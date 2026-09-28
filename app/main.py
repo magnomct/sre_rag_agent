@@ -9,8 +9,10 @@ import signal
 import sys
 import structlog
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, Response
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Request, Response, HTTPException
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from config import settings
 from metrics import (
@@ -23,6 +25,28 @@ from metrics import (
 )
 from healthcheck import health_checker
 from rag.engine import rag_engine
+
+# ============================================================
+# Templates Setup
+# ============================================================
+templates = Jinja2Templates(directory="templates")
+
+# ============================================================
+# Models & In-Memory DB (For Lab CRUD)
+# ============================================================
+class QueryHistory(BaseModel):
+    id: int
+    query: str
+    answer: str
+    status: str = "success"
+
+class QueryHistoryCreate(BaseModel):
+    query: str
+    answer: str
+
+# In-memory storage for CRUD demonstration
+history_db: list[QueryHistory] = []
+history_counter = 1
 
 # ============================================================
 # Chaos Engineering State
@@ -244,3 +268,47 @@ async def toggle_500_errors(enable: bool = True):
     logger.warning("chaos_monkey_toggled", simulate_500=chaos_state.simulate_500)
     return {"status": "success", "simulate_500": chaos_state.simulate_500}
 
+# ============================================================
+# History Board (Jinja2)
+# ============================================================
+@app.get("/board", response_class=HTMLResponse, tags=["Web"])
+async def read_board(request: Request):
+    """Renderiza a página de board com o histórico de consultas."""
+    return templates.TemplateResponse(
+        request=request, name="board.html", context={"history": history_db}
+    )
+
+# ============================================================
+# History CRUD (Swagger)
+# ============================================================
+@app.post("/api/v1/history", response_model=QueryHistory, tags=["History CRUD"])
+async def create_history(item: QueryHistoryCreate):
+    """Cria um novo registro no histórico."""
+    global history_counter
+    new_item = QueryHistory(id=history_counter, query=item.query, answer=item.answer)
+    history_db.append(new_item)
+    history_counter += 1
+    return new_item
+
+@app.get("/api/v1/history", response_model=list[QueryHistory], tags=["History CRUD"])
+async def get_all_history():
+    """Retorna todos os registros do histórico."""
+    return history_db
+
+@app.get("/api/v1/history/{item_id}", response_model=QueryHistory, tags=["History CRUD"])
+async def get_history(item_id: int):
+    """Busca um registro específico pelo ID."""
+    for item in history_db:
+        if item.id == item_id:
+            return item
+    raise HTTPException(status_code=404, detail="Item not found")
+
+@app.delete("/api/v1/history/{item_id}", tags=["History CRUD"])
+async def delete_history(item_id: int):
+    """Deleta um registro do histórico."""
+    global history_db
+    original_length = len(history_db)
+    history_db = [item for item in history_db if item.id != item_id]
+    if len(history_db) == original_length:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return {"status": "deleted"}
