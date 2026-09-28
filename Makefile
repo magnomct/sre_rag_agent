@@ -24,7 +24,7 @@ cluster-delete: ## Delete Kind cluster
 
 # ---- Build ----
 build: ## Build Docker image
-	docker build -t $(IMAGE):$(TAG) ./app/
+	docker build -t $(IMAGE):$(TAG) -f docker/Dockerfile ./app/
 	docker tag $(IMAGE):$(TAG) $(IMAGE):latest
 
 push: ## Push image to registry
