@@ -45,7 +45,17 @@ api:
       initialDelaySeconds: 15
       periodSeconds: 10
       failureThreshold: 3
-    readiness:
+
+# -- Ingress Settings
+ingress:
+  enabled: true
+  host: api.srelab.local
+  tls: true
+  certManagerIssuer: "letsencrypt-prod"
+  annotations: {}
+    # nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+
+  probes:
       path: /ready
       port: 8080
       initialDelaySeconds: 5

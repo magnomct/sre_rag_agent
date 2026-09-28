@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRE RAG - History Board</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --text: #c9d1d9;
+            --border: #30363d;
+            --accent: #58a6ff;
+            --card-bg: #161b22;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: var(--accent);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        .board {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            color: #8b949e;
+            margin-bottom: 10px;
+        }
+        .query {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .answer {
+            color: #8b949e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SRE RAG - Consultas Recentes</h1>
+        <div class="board" id="board">
+            <!-- Os cards serão renderizados pelo Jinja -->
+            {% for item in history %}
+            <div class="card">
+                <div class="card-header">
+                    <span>ID: {{ item.id }}</span>
+                    <span>Status: {{ item.status }}</span>
+                </div>
+                <div class="query">Q: {{ item.query }}</div>
+                <div class="answer">A: {{ item.answer }}</div>
+            </div>
+            {% else %}
+            <div class="card">
+                <p>Nenhum histórico encontrado. Utilize o Swagger em /docs para adicionar queries.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
