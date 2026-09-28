@@ -24,6 +24,14 @@ from metrics import (
 from healthcheck import health_checker
 from rag.engine import rag_engine
 
+# ============================================================
+# Chaos Engineering State
+# ============================================================
+class ChaosState:
+    simulate_500: bool = False
+
+chaos_state = ChaosState()
+
 
 # ============================================================
 # Structured Logging Setup
@@ -111,7 +119,10 @@ async def metrics_middleware(request: Request, call_next):
     """Collect RED metrics for every HTTP request."""
     start_time = time.time()
 
-    response = await call_next(request)
+    if chaos_state.simulate_500 and not request.url.path.startswith("/healthz") and not request.url.path.startswith("/metrics"):
+        response = JSONResponse(status_code=500, content={"error": "Chaos Monkey injected 500 Internal Server Error"})
+    else:
+        response = await call_next(request)
 
     duration = time.time() - start_time
     method = request.method
@@ -222,3 +233,14 @@ async def dependency_health():
         "postgresql": health_checker.check_postgres(),
         "redis": health_checker.check_redis(),
     }
+
+# ============================================================
+# Chaos Engineering Endpoints (For Lab Purposes)
+# ============================================================
+@app.post("/api/v1/chaos/500", tags=["Chaos"])
+async def toggle_500_errors(enable: bool = True):
+    """Toggle returning 500 Internal Server Error for all requests."""
+    chaos_state.simulate_500 = enable
+    logger.warning("chaos_monkey_toggled", simulate_500=chaos_state.simulate_500)
+    return {"status": "success", "simulate_500": chaos_state.simulate_500}
+

@@ -1,0 +1,27 @@
+---
+# Source: sre-rag/templates/api-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: sre-rag-api
+  namespace: sre-rag
+  labels:
+    app.kubernetes.io/name: sre-rag
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: sre-rag-lab
+    helm.sh/chart: sre-rag-0.1.0
+    environment: staging
+    team: sre
+    app.kubernetes.io/name: sre-rag-api
+    app.kubernetes.io/component: backend
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: sre-rag-api
+    app.kubernetes.io/component: backend
