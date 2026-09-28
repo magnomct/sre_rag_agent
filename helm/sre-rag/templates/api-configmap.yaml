@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sre-rag-api-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "sre-rag.labels" . | nindent 4 }}
+data:
+  {{- range $key, $val := .Values.api.env }}
+  {{ $key }}: {{ $val | quote }}
+  {{- end }}

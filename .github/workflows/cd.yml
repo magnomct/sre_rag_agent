@@ -1,0 +1,138 @@
+# =============================================================
+# CD Pipeline — Deploy to Staging/Production
+# =============================================================
+
+name: CD
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      image_tag:
+        description: "Docker image tag to deploy"
+        required: true
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/sre-rag-api
+
+jobs:
+  # --- Deploy to Staging ---
+  deploy-staging:
+    name: Deploy Staging
+    runs-on: ubuntu-latest
+    if: >
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+
+      - name: Determine image tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.image_tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy with Helm
+        run: |
+          helm upgrade --install sre-rag helm/sre-rag/ \
+            --namespace sre-rag \
+            --create-namespace \
+            --set api.image.tag=${{ steps.tag.outputs.tag }} \
+            --set global.environment=staging \
+            --wait \
+            --timeout 5m
+
+      - name: Smoke test
+        run: |
+          # Wait for rollout
+          kubectl rollout status deployment/sre-rag-api -n sre-rag --timeout=120s
+
+          # Port-forward and test
+          kubectl port-forward -n sre-rag svc/sre-rag-api 8080:80 &
+          sleep 5
+
+          # Health check
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/healthz)
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "Smoke test failed! Status: $HTTP_STATUS"
+            echo "Rolling back..."
+            helm rollback sre-rag -n sre-rag
+            exit 1
+          fi
+
+          echo "Smoke test passed!"
+
+  # --- Deploy to Production ---
+  deploy-production:
+    name: Deploy Production
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: >
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.environment == 'production'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG_PROD }}" | base64 -d > $HOME/.kube/config
+
+      - name: Deploy with Helm (Production)
+        run: |
+          helm upgrade --install sre-rag helm/sre-rag/ \
+            --namespace sre-rag \
+            --create-namespace \
+            -f helm/sre-rag/values.yaml \
+            -f helm/sre-rag/values-prod.yaml \
+            --set api.image.tag=${{ github.event.inputs.image_tag }} \
+            --set global.environment=production \
+            --wait \
+            --timeout 10m
+
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment/sre-rag-api -n sre-rag --timeout=180s
+          echo "Production deployment successful!"
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Deployment failed! Rolling back..."
+          helm rollback sre-rag -n sre-rag
+          echo "Rollback complete."

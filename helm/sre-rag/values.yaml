@@ -1,0 +1,130 @@
+# =============================================================
+# SRE RAG Agent — Helm Values (Default / Staging)
+# =============================================================
+
+global:
+  environment: staging
+  namespace: sre-rag
+
+# ----- API -----
+api:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/your-org/sre-rag-api
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 8080
+  
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  
+  pdb:
+    enabled: true
+    minAvailable: 1
+  
+  probes:
+    liveness:
+      path: /healthz
+      port: 8080
+      initialDelaySeconds: 15
+      periodSeconds: 10
+      failureThreshold: 3
+    readiness:
+      path: /ready
+      port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      failureThreshold: 3
+    startup:
+      path: /startup
+      port: 8080
+      failureThreshold: 30
+      periodSeconds: 10
+  
+  env:
+    LOG_LEVEL: "INFO"
+    LOG_FORMAT: "json"
+    POSTGRES_HOST: "postgresql"
+    POSTGRES_PORT: "5432"
+    POSTGRES_DB: "sre_rag"
+    REDIS_HOST: "redis"
+    REDIS_PORT: "6379"
+  
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/metrics"
+
+# ----- PostgreSQL -----
+postgresql:
+  enabled: true
+  image:
+    repository: postgres
+    tag: "16.4-alpine"
+  
+  auth:
+    database: sre_rag
+    username: sre_user
+    password: changeme  # Use External Secrets in production!
+  
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: ""
+  
+  service:
+    port: 5432
+
+# ----- Redis -----
+redis:
+  enabled: true
+  image:
+    repository: redis
+    tag: "7.4-alpine"
+  
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "250m"
+      memory: "256Mi"
+  
+  persistence:
+    enabled: true
+    size: 2Gi
+    storageClass: ""
+  
+  service:
+    port: 6379
+
+# ----- Monitoring -----
+monitoring:
+  serviceMonitor:
+    enabled: true
+    interval: 15s
+    scrapeTimeout: 10s

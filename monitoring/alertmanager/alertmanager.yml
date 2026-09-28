@@ -1,0 +1,75 @@
+# =============================================================
+# Alertmanager Configuration
+# =============================================================
+
+global:
+  resolve_timeout: 5m
+
+# Routing tree
+route:
+  group_by: ['alertname', 'namespace', 'severity']
+  group_wait: 10s
+  group_interval: 5m
+  repeat_interval: 12h
+  receiver: 'default-webhook'
+
+  routes:
+    # Critical: immediate notification (PagerDuty-like)
+    - match:
+        severity: critical
+      receiver: 'critical-webhook'
+      group_wait: 0s
+      repeat_interval: 5m
+      continue: true
+
+    # Warning: Slack notification
+    - match:
+        severity: warning
+      receiver: 'warning-webhook'
+      group_wait: 30s
+      repeat_interval: 4h
+
+    # SLO-specific routing
+    - match_re:
+        slo: .+
+      receiver: 'slo-webhook'
+      group_by: ['slo', 'alertname']
+
+# Inhibition rules: suppress lower severity when higher is firing
+inhibit_rules:
+  - source_match:
+      severity: critical
+    target_match:
+      severity: warning
+    equal: ['alertname', 'namespace']
+
+# Receivers
+receivers:
+  - name: 'default-webhook'
+    webhook_configs:
+      - url: 'http://localhost:5001/alerts/default'
+        send_resolved: true
+
+  - name: 'critical-webhook'
+    webhook_configs:
+      - url: 'http://localhost:5001/alerts/critical'
+        send_resolved: true
+    # Uncomment for PagerDuty:
+    # pagerduty_configs:
+    #   - service_key: '<PAGERDUTY_SERVICE_KEY>'
+
+  - name: 'warning-webhook'
+    webhook_configs:
+      - url: 'http://localhost:5001/alerts/warning'
+        send_resolved: true
+    # Uncomment for Slack:
+    # slack_configs:
+    #   - api_url: '<SLACK_WEBHOOK_URL>'
+    #     channel: '#sre-alerts'
+    #     title: '{{ .CommonAnnotations.summary }}'
+    #     text: '{{ .CommonAnnotations.description }}'
+
+  - name: 'slo-webhook'
+    webhook_configs:
+      - url: 'http://localhost:5001/alerts/slo'
+        send_resolved: true

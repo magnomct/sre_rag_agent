@@ -1,0 +1,171 @@
+# =============================================================
+# Alert Rules — Multi-Window Burn Rate Alerts
+# Based on Google SRE Workbook Chapter 5
+# =============================================================
+
+groups:
+  - name: sre-rag.alerts
+    rules:
+      # -------------------------------------------------------
+      # CRITICAL: Fast burn — 2% of 30-day budget in 1 hour
+      # 14.4x burn rate over 1h AND 6x over 6h
+      # -------------------------------------------------------
+      - alert: SLOAvailabilityBurnRateCritical
+        expr: |
+          slo:availability:burn_rate1h > 14.4
+          and
+          slo:availability:burn_rate6h > 6
+        for: 2m
+        labels:
+          severity: critical
+          team: sre
+          slo: availability
+        annotations:
+          summary: "High error budget burn rate (critical)"
+          description: |
+            Availability SLO burn rate is {{ $value }}x (1h window).
+            At this rate, the 30-day error budget will be exhausted in {{ printf "%.1f" (divf 720 $value) }} hours.
+          runbook_url: "https://github.com/your-org/sre-rag-agent/blob/main/docs/runbooks/high-error-rate.md"
+
+      # -------------------------------------------------------
+      # WARNING: Slow burn — 5% of 30-day budget in 6 hours
+      # -------------------------------------------------------
+      - alert: SLOAvailabilityBurnRateWarning
+        expr: |
+          slo:availability:burn_rate1h > 6
+          and
+          slo:availability:burn_rate6h > 3
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+          slo: availability
+        annotations:
+          summary: "Elevated error budget burn rate (warning)"
+          description: |
+            Availability SLO burn rate is {{ $value }}x (1h window).
+            Investigate before it becomes critical.
+          runbook_url: "https://github.com/your-org/sre-rag-agent/blob/main/docs/runbooks/high-error-rate.md"
+
+      # -------------------------------------------------------
+      # Latency SLO
+      # -------------------------------------------------------
+      - alert: SLOLatencyP99High
+        expr: |
+          histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+          > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+          slo: latency
+        annotations:
+          summary: "P99 latency exceeds 500ms SLO"
+          description: |
+            P99 latency is {{ $value }}s (SLO: 0.5s).
+          runbook_url: "https://github.com/your-org/sre-rag-agent/blob/main/docs/runbooks/high-latency.md"
+
+      - alert: SLOLatencyP99Critical
+        expr: |
+          histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+          > 2.0
+        for: 2m
+        labels:
+          severity: critical
+          team: sre
+          slo: latency
+        annotations:
+          summary: "P99 latency critically high (>2s)"
+          description: |
+            P99 latency is {{ $value }}s — severely impacting user experience.
+          runbook_url: "https://github.com/your-org/sre-rag-agent/blob/main/docs/runbooks/high-latency.md"
+
+      # -------------------------------------------------------
+      # Infrastructure Alerts
+      # -------------------------------------------------------
+      - alert: PodCrashLooping
+        expr: |
+          rate(kube_pod_container_status_restarts_total{namespace="sre-rag"}[5m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          team: sre
+        annotations:
+          summary: "Pod {{ $labels.pod }} is crash-looping"
+          description: |
+            Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has been restarting.
+
+      - alert: PodNotReady
+        expr: |
+          kube_pod_status_ready{namespace="sre-rag", condition="true"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "Pod {{ $labels.pod }} not ready for 5+ minutes"
+
+      - alert: HighMemoryUsage
+        expr: |
+          container_memory_working_set_bytes{namespace="sre-rag"}
+          /
+          container_spec_memory_limit_bytes{namespace="sre-rag"}
+          > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "Memory usage >85% of limit for {{ $labels.pod }}"
+          description: |
+            Container {{ $labels.container }} in pod {{ $labels.pod }} is using
+            {{ printf "%.1f" (mulf $value 100) }}% of its memory limit. OOMKill risk.
+
+      - alert: HighCPUThrottling
+        expr: |
+          rate(container_cpu_cfs_throttled_seconds_total{namespace="sre-rag"}[5m])
+          /
+          rate(container_cpu_usage_seconds_total{namespace="sre-rag"}[5m])
+          > 0.25
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "CPU throttling >25% for {{ $labels.pod }}"
+
+      # -------------------------------------------------------
+      # Database Alerts
+      # -------------------------------------------------------
+      - alert: PostgreSQLDown
+        expr: |
+          up{job="postgresql"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: sre
+        annotations:
+          summary: "PostgreSQL is down"
+
+      - alert: RedisDown
+        expr: |
+          up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: sre
+        annotations:
+          summary: "Redis is down"
+
+      - alert: CacheHitRateLow
+        expr: |
+          sli:cache_hit:ratio_rate5m < 0.5
+        for: 10m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "Cache hit rate below 50%"
+          description: |
+            Redis cache hit rate is {{ printf "%.1f" (mulf $value 100) }}%.
+            Expected >80% for optimal performance.
