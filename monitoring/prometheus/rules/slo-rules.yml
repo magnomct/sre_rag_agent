@@ -1,0 +1,86 @@
+# =============================================================
+# SLO Recording Rules
+# These pre-compute SLI/SLO metrics for efficient querying
+# =============================================================
+
+groups:
+  - name: slo.rules
+    interval: 30s
+    rules:
+      # -------------------------------------------------------
+      # Availability SLI: proportion of successful requests
+      # -------------------------------------------------------
+      - record: sli:availability:ratio_rate5m
+        expr: |
+          sum(rate(http_requests_total{status_code!~"5.."}[5m]))
+          /
+          sum(rate(http_requests_total[5m]))
+
+      - record: sli:availability:ratio_rate30m
+        expr: |
+          sum(rate(http_requests_total{status_code!~"5.."}[30m]))
+          /
+          sum(rate(http_requests_total[30m]))
+
+      - record: sli:availability:ratio_rate1h
+        expr: |
+          sum(rate(http_requests_total{status_code!~"5.."}[1h]))
+          /
+          sum(rate(http_requests_total[1h]))
+
+      - record: sli:availability:ratio_rate6h
+        expr: |
+          sum(rate(http_requests_total{status_code!~"5.."}[6h]))
+          /
+          sum(rate(http_requests_total[6h]))
+
+      # -------------------------------------------------------
+      # Latency SLI: proportion of requests under 500ms
+      # -------------------------------------------------------
+      - record: sli:latency:ratio_rate5m
+        expr: |
+          sum(rate(http_request_duration_seconds_bucket{le="0.5"}[5m]))
+          /
+          sum(rate(http_request_duration_seconds_count[5m]))
+
+      - record: sli:latency:ratio_rate1h
+        expr: |
+          sum(rate(http_request_duration_seconds_bucket{le="0.5"}[1h]))
+          /
+          sum(rate(http_request_duration_seconds_count[1h]))
+
+      # -------------------------------------------------------
+      # Error Budget Burn Rate
+      # burn_rate > 1 means we're burning budget faster than expected
+      # -------------------------------------------------------
+      - record: slo:availability:burn_rate1h
+        expr: |
+          (1 - sli:availability:ratio_rate1h) / (1 - 0.999)
+
+      - record: slo:availability:burn_rate6h
+        expr: |
+          (1 - sli:availability:ratio_rate6h) / (1 - 0.999)
+
+      # -------------------------------------------------------
+      # Error Budget Remaining (30-day window)
+      # -------------------------------------------------------
+      - record: slo:availability:error_budget_remaining
+        expr: |
+          1 - (
+            (1 - sli:availability:ratio_rate1h) / (1 - 0.999)
+          )
+
+      # -------------------------------------------------------
+      # RAG-specific SLIs
+      # -------------------------------------------------------
+      - record: sli:rag_success:ratio_rate5m
+        expr: |
+          sum(rate(rag_queries_total{status="success"}[5m]))
+          /
+          sum(rate(rag_queries_total[5m]))
+
+      - record: sli:cache_hit:ratio_rate5m
+        expr: |
+          sum(rate(cache_hits_total[5m]))
+          /
+          (sum(rate(cache_hits_total[5m])) + sum(rate(cache_misses_total[5m])))

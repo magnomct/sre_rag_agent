@@ -1,0 +1,14 @@
+{{- if .Values.api.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: sre-rag-api
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "sre-rag.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.api.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "sre-rag.api.selectorLabels" . | nindent 6 }}
+{{- end }}

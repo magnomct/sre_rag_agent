@@ -1,0 +1,55 @@
+# =============================================================
+# SRE RAG Agent — Helm Values (Production Override)
+# =============================================================
+
+global:
+  environment: production
+
+api:
+  replicaCount: 3
+  image:
+    pullPolicy: Always
+  
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 60
+  
+  pdb:
+    minAvailable: 2
+  
+  env:
+    LOG_LEVEL: "WARNING"
+
+postgresql:
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+  
+  persistence:
+    size: 20Gi
+
+redis:
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  
+  persistence:
+    size: 5Gi
