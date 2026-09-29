@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SRE Incident Simulation Lab</title>
+  <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────── -->
+<header class="header">
+  <div class="header-title">
+    <span style="font-size:1.4rem">🚨</span>
+    <div>
+      <h1>SRE Incident Simulation Lab</h1>
+      <div class="header-subtitle">RAG Agent · Kubernetes · Observability · Production Scenarios</div>
+    </div>
+  </div>
+  <div class="status-badge">
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-text">Todos os sistemas operacionais</span>
+    <span style="margin-left:16px;color:#484f58">|</span>
+    <a href="/docs" style="margin-left:16px;color:#58a6ff;text-decoration:none;font-size:0.8rem">Swagger →</a>
+    <a href="/board" style="margin-left:12px;color:#58a6ff;text-decoration:none;font-size:0.8rem">Board →</a>
+  </div>
+</header>
+
+<!-- ── Main Layout ──────────────────────────────────────────── -->
+<div class="layout">
+
+  <!-- ── Sidebar: Scenario List ─────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span>🎯</span> Cenários de Incidente ({{ scenarios|length }})
+    </div>
+
+    {% for scenario in scenarios %}
+    <div class="incident-card" data-scenario="{{ scenario.id }}">
+      <div class="incident-card-header">
+        <div class="incident-title">
+          <span>{{ scenario.icon }}</span>
+          {{ scenario.title }}
+        </div>
+        <span class="severity-badge sev-{{ scenario.severity }}">{{ scenario.severity }}</span>
+      </div>
+      <div class="incident-category">
+        📂 {{ scenario.category }}
+      </div>
+      <div class="incident-description" style="margin-top:6px">
+        {{ scenario.description }}
+      </div>
+      <button
+        class="simulate-btn"
+        onclick="startSimulation('{{ scenario.id }}')"
+      >▶ Simular</button>
+    </div>
+    {% endfor %}
+  </aside>
+
+  <!-- ── Main Content ──────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Empty state -->
+    <div class="empty-state" id="empty-state">
+      <div class="empty-state-icon">🖥️</div>
+      <h3>Nenhuma Simulação Ativa</h3>
+      <p>
+        Escolha um cenário de incidente no painel à esquerda<br>
+        e clique em <strong>▶ Simular</strong> para iniciar.<br><br>
+        A timeline de MTTD → Investigação → MTTR será exibida aqui,<br>
+        junto com o seletor de soluções corretas.
+      </p>
+    </div>
+
+    <!-- Active simulation panels rendered by JS -->
+    <div id="simulation-panels"></div>
+
+    <!-- ── History Table ──────────────────────────────────── -->
+    <div class="history-section">
+      <div class="history-title">
+        📊 Histórico de Simulações
+        <span style="color:#484f58;font-weight:400;font-size:0.75rem">(atualizado automaticamente)</span>
+      </div>
+
+      {% if history %}
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Cenário</th>
+            <th>Severidade</th>
+            <th>MTTD</th>
+            <th>MTTR</th>
+            <th>Resultado</th>
+          </tr>
+        </thead>
+        <tbody id="history-body">
+          {% for item in history %}
+          <tr>
+            <td>{{ item.id }}</td>
+            <td class="scenario-name">{{ item.scenario_title }}</td>
+            <td><span class="severity-badge sev-{{ item.severity }}">{{ item.severity }}</span></td>
+            <td>{{ "%.0f"|format(item.mttd_seconds or 0) }}s</td>
+            <td>{{ "%.0f"|format(item.mttr_seconds or 0) }}s</td>
+            <td class="{{ 'result-correct' if item.correct else 'result-incorrect' }}">
+              {{ '✅ Correto' if item.correct else '❌ Incorreto' }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div id="history-body">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Cenário</th>
+              <th>Severidade</th>
+              <th>MTTD</th>
+              <th>MTTR</th>
+              <th>Resultado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="6" class="history-empty">
+                Nenhuma simulação realizada ainda. Clique em "▶ Simular" para começar.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+
+  </main>
+</div>
+
+<script src="/static/js/dashboard.js"></script>
+</body>
+</html>

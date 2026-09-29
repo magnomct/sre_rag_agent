@@ -1,0 +1,25 @@
+# =============================================================
+# terraform.tfvars.example — OCI Infrastructure
+# Copie para terraform.tfvars e preencha com seus valores reais.
+# NUNCA commite o terraform.tfvars — ele está no .gitignore.
+# =============================================================
+
+# ── OCI Authentication ────────────────────────────────────────
+# Encontre em: OCI Console → Profile → API Keys
+tenancy_ocid     = "ocid1.tenancy.oc1..CHANGE_ME"
+user_ocid        = "ocid1.user.oc1..CHANGE_ME"
+fingerprint      = "xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx"
+private_key_path = "~/.oci/oci_api_key.pem"
+
+# ── Region ────────────────────────────────────────────────────
+# Regiões disponíveis: sa-saopaulo-1, us-ashburn-1, us-phoenix-1
+region = "sa-saopaulo-1"
+
+# ── Compartment ───────────────────────────────────────────────
+# Encontre em: OCI Console → Identity → Compartments
+compartment_ocid = "ocid1.compartment.oc1..CHANGE_ME"
+
+# ── Cluster Configuration ─────────────────────────────────────
+project_name       = "sre-rag"
+kubernetes_version = "v1.30.1"
+node_shape         = "VM.Standard.E4.Flex"

@@ -91,7 +91,8 @@ postgresql:
   auth:
     database: sre_rag
     username: sre_user
-    password: changeme  # Use External Secrets in production!
+    password: ""  # Set via --set postgresql.auth.password=${{ secrets.POSTGRES_PASSWORD }} in CI/CD
+                    # or use external-secrets-operator for GitOps
   
   resources:
     requests:

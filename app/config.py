@@ -27,7 +27,10 @@ class Settings(BaseSettings):
     postgres_port: int = Field(default=5432, description="PostgreSQL port")
     postgres_db: str = Field(default="sre_rag", description="PostgreSQL database")
     postgres_user: str = Field(default="sre_user", description="PostgreSQL user")
-    postgres_password: str = Field(default="changeme", description="PostgreSQL password")
+    postgres_password: str = Field(
+        default="",
+        description="PostgreSQL password — MUST be set via POSTGRES_PASSWORD env var in production",
+    )
 
     # Redis
     redis_host: str = Field(default="redis", description="Redis host")
