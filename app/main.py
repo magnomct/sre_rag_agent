@@ -12,6 +12,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response, HTTPException
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from config import settings
@@ -25,6 +26,7 @@ from metrics import (
 )
 from healthcheck import health_checker
 from rag.engine import rag_engine
+from incidents import simulation_engine, SCENARIOS
 
 # ============================================================
 # Templates Setup
@@ -134,6 +136,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 # ============================================================
 # Middleware: Metrics Collection
@@ -216,17 +221,16 @@ async def metrics():
 # ============================================================
 # API Endpoints
 # ============================================================
-@app.get("/", tags=["API"])
-async def root():
-    """Root endpoint — API information."""
-    return {
-        "service": settings.app_name,
-        "version": settings.app_version,
-        "status": "running",
-        "docs": "/docs",
-        "metrics": "/metrics",
-        "health": "/healthz",
-    }
+@app.get("/", response_class=HTMLResponse, tags=["Web"])
+async def root(request: Request):
+    """SRE Incident Simulation Dashboard."""
+    scenarios = list(SCENARIOS.values())
+    history = simulation_engine.history
+    return templates.TemplateResponse(
+        request=request,
+        name="dashboard.html",
+        context={"scenarios": scenarios, "history": history},
+    )
 
 
 @app.post("/api/v1/query", tags=["RAG"])
@@ -267,6 +271,62 @@ async def toggle_500_errors(enable: bool = True):
     chaos_state.simulate_500 = enable
     logger.warning("chaos_monkey_toggled", simulate_500=chaos_state.simulate_500)
     return {"status": "success", "simulate_500": chaos_state.simulate_500}
+
+# ============================================================
+# Incident Simulation API
+# ============================================================
+class SimulateRequest(BaseModel):
+    scenario_id: str
+
+class SolveRequest(BaseModel):
+    scenario_id: str
+    solution_id: str
+
+@app.get("/api/v1/incidents/scenarios", tags=["Incidents"])
+async def list_scenarios():
+    """List all available incident scenarios."""
+    return list(SCENARIOS.values())
+
+@app.post("/api/v1/incidents/simulate", tags=["Incidents"])
+async def start_simulation(body: SimulateRequest):
+    """Start an incident simulation for a given scenario."""
+    result = simulation_engine.start(body.scenario_id)
+    # Activate chaos if the scenario requires it
+    scenario = SCENARIOS.get(body.scenario_id, {})
+    if scenario.get("chaos_action") == "simulate_500":
+        chaos_state.simulate_500 = True
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+@app.get("/api/v1/incidents/active", tags=["Incidents"])
+async def get_active_simulation():
+    """Get current state of the active simulation."""
+    state = simulation_engine.get_active_state()
+    if not state:
+        return {"active": False}
+    return state
+
+@app.post("/api/v1/incidents/solve", tags=["Incidents"])
+async def solve_simulation(body: SolveRequest):
+    """Submit a solution for the active simulation."""
+    # Deactivate chaos regardless of answer
+    chaos_state.simulate_500 = False
+    result = simulation_engine.solve(body.scenario_id, body.solution_id)
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+@app.post("/api/v1/incidents/cancel", tags=["Incidents"])
+async def cancel_simulation():
+    """Cancel the active simulation."""
+    chaos_state.simulate_500 = False
+    return simulation_engine.cancel()
+
+@app.get("/api/v1/incidents/history", tags=["Incidents"])
+async def get_simulation_history():
+    """Return the full simulation history."""
+    return [item.model_dump() for item in simulation_engine.history]
 
 # ============================================================
 # History Board (Jinja2)

@@ -1,4 +1,9 @@
-# Python
+# =============================================================
+# .gitignore — SRE RAG Agent
+# Mantém o repositório público seguro, sem credenciais expostas.
+# =============================================================
+
+# ── Python ────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
@@ -6,44 +11,94 @@ __pycache__/
 dist/
 build/
 .eggs/
-venv/
 .venv/
+venv/
 .mypy_cache/
 .pytest_cache/
 .ruff_cache/
+coverage.xml
+htmlcov/
+.coverage
+*.log
 
-# Environment
+# ── Environment Files ─────────────────────────────────────────
+# NUNCA commitar arquivos .env com valores reais.
+# Use .env.example como template (sem valores reais).
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
-# IDE
+# ── Terraform ─────────────────────────────────────────────────
+# tfvars contêm OCIDs, fingerprints e credenciais de nuvem.
+*.tfvars
+*.tfvars.json
+terraform.tfvars
+!terraform.tfvars.example
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+crash.log
+override.tf
+override.tf.json
+
+# ── OCI Credentials ───────────────────────────────────────────
+# Nunca commitar chaves da API da Oracle Cloud.
+oci_api_key*.pem
+oci_api_key_private.pem
+
+# ── Kubernetes ────────────────────────────────────────────────
+# Kubeconfigs contêm tokens de acesso ao cluster.
+kubeconfig
+kubeconfig.*
+*.kubeconfig
+
+# Manifests gerados por `helm template` — são derivados do helm/
+# Usar `helm template` localmente em vez de commitar o output.
+kubernetes/
+
+# Kubernetes Secrets gerados localmente (nunca commitar)
+*-secret.yaml
+*-secrets.yaml
+
+# ── Helm ──────────────────────────────────────────────────────
+# Arquivos de override com valores sensíveis locais.
+values-local.yaml
+values-secrets.yaml
+helm-overrides/
+local-overrides/
+local/
+
+# ── Docker ────────────────────────────────────────────────────
+*.tar
+docker-compose.override.yml
+
+# ── Certificados e Chaves ─────────────────────────────────────
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets/
+
+# ── IDE / Editor ──────────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+*.orig
 
-# OS
+# ── OS ────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Terraform
-*.tfstate
-*.tfstate.*
-.terraform/
-.terraform.lock.hcl
-crash.log
+# ── Scripts gerados localmente ────────────────────────────────
+scripts/install-gh.sh
 
-# Docker
-*.tar
-
-# Kubernetes
-kubeconfig
-*.kubeconfig
-
-# Secrets
-secrets/
-*.pem
-*.key
-*.crt
+# ── Local Training / SRE Guides ───────────────────────────────
+# Arquivos de estudo e treinamento que não devem ir ao repositório
+*_GUIDE.md
+SRE_PROFESSOR_GUIDE.md
