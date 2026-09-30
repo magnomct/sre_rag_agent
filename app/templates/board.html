@@ -58,7 +58,10 @@
 </head>
 <body>
     <div class="container">
-        <h1>SRE RAG - Consultas Recentes</h1>
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:10px;">
+            <h1 style="border-bottom:none;padding-bottom:0;margin:0;">SRE RAG - Consultas Recentes</h1>
+            <a href="/dashboard" style="color:#58a6ff;text-decoration:none;font-size:0.85rem;">&larr; Voltar ao Dashboard</a>
+        </div>
         <div class="board" id="board">
             <!-- Os cards serão renderizados pelo Jinja -->
             {% for item in history %}
@@ -76,6 +79,40 @@
             </div>
             {% endfor %}
         </div>
+            <footer class="app-footer" style="margin-top: 40px; border-radius: 8px; border: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; background: var(--card-bg);">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="width: 6px; height: 6px; border-radius: 50%; background: #3fb950; box-shadow: 0 0 6px #3fb950; display: inline-block;"></span>
+                <span style="font-weight: 600; color: #e6edf3;">SRE Incident Lab</span>
+                <span style="color: #484f58; margin: 0 4px;">·</span>
+                <span style="color: #8b949e;">Autor: <strong style="color: #e6edf3;">Carlos Magno Cordeiro</strong> &copy; 2026</span>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <a
+                    href="https://github.com/magnomct/sre_rag_agent/blob/main/LICENSE"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 12px; background: rgba(46, 160, 67, 0.1); border: 1px solid rgba(46, 160, 67, 0.3); color: #7ee787; text-decoration: none; font-size: 0.74rem;"
+                >
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1zM2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1zM7 21h10M12 3v18M3 7h18"/>
+                    </svg>
+                    <span>Licença MIT</span>
+                </a>
+
+                <a
+                    href="https://github.com/magnomct/sre_rag_agent"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style="display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 6px; text-decoration: none; font-size: 0.76rem; color: #e6edf3; background: rgba(255, 255, 255, 0.04); border: 1px solid #30363d;"
+                >
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                    </svg>
+                    <span>magnomct/sre_rag_agent</span>
+                </a>
+            </div>
+        </footer>
     </div>
 </body>
 </html>
