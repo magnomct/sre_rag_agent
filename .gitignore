@@ -116,6 +116,12 @@ desktop.ini
 ehthumbs.db
 Icon?
 
+# ── CI/CD Workflows ───────────────────────────────────────────
+# Mantidos locais até validação completa em ambiente local.
+# Remova estas linhas quando estiver pronto para ativar o pipeline.
+.github/workflows/ci.yml
+.github/workflows/cd.yml
+
 # ── Scripts gerados / auxiliares locais ───────────────────────
 # Apenas o install-gh.sh é gerado localmente e não deve ir ao repo.
 # Os demais scripts (setup-local.sh, load-test.sh, setup-github-secrets.sh)
