@@ -1,6 +1,7 @@
 # =============================================================
 # .gitignore — SRE RAG Agent
-# Mantém o repositório público seguro, sem credenciais expostas.
+# Auditado e aprovado por SRE/QA — repositório público seguro.
+# Última revisão: 2026-09-30
 # =============================================================
 
 # ── Python ────────────────────────────────────────────────────
@@ -13,6 +14,7 @@ build/
 .eggs/
 .venv/
 venv/
+env/
 .mypy_cache/
 .pytest_cache/
 .ruff_cache/
@@ -20,13 +22,16 @@ coverage.xml
 htmlcov/
 .coverage
 *.log
+pip-log.txt
+pip-delete-this-directory.txt
 
 # ── Environment Files ─────────────────────────────────────────
 # NUNCA commitar arquivos .env com valores reais.
-# Use .env.example como template (sem valores reais).
+# Use .env.example como template documentado (sem valores reais).
 .env
 .env.*
 !.env.example
+*.env
 
 # ── Terraform ─────────────────────────────────────────────────
 # tfvars contêm OCIDs, fingerprints e credenciais de nuvem.
@@ -42,30 +47,35 @@ terraform.tfvars
 crash.log
 override.tf
 override.tf.json
+errored.tfstate
 
 # ── OCI Credentials ───────────────────────────────────────────
 # Nunca commitar chaves da API da Oracle Cloud.
 oci_api_key*.pem
 oci_api_key_private.pem
+.oci/
 
 # ── Kubernetes ────────────────────────────────────────────────
-# Kubeconfigs contêm tokens de acesso ao cluster.
+# Kubeconfigs contêm tokens de acesso completo ao cluster.
 kubeconfig
 kubeconfig.*
 *.kubeconfig
+.kube/
 
-# Manifests gerados por `helm template` — são derivados do helm/
-# Usar `helm template` localmente em vez de commitar o output.
+# Manifests gerados por `helm template` — use helm/ como fonte de verdade.
+# Gere localmente: helm template sre-rag helm/sre-rag/ > output.yaml
 kubernetes/
 
-# Kubernetes Secrets gerados localmente (nunca commitar)
+# Kubernetes Secrets gerados localmente (nunca commitar valores reais)
 *-secret.yaml
 *-secrets.yaml
+*-credentials.yaml
 
 # ── Helm ──────────────────────────────────────────────────────
-# Arquivos de override com valores sensíveis locais.
+# Arquivos de override com valores sensíveis para ambientes locais.
 values-local.yaml
 values-secrets.yaml
+values-dev.yaml
 helm-overrides/
 local-overrides/
 local/
@@ -73,14 +83,18 @@ local/
 # ── Docker ────────────────────────────────────────────────────
 *.tar
 docker-compose.override.yml
+.docker/
 
 # ── Certificados e Chaves ─────────────────────────────────────
+# Qualquer chave ou certificado real — use cert-manager em produção.
 *.pem
 *.key
 *.crt
 *.p12
 *.pfx
+*.jks
 secrets/
+certs/
 
 # ── IDE / Editor ──────────────────────────────────────────────
 .vscode/
@@ -89,16 +103,33 @@ secrets/
 *.swo
 *~
 *.orig
+.project
+.settings/
+*.sublime-project
+*.sublime-workspace
 
 # ── OS ────────────────────────────────────────────────────────
 .DS_Store
+.DS_Store?
 Thumbs.db
 desktop.ini
+ehthumbs.db
+Icon?
 
-# ── Scripts gerados localmente ────────────────────────────────
+# ── Scripts gerados / auxiliares locais ───────────────────────
+# Apenas o install-gh.sh é gerado localmente e não deve ir ao repo.
+# Os demais scripts (setup-local.sh, load-test.sh, setup-github-secrets.sh)
+# são utilitários legítimos e fazem parte do repositório.
 scripts/install-gh.sh
 
+# ── Testes — arquivos locais de fixture com dados reais ───────
+# Nunca commitar fixtures com dados reais de produção.
+tests/fixtures/real_*
+tests/data/real_*
+app/tests/fixtures/real_*
+
 # ── Local Training / SRE Guides ───────────────────────────────
-# Arquivos de estudo e treinamento que não devem ir ao repositório
+# Arquivos de estudo e treinamento pessoal — ficam apenas locais.
 *_GUIDE.md
 SRE_PROFESSOR_GUIDE.md
+TREINO_*.md
