@@ -7,6 +7,7 @@ and health check endpoints following SRE best practices.
 import time
 import signal
 import sys
+import logging
 import structlog
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response, HTTPException
@@ -76,7 +77,7 @@ structlog.configure(
         ),
     ],
     wrapper_class=structlog.make_filtering_bound_logger(
-        structlog.get_level_from_name(settings.log_level)
+        logging.getLevelName(settings.log_level.upper())
     ),
     context_class=dict,
     logger_factory=structlog.PrintLoggerFactory(),
@@ -148,7 +149,17 @@ async def metrics_middleware(request: Request, call_next):
     """Collect RED metrics for every HTTP request."""
     start_time = time.time()
 
-    if chaos_state.simulate_500 and not request.url.path.startswith("/healthz") and not request.url.path.startswith("/metrics"):
+    # Rotas excluídas do Chaos Monkey — "plano de controle" deve sobreviver ao incidente
+    CHAOS_EXEMPT_PREFIXES = (
+        "/healthz",       # health checks
+        "/ready",         # readiness probe
+        "/metrics",       # Prometheus scrape
+        "/static",        # assets do dashboard
+        "/docs",          # Swagger UI
+        "/openapi.json",  # schema
+        "/api/v1/incidents",  # controle da simulação — o SRE precisa agir!
+    )
+    if chaos_state.simulate_500 and not request.url.path.startswith(CHAOS_EXEMPT_PREFIXES):
         response = JSONResponse(status_code=500, content={"error": "Chaos Monkey injected 500 Internal Server Error"})
     else:
         response = await call_next(request)
@@ -327,6 +338,11 @@ async def cancel_simulation():
 async def get_simulation_history():
     """Return the full simulation history."""
     return [item.model_dump() for item in simulation_engine.history]
+
+@app.post("/api/v1/incidents/history/clear", tags=["Incidents"])
+async def clear_simulation_history():
+    """Clear all simulation history records."""
+    return simulation_engine.clear_history()
 
 # ============================================================
 # History Board (Jinja2)
