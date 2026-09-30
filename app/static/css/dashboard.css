@@ -51,7 +51,10 @@ body {
   background: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.6;
-  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* ── Header ─────────────────────────────────────────────── */
@@ -65,6 +68,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
+  flex-shrink: 0;
   backdrop-filter: blur(8px);
 }
 
@@ -117,7 +121,8 @@ body {
 .layout {
   display: grid;
   grid-template-columns: 360px 1fr;
-  height: calc(100vh - 65px);
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -1000,9 +1005,186 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
 
+
+/* ── App Footer ──────────────────────────────────────────── */
+.app-footer {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  padding: 0 24px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  z-index: 90;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  backdrop-filter: blur(8px);
+}
+
+.footer-left,
+.footer-center,
+.footer-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  flex-shrink: 0;
+}
+
+.footer-app-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.footer-separator {
+  color: var(--border-hover);
+}
+
+.footer-author {
+  color: var(--text-secondary);
+}
+
+.footer-author strong {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* Badges & Buttons */
+.footer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.74rem;
+  font-weight: 500;
+  transition: all var(--transition);
+}
+
+.footer-badge:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.license-badge {
+  color: #7ee787;
+  background: rgba(46, 160, 67, 0.1);
+  border-color: rgba(46, 160, 67, 0.3);
+}
+
+.license-badge:hover {
+  background: rgba(46, 160, 67, 0.2);
+  border-color: rgba(46, 160, 67, 0.5);
+  color: #a5d6a7;
+  transform: translateY(-1px);
+}
+
+.footer-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+}
+
+.footer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.76rem;
+  font-weight: 500;
+  transition: all var(--transition);
+}
+
+.github-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.github-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 0 12px var(--accent-glow);
+  transform: translateY(-1px);
+}
+
+.footer-icon {
+  flex-shrink: 0;
+  transition: transform var(--transition);
+}
+
+.github-btn:hover .footer-icon {
+  transform: scale(1.1);
+}
+
+.external-icon {
+  opacity: 0.6;
+  transition: transform var(--transition), opacity var(--transition);
+}
+
+.github-btn:hover .external-icon {
+  opacity: 1;
+  transform: translate(1px, -1px);
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .layout { grid-template-columns: 1fr; height: auto; }
-  .sidebar { border-right: none; border-bottom: 1px solid var(--border); max-height: 380px; }
-  .visual-charts-row { grid-template-columns: 1fr; }
+  body {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    height: auto;
+    flex: none;
+  }
+  .sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    max-height: 380px;
+  }
+  .visual-charts-row {
+    grid-template-columns: 1fr;
+  }
+  .app-footer {
+    height: auto;
+    padding: 14px 20px;
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  .footer-left,
+  .footer-center,
+  .footer-right {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 }
