@@ -14,14 +14,14 @@
     <span style="font-size:1.4rem">🚨</span>
     <div>
       <h1>SRE Incident Simulation Lab</h1>
-      <div class="header-subtitle">RAG Agent · Kubernetes · Observability · Production Scenarios</div>
+      <div class="header-subtitle">RAG Agent · Kubernetes · Observability · Chaos & Incident Response</div>
     </div>
   </div>
   <div class="status-badge">
     <div class="status-dot" id="status-dot"></div>
     <span id="status-text">Todos os sistemas operacionais</span>
     <span style="margin-left:16px;color:#484f58">|</span>
-    <a href="/docs" style="margin-left:16px;color:#58a6ff;text-decoration:none;font-size:0.8rem">Swagger →</a>
+    <a href="/docs" target="_blank" style="margin-left:16px;color:#58a6ff;text-decoration:none;font-size:0.8rem">Swagger Docs →</a>
     <a href="/board" style="margin-left:12px;color:#58a6ff;text-decoration:none;font-size:0.8rem">Board →</a>
   </div>
 </header>
@@ -35,27 +35,30 @@
       <span>🎯</span> Cenários de Incidente ({{ scenarios|length }})
     </div>
 
-    {% for scenario in scenarios %}
-    <div class="incident-card" data-scenario="{{ scenario.id }}">
-      <div class="incident-card-header">
-        <div class="incident-title">
-          <span>{{ scenario.icon }}</span>
-          {{ scenario.title }}
+    <div class="sidebar-scenarios">
+      {% for scenario in scenarios %}
+      <div class="incident-card" data-scenario="{{ scenario.id }}">
+        <div class="incident-card-header">
+          <div class="incident-title">
+            <span class="incident-icon">{{ scenario.icon }}</span>
+            <span class="incident-name">{{ scenario.title }}</span>
+          </div>
+          <span class="severity-badge sev-{{ scenario.severity }}">{{ scenario.severity }}</span>
         </div>
-        <span class="severity-badge sev-{{ scenario.severity }}">{{ scenario.severity }}</span>
+        <div class="incident-category">
+          <span>📂</span> {{ scenario.category }}
+        </div>
+        <div class="incident-description">
+          {{ scenario.description }}
+        </div>
+        <button
+          class="simulate-btn"
+          id="btn-simulate-{{ scenario.id }}"
+          onclick="startSimulation('{{ scenario.id }}')"
+        >▶ Simular</button>
       </div>
-      <div class="incident-category">
-        📂 {{ scenario.category }}
-      </div>
-      <div class="incident-description" style="margin-top:6px">
-        {{ scenario.description }}
-      </div>
-      <button
-        class="simulate-btn"
-        onclick="startSimulation('{{ scenario.id }}')"
-      >▶ Simular</button>
+      {% endfor %}
     </div>
-    {% endfor %}
   </aside>
 
   <!-- ── Main Content ──────────────────────────────────────── -->
@@ -66,74 +69,170 @@
       <div class="empty-state-icon">🖥️</div>
       <h3>Nenhuma Simulação Ativa</h3>
       <p>
-        Escolha um cenário de incidente no painel à esquerda<br>
-        e clique em <strong>▶ Simular</strong> para iniciar.<br><br>
-        A timeline de MTTD → Investigação → MTTR será exibida aqui,<br>
-        junto com o seletor de soluções corretas.
+        Escolha um cenário de incidente no painel lateral à esquerda<br>
+        e clique em <strong>▶ Simular</strong> para iniciar a dinâmica de resposta.<br><br>
+        A timeline de <strong>MTTD → Investigação → Mitigação (MTTR)</strong> será ativada,<br>
+        junto com o seletor de soluções (as opções são embaralhadas aleatoriamente).
       </p>
     </div>
 
     <!-- Active simulation panels rendered by JS -->
     <div id="simulation-panels"></div>
 
-    <!-- ── History Table ──────────────────────────────────── -->
-    <div class="history-section">
-      <div class="history-title">
-        📊 Histórico de Simulações
-        <span style="color:#484f58;font-weight:400;font-size:0.75rem">(atualizado automaticamente)</span>
+    <!-- ── History & SRE Analytics Section ──────────────────── -->
+    <section class="history-section">
+      <div class="history-header">
+        <div class="history-header-info">
+          <div class="history-title">
+            📊 Painel de Métricas & Histórico SRE
+          </div>
+          <div class="history-subtitle">
+            Estatísticas agregadas, taxa de assertividade e tempos médios de resolução (MTTR / MTTD)
+          </div>
+        </div>
+        <div class="history-header-actions">
+          <button class="action-btn" onclick="refreshHistory()" title="Atualizar dados">
+            🔄 Atualizar
+          </button>
+          <button class="action-btn danger" onclick="confirmClearHistory()" title="Limpar histórico de simulações">
+            🗑️ Limpar Histórico
+          </button>
+        </div>
       </div>
 
-      {% if history %}
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Cenário</th>
-            <th>Severidade</th>
-            <th>MTTD</th>
-            <th>MTTR</th>
-            <th>Resultado</th>
-          </tr>
-        </thead>
-        <tbody id="history-body">
-          {% for item in history %}
-          <tr>
-            <td>{{ item.id }}</td>
-            <td class="scenario-name">{{ item.scenario_title }}</td>
-            <td><span class="severity-badge sev-{{ item.severity }}">{{ item.severity }}</span></td>
-            <td>{{ "%.0f"|format(item.mttd_seconds or 0) }}s</td>
-            <td>{{ "%.0f"|format(item.mttr_seconds or 0) }}s</td>
-            <td class="{{ 'result-correct' if item.correct else 'result-incorrect' }}">
-              {{ '✅ Correto' if item.correct else '❌ Incorreto' }}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <div id="history-body">
-        <table>
+      <!-- SRE KPI Cards -->
+      <div class="analytics-grid" id="analytics-grid">
+        <!-- Card 1: Taxa de Resolução -->
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Taxa de Sucesso SRE</span>
+            <span class="kpi-badge" id="kpi-badge-rate">Aguardando</span>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value-group">
+              <div class="kpi-main-value" id="kpi-success-rate">0%</div>
+              <div class="kpi-sub-value" id="kpi-success-sub">0 corretos de 0</div>
+            </div>
+            <div class="kpi-chart-ring">
+              <svg viewBox="0 0 36 36" class="circular-chart" id="svg-rate-ring">
+                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path class="circle" id="kpi-rate-path" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: MTTD Médio -->
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">MTTD Médio (Detecção)</span>
+            <span class="kpi-icon">⏱️</span>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value-group">
+              <div class="kpi-main-value" id="kpi-avg-mttd">00:00</div>
+              <div class="kpi-sub-value">Tempo médio até alerta</div>
+            </div>
+            <div class="kpi-extra-info">
+              <span class="tag-pill">Prometheus</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: MTTR Médio -->
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">MTTR Médio (Mitigação)</span>
+            <span class="kpi-icon">⚡</span>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value-group">
+              <div class="kpi-main-value" id="kpi-avg-mttr">00:00</div>
+              <div class="kpi-sub-value">Tempo médio até mitigação</div>
+            </div>
+            <div class="kpi-extra-info">
+              <span class="tag-pill" id="kpi-mttr-pill">Meta &lt; 01:00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4: Total & Distribuição -->
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Simulações Realizadas</span>
+            <span class="kpi-icon">🎯</span>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value-group">
+              <div class="kpi-main-value" id="kpi-total-sims">0</div>
+              <div class="kpi-sub-value" id="kpi-sev-breakdown">SEV-1: 0 · SEV-2: 0 · SEV-3: 0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visual Charts Row -->
+      <div class="visual-charts-row" id="visual-charts-row">
+        <!-- Efficiency Ratio Bar -->
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <span class="chart-card-title">Distribuição de Resultados (Assertividade)</span>
+            <span class="chart-card-legend">
+              <span class="legend-dot green"></span> Corretos
+              <span class="legend-dot red" style="margin-left:10px"></span> Incorretos
+            </span>
+          </div>
+          <div class="ratio-bar-wrapper">
+            <div class="ratio-bar">
+              <div class="ratio-segment ratio-green" id="ratio-green-bar" style="width: 0%"></div>
+              <div class="ratio-segment ratio-red" id="ratio-red-bar" style="width: 0%"></div>
+            </div>
+            <div class="ratio-labels">
+              <span id="ratio-green-label">0% Corretos (0)</span>
+              <span id="ratio-red-label">0% Incorretos (0)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent MTTR Trend (SVG Sparkline / Bar Chart) -->
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <span class="chart-card-title">Performance Recente de MTTR (Últimas Simulações)</span>
+            <span class="chart-card-legend" id="chart-avg-line-label">Média: --:--</span>
+          </div>
+          <div class="svg-chart-container" id="svg-chart-container">
+            <svg id="mttr-spark-chart" viewBox="0 0 500 90" preserveAspectRatio="none">
+              <!-- SVG chart elements generated dynamically by JS -->
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Structured History Table -->
+      <div class="table-container">
+        <table class="history-table">
           <thead>
             <tr>
-              <th>#</th>
-              <th>Cenário</th>
-              <th>Severidade</th>
-              <th>MTTD</th>
-              <th>MTTR</th>
-              <th>Resultado</th>
+              <th style="width:50px">#</th>
+              <th>Cenário de Incidente</th>
+              <th style="width:90px">Severidade</th>
+              <th style="width:90px">MTTD</th>
+              <th style="width:90px">MTTR</th>
+              <th>Solução Escolhida</th>
+              <th style="width:120px">Resultado</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="history-body">
             <tr>
-              <td colspan="6" class="history-empty">
-                Nenhuma simulação realizada ainda. Clique em "▶ Simular" para começar.
+              <td colspan="7" class="history-empty">
+                Carregando histórico...
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-      {% endif %}
-    </div>
+
+    </section>
 
   </main>
 </div>

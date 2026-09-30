@@ -13,6 +13,11 @@ dist/
 build/
 .eggs/
 .venv/
+.venv*/
+venv*/
+*.venv*
+requirements-dev*.txt
+*_stub.py
 venv/
 env/
 .mypy_cache/

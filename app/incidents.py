@@ -326,6 +326,8 @@ class SimulationResult(BaseModel):
     scenario_id: str
     scenario_title: str
     severity: str
+    category: Optional[str] = "Geral"
+    icon: Optional[str] = "🚨"
     started_at: str
     solved_at: Optional[str]
     mttd_seconds: Optional[float]
@@ -402,6 +404,8 @@ class IncidentSimulationEngine:
             scenario_id=scenario_id,
             scenario_title=scenario["title"],
             severity=scenario["severity"],
+            category=scenario.get("category", "Geral"),
+            icon=scenario.get("icon", "🚨"),
             started_at=datetime.fromtimestamp(self.active.started_at).strftime("%H:%M:%S"),
             solved_at=datetime.now().strftime("%H:%M:%S"),
             mttd_seconds=mttd,
@@ -420,6 +424,11 @@ class IncidentSimulationEngine:
     def cancel(self):
         self.active = None
         return {"status": "cancelled"}
+
+    def clear_history(self):
+        self.history = []
+        self._counter = 1
+        return {"status": "cleared", "count": 0}
 
 
 # Singleton engine instance
