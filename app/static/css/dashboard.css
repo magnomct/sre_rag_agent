@@ -1188,3 +1188,63 @@ body {
     justify-content: center;
   }
 }
+
+
+/* ── Header Controls & Chaos Monkey Toggle ───────────────── */
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.chaos-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid #30363d;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.chaos-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #58a6ff;
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.chaos-toggle-btn.active {
+  background: rgba(248, 81, 73, 0.18);
+  border-color: rgba(248, 81, 73, 0.6);
+  color: #ff7b72;
+  box-shadow: 0 0 14px rgba(248, 81, 73, 0.4);
+  animation: pulse-chaos 1.8s infinite;
+}
+
+.chaos-toggle-btn.active .chaos-icon {
+  display: inline-block;
+  animation: shake 1s infinite ease-in-out;
+}
+
+@keyframes pulse-chaos {
+  0%, 100% { box-shadow: 0 0 6px rgba(248, 81, 73, 0.3); }
+  50% { box-shadow: 0 0 18px rgba(248, 81, 73, 0.7); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-10deg) scale(1.1); }
+  75% { transform: rotate(10deg) scale(1.1); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}

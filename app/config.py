@@ -14,6 +14,14 @@ class Settings(BaseSettings):
     app_name: str = Field(default="sre-rag-api", description="Application name")
     app_version: str = Field(default="1.0.0", description="Application version")
     debug: bool = Field(default=False, description="Debug mode")
+    environment: str = Field(
+        default="development",
+        description="Deployment environment: development, staging, or production",
+    )
+    enable_docs: bool = Field(
+        default=True,
+        description="Enable Swagger/OpenAPI docs (auto-disabled in production)",
+    )
     log_level: str = Field(default="INFO", description="Log level")
     log_format: str = Field(default="json", description="Log format: json or console")
 
@@ -53,6 +61,28 @@ class Settings(BaseSettings):
             f"postgresql://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
+
+    @property
+    def is_production(self) -> bool:
+        return self.environment.lower() == "production"
+
+    @property
+    def docs_url(self) -> str | None:
+        if self.is_production or not self.enable_docs:
+            return None
+        return "/docs"
+
+    @property
+    def openapi_url(self) -> str | None:
+        if self.is_production or not self.enable_docs:
+            return None
+        return "/openapi.json"
+
+    @property
+    def redoc_url(self) -> str | None:
+        if self.is_production or not self.enable_docs:
+            return None
+        return "/redoc"
 
     @property
     def redis_url(self) -> str:

@@ -135,6 +135,9 @@ app = FastAPI(
     version=settings.app_version,
     description="SRE RAG Agent — Production Lab API with Observability",
     lifespan=lifespan,
+    docs_url=settings.docs_url,
+    openapi_url=settings.openapi_url,
+    redoc_url=settings.redoc_url,
 )
 
 # Mount static files
@@ -284,6 +287,12 @@ async def dependency_health():
 # ============================================================
 # Chaos Engineering Endpoints (For Lab Purposes)
 # ============================================================
+@app.get("/api/v1/chaos/status", tags=["Chaos"])
+async def get_chaos_status():
+    """Get the current Chaos Monkey status."""
+    return {"simulate_500": chaos_state.simulate_500}
+
+
 @app.post("/api/v1/chaos/500", tags=["Chaos"])
 async def toggle_500_errors(enable: bool = True):
     """Toggle returning 500 Internal Server Error for all requests."""

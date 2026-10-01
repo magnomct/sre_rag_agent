@@ -28,6 +28,8 @@ api:
     minAvailable: 2
   
   env:
+    ENVIRONMENT: "production"
+    ENABLE_DOCS: "false"
     LOG_LEVEL: "WARNING"
 
 postgresql:

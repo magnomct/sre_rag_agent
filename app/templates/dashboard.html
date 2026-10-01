@@ -17,12 +17,23 @@
       <div class="header-subtitle">RAG Agent · Kubernetes · Observability · Chaos & Incident Response</div>
     </div>
   </div>
-  <div class="status-badge">
-    <div class="status-dot" id="status-dot"></div>
-    <span id="status-text">Todos os sistemas operacionais</span>
-    <span style="margin-left:16px;color:#484f58">|</span>
-    <a href="/docs" target="_blank" style="margin-left:16px;color:#58a6ff;text-decoration:none;font-size:0.8rem">Swagger Docs →</a>
-    <a href="/board" style="margin-left:12px;color:#58a6ff;text-decoration:none;font-size:0.8rem">Board →</a>
+  <div class="header-controls">
+    <button
+      id="chaos-monkey-toggle"
+      class="chaos-toggle-btn"
+      onclick="toggleChaosMonkey()"
+      title="Ativar/Desativar Chaos Monkey (injeção de HTTP 500 no workload da API)"
+    >
+      <span class="chaos-icon">🐒</span>
+      <span id="chaos-btn-text">Chaos Monkey: Off</span>
+    </button>
+
+    <div class="status-badge">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text">Todos os sistemas operacionais</span>
+      <span style="margin-left:16px;color:#484f58">|</span>
+      <a href="/board" style="margin-left:12px;color:#58a6ff;text-decoration:none;font-size:0.8rem">Board →</a>
+    </div>
   </div>
 </header>
 
