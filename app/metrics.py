@@ -109,3 +109,18 @@ SLI_REQUEST_TOTAL = Counter(
     "sli_request_total",
     "Total requests — used for availability SLI",
 )
+
+# ============================================================
+# Chaos Engineering Metrics
+# ============================================================
+
+CHAOS_INJECTIONS_TOTAL = Counter(
+    "sre_rag_chaos_injections_total",
+    "Total number of faults injected by Chaos Monkey",
+    ["fault_type", "endpoint"],
+)
+
+CHAOS_ACTIVE_GAUGE = Gauge(
+    "sre_rag_chaos_active",
+    "Whether Chaos Monkey fault injection is currently active (1 = active, 0 = inactive)",
+)

@@ -90,6 +90,154 @@
     <!-- Active simulation panels rendered by JS -->
     <div id="simulation-panels"></div>
 
+
+    <!-- ── Chaos Engineering & Audit Telemetry Section ────────── -->
+    <section class="chaos-section">
+      <div class="chaos-header">
+        <div class="chaos-header-info">
+          <div class="chaos-title">
+            <span class="chaos-badge-icon">🐒</span>
+            <span>Chaos Monkey & Auditoria de Resiliência</span>
+            <span class="live-pill" id="chaos-live-indicator">
+              <span class="pulse-dot"></span> LIVE
+            </span>
+          </div>
+          <div class="chaos-subtitle">
+            Telemetria em tempo real, injeção de falhas no workload da API e trilha de auditoria para observabilidade SRE.
+          </div>
+        </div>
+        <div class="chaos-header-actions">
+          <button class="action-btn" onclick="syncChaosState(true)" title="Atualizar telemetria do Chaos">
+            🔄 Atualizar
+          </button>
+          <button class="action-btn danger" onclick="confirmClearChaosHistory()" title="Limpar histórico de sessões e auditoria do caos">
+            🗑️ Limpar Auditoria
+          </button>
+        </div>
+      </div>
+
+      <!-- Chaos KPIs Row -->
+      <div class="analytics-grid" id="chaos-kpis-grid">
+        <!-- Card 1: Status Atual do Chaos -->
+        <div class="kpi-card" id="chaos-kpi-status-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Estado do Injetor</span>
+            <span class="kpi-badge" id="chaos-status-badge">Inativo</span>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value-group">
+              <div class="kpi-main-value" id="chaos-main-state">NORMAL</div>
+              <div class="kpi-sub-value" id="chaos-duration-sub">Sessão inativa (0s)</div>
+            </div>
+            <div class="kpi-extra-info">
+              <span class="tag-pill" id="chaos-fault-tag">Workload Saudável</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Total de Falhas Injetadas All-Time -->
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Falhas Injetadas (Total)</span>
+            <span class="kpi-icon">💥</span>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value-group">
+              <div class="kpi-main-value" id="chaos-total-injections">0</div>
+              <div class="kpi-sub-value">Erros HTTP 500 no workload</div>
+            </div>
+            <div class="kpi-extra-info">
+              <span class="tag-pill">Prometheus Counter</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Sessão Recente / Atual -->
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Sessão Atual / Recente</span>
+            <span class="kpi-icon">⏱️</span>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value-group">
+              <div class="kpi-main-value" id="chaos-session-injections">0</div>
+              <div class="kpi-sub-value" id="chaos-session-sub">Nenhuma falha nesta sessão</div>
+            </div>
+            <div class="kpi-extra-info">
+              <span class="tag-pill" id="chaos-session-id-pill">Sessão #--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4: Endpoints Impactados -->
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Alvos do Workload</span>
+            <span class="kpi-icon">🎯</span>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value-group">
+              <div class="kpi-main-value" id="chaos-endpoints-count">0</div>
+              <div class="kpi-sub-value" id="chaos-endpoints-list">Nenhum endpoint afetado</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live SRE Audit Terminal & Session History Split Row -->
+      <div class="chaos-split-row">
+        <!-- SRE Terminal Stream -->
+        <div class="chaos-terminal-card">
+          <div class="terminal-header">
+            <div class="terminal-controls">
+              <span class="term-dot red"></span>
+              <span class="term-dot yellow"></span>
+              <span class="term-dot green"></span>
+            </div>
+            <div class="terminal-title">
+              <span>📋</span> SRE Chaos Audit Stream &middot; <code>events.log</code>
+            </div>
+            <div class="terminal-badge" id="terminal-event-count">0 eventos</div>
+          </div>
+          <div class="terminal-body" id="chaos-terminal-body">
+            <div class="terminal-line placeholder">
+              <span class="term-time">[--:--:--]</span>
+              <span class="term-dim">Aguardando eventos de injeção ou ativação do Chaos Monkey...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Past Sessions Mini-Table -->
+        <div class="chaos-sessions-card">
+          <div class="sessions-header">
+            <div class="sessions-title">
+              <span>📜</span> Histórico de Sessões de Caos
+            </div>
+            <span class="sessions-count" id="sessions-count-badge">0 sessões</span>
+          </div>
+          <div class="sessions-table-container">
+            <table class="sessions-table">
+              <thead>
+                <tr>
+                  <th style="width:40px">#</th>
+                  <th>Início</th>
+                  <th style="width:70px">Duração</th>
+                  <th style="width:75px">Falhas</th>
+                  <th>Endpoints</th>
+                  <th style="width:85px">Status</th>
+                </tr>
+              </thead>
+              <tbody id="chaos-sessions-body">
+                <tr>
+                  <td colspan="6" class="history-empty">Nenhuma sessão registrada.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ── History & SRE Analytics Section ──────────────────── -->
     <section class="history-section">
       <div class="history-header">
@@ -297,55 +445,244 @@
 <script src="/static/js/dashboard.js?v=1.1.0"></script>
 
 <script>
-// ── Inline Chaos Monkey Controller (Immune to browser caching) ──
+// ── SRE Chaos Monkey & Audit Controller ─────────────────────────
 let isChaosMonkeyActive = false;
+let chaosPollTimer = null;
 
-async function syncChaosState() {
+async function syncChaosState(manual = false) {
   try {
     const res = await fetch('/api/v1/chaos/status');
-    if (res.ok) {
-      const data = await res.json();
-      applyChaosUI(data.simulate_500);
-    }
+    if (!res.ok) return;
+    const data = await res.json();
+    applyChaosUI(data.simulate_500, data);
+
+    // Fetch and render events & history
+    await Promise.all([
+      fetchChaosEvents(),
+      fetchChaosHistory()
+    ]);
   } catch (e) {
-    console.warn('[Chaos] Nao foi possivel sincronizar status:', e);
+    console.warn('Erro ao consultar status do Chaos Monkey:', e);
   }
 }
 
-function applyChaosUI(active) {
-  isChaosMonkeyActive = !!active;
+function applyChaosUI(active, telemetry) {
+  isChaosMonkeyActive = Boolean(active);
   const btn = document.getElementById('chaos-monkey-toggle');
   const txt = document.getElementById('chaos-btn-text');
   const dot = document.getElementById('status-dot');
   const statusTxt = document.getElementById('status-text');
+  const liveIndicator = document.getElementById('chaos-live-indicator');
 
-  if (!btn || !txt) return;
-
-  if (isChaosMonkeyActive) {
-    btn.classList.add('active');
-    btn.style.background = 'rgba(248, 81, 73, 0.2)';
-    btn.style.borderColor = '#f85149';
-    btn.style.color = '#ff7b72';
-    txt.textContent = 'Chaos Monkey: ATIVO (500)';
-    btn.title = 'Injeção de 500 ativa no workload! Clique para desativar.';
-    if (dot) {
-      dot.style.background = '#f85149';
-      dot.style.boxShadow = '0 0 10px #f85149';
+  // Header button
+  if (btn && txt) {
+    if (isChaosMonkeyActive) {
+      btn.classList.add('active');
+      btn.style.background = 'rgba(248, 81, 73, 0.18)';
+      btn.style.borderColor = '#f85149';
+      btn.style.color = '#ff7b72';
+      txt.textContent = 'Chaos Monkey: ATIVO (500)';
+      btn.title = 'Injeção de 500 ativa no workload! Clique para desativar.';
+      if (dot) {
+        dot.style.background = '#f85149';
+        dot.style.boxShadow = '0 0 10px #f85149';
+      }
+      if (statusTxt) statusTxt.textContent = 'Degradação Ativa (Chaos Monkey HTTP 500)';
+    } else {
+      btn.classList.remove('active');
+      btn.style.background = 'rgba(255, 255, 255, 0.05)';
+      btn.style.borderColor = '#30363d';
+      btn.style.color = '#8b949e';
+      txt.textContent = 'Chaos Monkey: Off';
+      btn.title = 'Clique para ativar o Chaos Monkey (injeta HTTP 500 no workload da API)';
+      if (dot) {
+        dot.style.background = '#3fb950';
+        dot.style.boxShadow = '0 0 8px #3fb950';
+      }
+      if (statusTxt) statusTxt.textContent = 'Todos os sistemas operacionais';
     }
-    if (statusTxt) statusTxt.textContent = 'Degradação Ativa (Chaos Monkey HTTP 500)';
-  } else {
-    btn.classList.remove('active');
-    btn.style.background = 'rgba(255, 255, 255, 0.05)';
-    btn.style.borderColor = '#30363d';
-    btn.style.color = '#8b949e';
-    txt.textContent = 'Chaos Monkey: Off';
-    btn.title = 'Clique para ativar o Chaos Monkey (injeta HTTP 500 no workload da API)';
-    if (dot) {
-      dot.style.background = '#3fb950';
-      dot.style.boxShadow = '0 0 8px #3fb950';
-    }
-    if (statusTxt) statusTxt.textContent = 'Todos os sistemas operacionais';
   }
+
+  // Live Pill
+  if (liveIndicator) {
+    if (isChaosMonkeyActive) {
+      liveIndicator.classList.add('chaos-active');
+      liveIndicator.innerHTML = '<span class="pulse-dot"></span> INJETANDO 500';
+    } else {
+      liveIndicator.classList.remove('chaos-active');
+      liveIndicator.innerHTML = '<span class="pulse-dot"></span> LIVE';
+    }
+  }
+
+  // Chaos KPIs
+  if (telemetry) {
+    const badge = document.getElementById('chaos-status-badge');
+    const mainState = document.getElementById('chaos-main-state');
+    const durSub = document.getElementById('chaos-duration-sub');
+    const faultTag = document.getElementById('chaos-fault-tag');
+    const totalInj = document.getElementById('chaos-total-injections');
+    const sessInj = document.getElementById('chaos-session-injections');
+    const sessSub = document.getElementById('chaos-session-sub');
+    const sessIdPill = document.getElementById('chaos-session-id-pill');
+    const epCount = document.getElementById('chaos-endpoints-count');
+    const epList = document.getElementById('chaos-endpoints-list');
+
+    if (totalInj) totalInj.textContent = telemetry.total_injections_all_time ?? 0;
+
+    if (isChaosMonkeyActive) {
+      if (badge) {
+        badge.textContent = 'Ativo';
+        badge.style.background = 'rgba(248,81,73,0.2)';
+        badge.style.color = '#ff7b72';
+      }
+      if (mainState) {
+        mainState.textContent = 'HTTP 500';
+        mainState.style.color = '#ff7b72';
+      }
+      const secs = Math.round(telemetry.active_duration_seconds || 0);
+      if (durSub) durSub.textContent = `Em execução: ${formatSeconds(secs)}`;
+      if (faultTag) {
+        faultTag.textContent = '⚠️ Falhas Injetadas no Workload';
+        faultTag.style.background = 'rgba(248,81,73,0.15)';
+        faultTag.style.color = '#ff7b72';
+      }
+    } else {
+      if (badge) {
+        badge.textContent = 'Inativo';
+        badge.style.background = 'rgba(46,160,67,0.15)';
+        badge.style.color = '#3fb950';
+      }
+      if (mainState) {
+        mainState.textContent = 'NORMAL';
+        mainState.style.color = '#3fb950';
+      }
+      if (durSub) durSub.textContent = 'Workload 100% Saudável';
+      if (faultTag) {
+        faultTag.textContent = 'Workload Saudável';
+        faultTag.style.background = 'rgba(255,255,255,0.05)';
+        faultTag.style.color = '#8b949e';
+      }
+    }
+
+    if (telemetry.session) {
+      if (sessInj) sessInj.textContent = telemetry.session.injected_count;
+      if (sessSub) sessSub.textContent = `${telemetry.session.injected_count} falhas nesta sessão`;
+      if (sessIdPill) sessIdPill.textContent = `Sessão #${telemetry.session.session_id}`;
+
+      const eps = telemetry.session.affected_endpoints || {};
+      const keys = Object.keys(eps);
+      if (epCount) epCount.textContent = keys.length;
+      if (epList) {
+        if (keys.length > 0) {
+          epList.textContent = keys.map(k => `${k} (${eps[k]})`).join(', ');
+        } else {
+          epList.textContent = 'Aguardando requisições ao workload';
+        }
+      }
+    } else {
+      if (sessInj) sessInj.textContent = 0;
+      if (sessSub) sessSub.textContent = 'Nenhuma sessão ativa no momento';
+      if (sessIdPill) sessIdPill.textContent = 'Sessão #--';
+      if (epCount) epCount.textContent = 0;
+      if (epList) epList.textContent = 'Nenhum endpoint afetado';
+    }
+  }
+}
+
+async function fetchChaosEvents() {
+  try {
+    const res = await fetch('/api/v1/chaos/events?limit=40');
+    if (!res.ok) return;
+    const events = await res.json();
+    renderChaosTerminal(events);
+  } catch (e) {
+    console.error('Erro ao buscar eventos do chaos:', e);
+  }
+}
+
+function renderChaosTerminal(events) {
+  const container = document.getElementById('chaos-terminal-body');
+  const countBadge = document.getElementById('terminal-event-count');
+  if (!container) return;
+
+  if (countBadge) countBadge.textContent = `${events.length} eventos`;
+
+  if (!events || events.length === 0) {
+    container.innerHTML = `
+      <div class="terminal-line placeholder">
+        <span class="term-time">[--:--:--]</span>
+        <span class="term-dim">Nenhum evento registrado. Ative o Chaos Monkey ou envie uma query RAG para ver o stream.</span>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = events.map(e => {
+    let badgeClass = 'activated';
+    let badgeLabel = e.event_type;
+    if (e.event_type === 'ACTIVATED') {
+      badgeClass = 'activated';
+      badgeLabel = 'ATIVADO';
+    } else if (e.event_type === 'FAULT_INJECTED') {
+      badgeClass = 'fault';
+      badgeLabel = '500 INJETADO';
+    } else if (e.event_type === 'DEACTIVATED') {
+      badgeClass = 'deactivated';
+      badgeLabel = 'DESATIVADO';
+    }
+
+    return `
+      <div class="terminal-line">
+        <span class="term-time">[${e.timestamp}]</span>
+        <span class="term-badge ${badgeClass}">${badgeLabel}</span>
+        <span class="term-msg">${escapeHtml(e.message)}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+async function fetchChaosHistory() {
+  try {
+    const res = await fetch('/api/v1/chaos/history');
+    if (!res.ok) return;
+    const history = await res.json();
+    renderChaosSessions(history);
+  } catch (e) {
+    console.error('Erro ao buscar histórico de sessões:', e);
+  }
+}
+
+function renderChaosSessions(sessions) {
+  const tbody = document.getElementById('chaos-sessions-body');
+  const countBadge = document.getElementById('sessions-count-badge');
+  if (!tbody) return;
+
+  if (countBadge) countBadge.textContent = `${sessions.length} sessões`;
+
+  if (!sessions || sessions.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="history-empty">Nenhuma sessão registrada.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = sessions.map(s => {
+    const statusBadge = s.active
+      ? '<span class="session-status-badge active">Ativa</span>'
+      : '<span class="session-status-badge completed">Concluída</span>';
+
+    const eps = s.affected_endpoints ? Object.keys(s.affected_endpoints) : [];
+    const epDisplay = eps.length > 0 ? eps.map(k => `${k} (${s.affected_endpoints[k]})`).join(', ') : 'Nenhum';
+    const durDisplay = s.duration_seconds != null ? `${s.duration_seconds}s` : '--';
+
+    return `
+      <tr>
+        <td><strong>#${s.session_id}</strong></td>
+        <td>${s.started_at}</td>
+        <td>${durDisplay}</td>
+        <td><strong style="color:${s.injected_count > 0 ? '#ff7b72' : '#8b949e'}">${s.injected_count}</strong></td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:#58a6ff">${escapeHtml(epDisplay)}</td>
+        <td>${statusBadge}</td>
+      </tr>
+    `;
+  }).join('');
 }
 
 async function toggleChaosMonkey() {
@@ -360,12 +697,24 @@ async function toggleChaosMonkey() {
     });
     if (!res.ok) throw new Error('Status ' + res.status);
     const data = await res.json();
-    applyChaosUI(data.simulate_500);
+    applyChaosUI(data.simulate_500, data);
     renderChaosToast(data.simulate_500);
+    await Promise.all([fetchChaosEvents(), fetchChaosHistory()]);
   } catch (err) {
     alert('Erro ao acionar Chaos Monkey: ' + err.message);
   } finally {
     if (btn) btn.style.opacity = '1';
+  }
+}
+
+async function confirmClearChaosHistory() {
+  if (!confirm('Deseja limpar todo o histórico de sessões e auditoria de eventos do Chaos Monkey?')) return;
+  try {
+    const res = await fetch('/api/v1/chaos/history/clear', { method: 'POST' });
+    if (!res.ok) throw new Error('Falha ao limpar');
+    await syncChaosState(true);
+  } catch (e) {
+    alert('Erro: ' + e.message);
   }
 }
 
@@ -381,12 +730,12 @@ function renderChaosToast(active) {
     toast.style.background = '#3d1214';
     toast.style.color = '#ff7b72';
     toast.style.border = '1px solid #f85149';
-    toast.innerHTML = '<span style="font-size:1.3rem">🐒💥</span> <div><div>Chaos Monkey Ativado!</div><div style="font-size:0.75rem;font-weight:400;color:#e6edf3">Requisições à API de inferência retornarão HTTP 500.</div></div>';
+    toast.innerHTML = '<span style="font-size:1.3rem">🐒💥</span> <div><div>Chaos Monkey Ativado!</div><div style="font-size:0.75rem;font-weight:400;color:#e6edf3">Injetando HTTP 500 no workload da API de inferência.</div></div>';
   } else {
     toast.style.background = '#0e2a1b';
     toast.style.color = '#7ee787';
     toast.style.border = '1px solid #2ea043';
-    toast.innerHTML = '<span style="font-size:1.3rem">✅</span> <div><div>Chaos Monkey Desativado!</div><div style="font-size:0.75rem;font-weight:400;color:#e6edf3">O workload da API foi normalizado.</div></div>';
+    toast.innerHTML = '<span style="font-size:1.3rem">✅</span> <div><div>Chaos Monkey Desativado!</div><div style="font-size:0.75rem;font-weight:400;color:#e6edf3">Sessão finalizada e workload normalizado.</div></div>';
   }
 
   document.body.appendChild(toast);
@@ -397,9 +746,38 @@ function renderChaosToast(active) {
   }, 4500);
 }
 
-// Inicializa imediatamente e no carregamento
-window.addEventListener('load', syncChaosState);
+function formatSeconds(secs) {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Polling dinâmico: a cada 2.5s se ativo, a cada 5s se ocioso
+function startChaosPolling() {
+  if (chaosPollTimer) clearInterval(chaosPollTimer);
+  chaosPollTimer = setInterval(() => {
+    syncChaosState();
+  }, isChaosMonkeyActive ? 2000 : 5000);
+}
+
+window.addEventListener('load', () => {
+  syncChaosState();
+  startChaosPolling();
+});
+
+// Inicialização imediata
 syncChaosState();
+startChaosPolling();
 </script>
 </body>
 </html>
