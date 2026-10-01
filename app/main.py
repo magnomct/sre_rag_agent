@@ -1,3 +1,4 @@
+from pathlib import Path
 """
 SRE RAG Agent — Main Application
 FastAPI application with Prometheus metrics, structured logging,
@@ -28,11 +29,16 @@ from metrics import (
 from healthcheck import health_checker
 from rag.engine import rag_engine
 from incidents import simulation_engine, SCENARIOS
+from chaos import chaos_manager
 
 # ============================================================
-# Templates Setup
+# Templates & Static Files Setup (Robust Path Resolution)
 # ============================================================
-templates = Jinja2Templates(directory="templates")
+BASE_APP_DIR = Path(__file__).resolve().parent
+TEMPLATES_DIR = BASE_APP_DIR / "templates"
+STATIC_DIR = BASE_APP_DIR / "static"
+
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # ============================================================
 # Models & In-Memory DB (For Lab CRUD)
@@ -52,12 +58,21 @@ history_db: list[QueryHistory] = []
 history_counter = 1
 
 # ============================================================
-# Chaos Engineering State
+# Chaos Engineering State (Proxy to ChaosManager)
 # ============================================================
-class ChaosState:
-    simulate_500: bool = False
+class ChaosStateProxy:
+    @property
+    def simulate_500(self) -> bool:
+        return chaos_manager.simulate_500
 
-chaos_state = ChaosState()
+    @simulate_500.setter
+    def simulate_500(self, value: bool):
+        if value:
+            chaos_manager.enable_500(source="legacy_proxy")
+        else:
+            chaos_manager.disable_500(source="legacy_proxy")
+
+chaos_state = ChaosStateProxy()
 
 
 # ============================================================
@@ -141,7 +156,7 @@ app = FastAPI(
 )
 
 # Mount static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 # ============================================================
@@ -169,8 +184,22 @@ async def metrics_middleware(request: Request, call_next):
         request.url.path in CHAOS_EXEMPT_EXACT
         or request.url.path.startswith(CHAOS_EXEMPT_PREFIXES)
     )
-    if chaos_state.simulate_500 and not is_exempt:
-        response = JSONResponse(status_code=500, content={"error": "Chaos Monkey injected 500 Internal Server Error"})
+    if chaos_manager.simulate_500 and not is_exempt:
+        client_host = request.client.host if request.client else "unknown"
+        chaos_manager.record_injection(
+            endpoint=request.url.path,
+            client_ip=client_host,
+            fault_type="HTTP_500"
+        )
+        response = JSONResponse(
+            status_code=500,
+            content={
+                "error": "Chaos Monkey injected 500 Internal Server Error",
+                "fault": "HTTP_500",
+                "endpoint": request.url.path,
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+            }
+        )
     else:
         response = await call_next(request)
 
@@ -289,16 +318,36 @@ async def dependency_health():
 # ============================================================
 @app.get("/api/v1/chaos/status", tags=["Chaos"])
 async def get_chaos_status():
-    """Get the current Chaos Monkey status."""
-    return {"simulate_500": chaos_state.simulate_500}
+    """Get current Chaos Monkey status and session telemetry."""
+    return chaos_manager.get_status()
 
 
 @app.post("/api/v1/chaos/500", tags=["Chaos"])
 async def toggle_500_errors(enable: bool = True):
-    """Toggle returning 500 Internal Server Error for all requests."""
-    chaos_state.simulate_500 = enable
-    logger.warning("chaos_monkey_toggled", simulate_500=chaos_state.simulate_500)
-    return {"status": "success", "simulate_500": chaos_state.simulate_500}
+    """Toggle returning 500 Internal Server Error for workload requests."""
+    if enable:
+        status = chaos_manager.enable_500(source="operator_api")
+    else:
+        status = chaos_manager.disable_500(source="operator_api")
+    return status
+
+
+@app.get("/api/v1/chaos/history", tags=["Chaos"])
+async def get_chaos_history():
+    """Get past chaos engineering sessions."""
+    return chaos_manager.get_history()
+
+
+@app.get("/api/v1/chaos/events", tags=["Chaos"])
+async def get_chaos_events(limit: int = 50):
+    """Get live audit log of chaos events."""
+    return chaos_manager.get_events(limit=limit)
+
+
+@app.post("/api/v1/chaos/history/clear", tags=["Chaos"])
+async def clear_chaos_history():
+    """Clear chaos session history and event logs."""
+    return chaos_manager.clear_history()
 
 # ============================================================
 # Incident Simulation API
@@ -322,7 +371,7 @@ async def start_simulation(body: SimulateRequest):
     # Activate chaos if the scenario requires it
     scenario = SCENARIOS.get(body.scenario_id, {})
     if scenario.get("chaos_action") == "simulate_500":
-        chaos_state.simulate_500 = True
+        chaos_manager.enable_500(source=f"scenario_{body.scenario_id}")
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
     return result
@@ -339,7 +388,7 @@ async def get_active_simulation():
 async def solve_simulation(body: SolveRequest):
     """Submit a solution for the active simulation."""
     # Deactivate chaos regardless of answer
-    chaos_state.simulate_500 = False
+    chaos_manager.disable_500(source="incident_resolved")
     result = simulation_engine.solve(body.scenario_id, body.solution_id)
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
@@ -348,7 +397,7 @@ async def solve_simulation(body: SolveRequest):
 @app.post("/api/v1/incidents/cancel", tags=["Incidents"])
 async def cancel_simulation():
     """Cancel the active simulation."""
-    chaos_state.simulate_500 = False
+    chaos_manager.disable_500(source="incident_cancelled")
     return simulation_engine.cancel()
 
 @app.get("/api/v1/incidents/history", tags=["Incidents"])
