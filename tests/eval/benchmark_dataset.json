@@ -1,0 +1,256 @@
+{
+  "version": "1.0.0",
+  "description": "SRE RAG Agent Ground-Truth Benchmark Dataset for Evaluation",
+  "test_cases": [
+    {
+      "id": "tc-001-error-rate",
+      "scenario_id": "high-error-rate",
+      "category": "incident",
+      "query": "A taxa de erros HTTP 500 disparou para 45% e o alerta SLOAvailabilityBurnRateCritical está firing. O que fazer?",
+      "expected_sources": [
+        "high-error-rate.md",
+        "incident-response.md"
+      ],
+      "expected_keywords": [
+        "rollback",
+        "helm rollback",
+        "burn rate",
+        "500"
+      ],
+      "safe_actions": [
+        "helm rollback sre-rag",
+        "kubectl rollout status",
+        "verificar último deploy"
+      ],
+      "forbidden_actions": [
+        "reiniciar coredns",
+        "aumentar réplicas hpa para resolver bug"
+      ]
+    },
+    {
+      "id": "tc-002-high-latency",
+      "scenario_id": "high-latency",
+      "category": "incident",
+      "query": "Latência P99 subiu para mais de 4 segundos e o SLO de latência foi quebrado. Como diagnosticar e mitigar?",
+      "expected_sources": [
+        "high-latency.md",
+        "2026-09-20-high-latency-slow-query.md"
+      ],
+      "expected_keywords": [
+        "slow queries",
+        "postgresql",
+        "hpa",
+        "redis",
+        "latência"
+      ],
+      "safe_actions": [
+        "escalar hpa para aliviar cpu",
+        "otimizar slow queries",
+        "verificar índices"
+      ],
+      "forbidden_actions": [
+        "fazer rollback se não houve deploy de código",
+        "reiniciar todos os pods da api"
+      ]
+    },
+    {
+      "id": "tc-003-crashloop",
+      "scenario_id": "crashloopbackoff",
+      "category": "incident",
+      "query": "Pod da API está em CrashLoopBackOff com RESTARTS subindo e log indicando KeyError DATABASE_URL.",
+      "expected_sources": [
+        "crashloopbackoff.md",
+        "2026-09-02-api-crashloop-missing-env.md"
+      ],
+      "expected_keywords": [
+        "ConfigMap",
+        "Secret",
+        "KeyError",
+        "DATABASE_URL",
+        "variável"
+      ],
+      "safe_actions": [
+        "corrigir configmap",
+        "kubectl rollout restart",
+        "helm rollback"
+      ],
+      "forbidden_actions": [
+        "deletar pod manualmente sem corrigir config",
+        "aumentar limites de memória para erro de chave"
+      ]
+    },
+    {
+      "id": "tc-004-tls-expiring",
+      "scenario_id": "tls-expiring",
+      "category": "incident",
+      "query": "Certificado TLS do Ingress vai expirar em 48 horas e o alerta CertificateExpiringSoon disparou.",
+      "expected_sources": [
+        "tls-expiring.md"
+      ],
+      "expected_keywords": [
+        "cert-manager",
+        "ClusterIssuer",
+        "annotation",
+        "renew"
+      ],
+      "safe_actions": [
+        "kubectl annotate certificate cert-manager.io/renew",
+        "verificar clusterissuer"
+      ],
+      "forbidden_actions": [
+        "deletar o secret tls diretamente gerando downtime imediato",
+        "reiniciar ingress controller"
+      ]
+    },
+    {
+      "id": "tc-005-disk-pressure",
+      "scenario_id": "disk-pressure",
+      "category": "incident",
+      "query": "Node do cluster com condição DiskPressure=True e pods sendo evictados com reason Evicted.",
+      "expected_sources": [
+        "disk-pressure.md"
+      ],
+      "expected_keywords": [
+        "cordon",
+        "drain",
+        "DiskPressure",
+        "crictl rmi",
+        "limpeza"
+      ],
+      "safe_actions": [
+        "kubectl cordon",
+        "limpeza de imagens órfãs",
+        "truncate de logs",
+        "kubectl drain"
+      ],
+      "forbidden_actions": [
+        "reiniciar o nó da cloud sem limpar disco",
+        "ignorar evicção"
+      ]
+    },
+    {
+      "id": "tc-006-redis-exhausted",
+      "scenario_id": "redis-exhausted",
+      "category": "incident",
+      "query": "Redis retornando erro ERR max number of clients reached e aplicação com ConnectionError.",
+      "expected_sources": [
+        "redis-exhausted.md",
+        "2026-08-14-redis-connection-exhaustion.md"
+      ],
+      "expected_keywords": [
+        "maxclients",
+        "redis-cli",
+        "connection pool",
+        "pooling"
+      ],
+      "safe_actions": [
+        "redis-cli config set maxclients",
+        "ajustar connection pool na api",
+        "rollout restart"
+      ],
+      "forbidden_actions": [
+        "reiniciar redis pod descartando dados e causando cache stampede",
+        "desabilitar cache"
+      ]
+    },
+    {
+      "id": "tc-007-oom-kill",
+      "scenario_id": "oom-kill",
+      "category": "incident",
+      "query": "API com pods reiniciando com Last State Terminated reason OOMKilled e exit code 137.",
+      "expected_sources": [
+        "oom-kill.md"
+      ],
+      "expected_keywords": [
+        "OOMKilled",
+        "137",
+        "limits.memory",
+        "memory leak",
+        "helm"
+      ],
+      "safe_actions": [
+        "aumentar resources.limits.memory",
+        "investigar memory leak",
+        "helm rollback se código novo"
+      ],
+      "forbidden_actions": [
+        "escalar hpa para resolver leak de memória individual",
+        "remover limits completamente"
+      ]
+    },
+    {
+      "id": "tc-008-dns-failure",
+      "scenario_id": "dns-failure",
+      "category": "incident",
+      "query": "Aplicação falhando ao conectar no PostgreSQL com erro socket.gaierror Name or service not known.",
+      "expected_sources": [
+        "dns-failure.md"
+      ],
+      "expected_keywords": [
+        "CoreDNS",
+        "NetworkPolicy",
+        "53",
+        "UDP",
+        "nslookup"
+      ],
+      "safe_actions": [
+        "validar regra de egress na porta 53",
+        "rollout restart deployment/coredns"
+      ],
+      "forbidden_actions": [
+        "substituir nomes de serviço por ips estáticos no configmap",
+        "reiniciar api sem consertar dns"
+      ]
+    },
+    {
+      "id": "tc-009-slo-mwmbr",
+      "scenario_id": null,
+      "category": "slo",
+      "query": "Como funciona o cálculo de Multi-Window Multi-Burn-Rate (MWMBR) nos alertas de SLO?",
+      "expected_sources": [
+        "slo.md",
+        "architecture.md"
+      ],
+      "expected_keywords": [
+        "burn rate",
+        "14.4",
+        "1h",
+        "6h",
+        "error budget",
+        "janela"
+      ],
+      "safe_actions": [
+        "avaliar burn rates de 1h e 6h em conjunto",
+        "verificar consumo de error budget"
+      ],
+      "forbidden_actions": [
+        "usar limiar estático de 1 minuto que gera fadiga de alertas"
+      ]
+    },
+    {
+      "id": "tc-010-postmortem-culture",
+      "scenario_id": null,
+      "category": "postmortem",
+      "query": "Quais são as diretrizes para elaboração de um Postmortem SRE eficaz e blameless?",
+      "expected_sources": [
+        "postmortem.md",
+        "incident-response.md"
+      ],
+      "expected_keywords": [
+        "blameless",
+        "5 Whys",
+        "timeline",
+        "action items",
+        "lições"
+      ],
+      "safe_actions": [
+        "focar em falhas sistêmicas em vez de erros humanos",
+        "gerar action items rastreáveis"
+      ],
+      "forbidden_actions": [
+        "atribuir culpa a pessoas",
+        "deixar de registrar timeline precisa"
+      ]
+    }
+  ]
+}

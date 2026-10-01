@@ -70,8 +70,14 @@ lint: ## Lint code and Helm chart
 	cd app && ruff check . && ruff format --check .
 	helm lint helm/sre-rag/
 
-test: ## Run tests
-	cd app && python -m pytest tests/ -v --cov=.
+dev: ## Run API locally with uvicorn
+	cd app && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8080 --reload
+
+test: ## Run unit tests
+	PYTHONPATH=.:app ./app/.venv/bin/pytest tests/ -v
+
+eval: ## Run SRE-Eval benchmark evaluation
+	PYTHONPATH=.:app ./app/.venv/bin/python tests/eval/evaluator.py
 
 helm-template: ## Dry-run Helm template
 	helm template sre-rag helm/sre-rag/ --debug
