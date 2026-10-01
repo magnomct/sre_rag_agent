@@ -645,4 +645,93 @@ function renderMttrChart(history, avgMttr) {
 // ── Inicialização ──────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   refreshHistory();
+  checkChaosState();
 });
+
+
+// ── Chaos Monkey Interactive Controller ───────────────────
+let chaosMonkeyActive = false;
+
+async function checkChaosState() {
+  try {
+    const res = await fetch("/api/v1/chaos/status");
+    if (res.ok) {
+      const data = await res.json();
+      updateChaosUI(data.simulate_500);
+    }
+  } catch (err) {
+    console.debug("Status do Chaos indisponivel:", err);
+  }
+}
+
+function updateChaosUI(isActive) {
+  chaosMonkeyActive = !!isActive;
+  const btn = document.getElementById("chaos-monkey-toggle");
+  const btnText = document.getElementById("chaos-btn-text");
+  const statusDot = document.getElementById("status-dot");
+  const statusText = document.getElementById("status-text");
+
+  if (!btn || !btnText) return;
+
+  if (chaosMonkeyActive) {
+    btn.classList.add("active");
+    btnText.textContent = "Chaos Monkey: ATIVO (500)";
+    btn.setAttribute("title", "Chaos ativo! Clique para desativar a injecao de HTTP 500");
+    if (statusDot && !activeScenarioId) {
+      statusDot.classList.add("incident");
+      if (statusText) statusText.textContent = "Falhas HTTP 500 sendo injetadas";
+    }
+  } else {
+    btn.classList.remove("active");
+    btnText.textContent = "Chaos Monkey: Off";
+    btn.setAttribute("title", "Clique para ativar o Chaos Monkey (injeta HTTP 500 no workload da API)");
+    if (statusDot && !activeScenarioId) {
+      statusDot.classList.remove("incident");
+      if (statusText) statusText.textContent = "Todos os sistemas operacionais";
+    }
+  }
+}
+
+async function toggleChaosMonkey() {
+  const targetState = !chaosMonkeyActive;
+  try {
+    const res = await fetch("/api/v1/chaos/500?enable=" + targetState, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" }
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    updateChaosUI(data.simulate_500);
+    showChaosNotification(data.simulate_500);
+  } catch (err) {
+    alert("Erro ao alterar estado do Chaos Monkey: " + err.message);
+  }
+}
+
+function showChaosNotification(isActive) {
+  const existing = document.getElementById("chaos-toast");
+  if (existing) existing.remove();
+
+  const toast = document.createElement("div");
+  toast.id = "chaos-toast";
+  toast.style.cssText = "position: fixed; bottom: 24px; right: 24px; z-index: 9999; padding: 12px 20px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.6); transition: all 0.3s ease; animation: slideIn 0.3s ease;";
+
+  if (isActive) {
+    toast.style.background = "#3d1214";
+    toast.style.color = "#ff7b72";
+    toast.style.border = "1px solid #f85149";
+    toast.innerHTML = "<span>💥</span> <span><strong>Chaos Monkey Ativado!</strong> Requisições de inferência retornarão HTTP 500.</span>";
+  } else {
+    toast.style.background = "#0e2a1b";
+    toast.style.color = "#7ee787";
+    toast.style.border = "1px solid #2ea043";
+    toast.innerHTML = "<span>✅</span> <span><strong>Chaos Monkey Desativado!</strong> Todos os endpoints normalizados.</span>";
+  }
+
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateY(10px)";
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
