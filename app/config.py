@@ -12,7 +12,7 @@ class Settings(BaseSettings):
 
     # Application
     app_name: str = Field(default="sre-rag-api", description="Application name")
-    app_version: str = Field(default="1.0.0", description="Application version")
+    app_version: str = Field(default="2.1", description="Application version")
     debug: bool = Field(default=False, description="Debug mode")
     environment: str = Field(
         default="development",

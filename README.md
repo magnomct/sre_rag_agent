@@ -3,6 +3,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Language-Portugu%C3%AAs-blue?style=for-the-badge" alt="Idioma Português" />
   <a href="README_EN.md"><img src="https://img.shields.io/badge/Language-English-green?style=for-the-badge" alt="English Documentation" /></a>
+  <img src="https://img.shields.io/badge/Version-v2.1-blue?style=for-the-badge" alt="Versão v2.1" />
   <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12" />
   <img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Kubernetes-Kind-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" alt="Kubernetes" />

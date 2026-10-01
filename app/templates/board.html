@@ -59,7 +59,10 @@
 <body>
     <div class="container">
         <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:10px;">
-            <h1 style="border-bottom:none;padding-bottom:0;margin:0;">SRE RAG - Consultas Recentes</h1>
+            <div style="display:flex;align-items:center;gap:10px;">
+                <h1 style="border-bottom:none;padding-bottom:0;margin:0;">SRE RAG - Consultas Recentes</h1>
+                <span style="background:rgba(88,166,255,0.15);border:1px solid rgba(88,166,255,0.4);color:#58a6ff;font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:12px;letter-spacing:0.04em;">v2.1</span>
+            </div>
             <a href="/" style="color:#58a6ff;text-decoration:none;font-size:0.85rem;">&larr; Voltar ao Dashboard</a>
         </div>
         <div class="board" id="board">
@@ -88,6 +91,7 @@
             </div>
 
             <div style="display: flex; align-items: center; gap: 12px;">
+                <span title="Versão da Plataforma" style="background:rgba(255,255,255,0.06);border:1px solid #30363d;padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:600;color:#8b949e;">v2.1</span>
                 <a
                     href="https://github.com/magnomct/sre_rag_agent/blob/main/LICENSE"
                     target="_blank"
