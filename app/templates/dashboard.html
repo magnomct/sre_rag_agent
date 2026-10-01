@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SRE Incident Simulation Lab</title>
-  <link rel="stylesheet" href="/static/css/dashboard.css">
+  <link rel="stylesheet" href="/static/css/dashboard.css?v=1.1.0">
 </head>
 <body>
 
@@ -294,6 +294,113 @@
     </div>
   </footer>
 
-<script src="/static/js/dashboard.js"></script>
+<script src="/static/js/dashboard.js?v=1.1.0"></script>
+
+<script>
+// ── Inline Chaos Monkey Controller (Immune to browser caching) ──
+let isChaosMonkeyActive = false;
+
+async function syncChaosState() {
+  try {
+    const res = await fetch('/api/v1/chaos/status');
+    if (res.ok) {
+      const data = await res.json();
+      applyChaosUI(data.simulate_500);
+    }
+  } catch (e) {
+    console.warn('[Chaos] Nao foi possivel sincronizar status:', e);
+  }
+}
+
+function applyChaosUI(active) {
+  isChaosMonkeyActive = !!active;
+  const btn = document.getElementById('chaos-monkey-toggle');
+  const txt = document.getElementById('chaos-btn-text');
+  const dot = document.getElementById('status-dot');
+  const statusTxt = document.getElementById('status-text');
+
+  if (!btn || !txt) return;
+
+  if (isChaosMonkeyActive) {
+    btn.classList.add('active');
+    btn.style.background = 'rgba(248, 81, 73, 0.2)';
+    btn.style.borderColor = '#f85149';
+    btn.style.color = '#ff7b72';
+    txt.textContent = 'Chaos Monkey: ATIVO (500)';
+    btn.title = 'Injeção de 500 ativa no workload! Clique para desativar.';
+    if (dot) {
+      dot.style.background = '#f85149';
+      dot.style.boxShadow = '0 0 10px #f85149';
+    }
+    if (statusTxt) statusTxt.textContent = 'Degradação Ativa (Chaos Monkey HTTP 500)';
+  } else {
+    btn.classList.remove('active');
+    btn.style.background = 'rgba(255, 255, 255, 0.05)';
+    btn.style.borderColor = '#30363d';
+    btn.style.color = '#8b949e';
+    txt.textContent = 'Chaos Monkey: Off';
+    btn.title = 'Clique para ativar o Chaos Monkey (injeta HTTP 500 no workload da API)';
+    if (dot) {
+      dot.style.background = '#3fb950';
+      dot.style.boxShadow = '0 0 8px #3fb950';
+    }
+    if (statusTxt) statusTxt.textContent = 'Todos os sistemas operacionais';
+  }
+}
+
+async function toggleChaosMonkey() {
+  const target = !isChaosMonkeyActive;
+  const btn = document.getElementById('chaos-monkey-toggle');
+  if (btn) btn.style.opacity = '0.5';
+
+  try {
+    const res = await fetch('/api/v1/chaos/500?enable=' + target, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!res.ok) throw new Error('Status ' + res.status);
+    const data = await res.json();
+    applyChaosUI(data.simulate_500);
+    renderChaosToast(data.simulate_500);
+  } catch (err) {
+    alert('Erro ao acionar Chaos Monkey: ' + err.message);
+  } finally {
+    if (btn) btn.style.opacity = '1';
+  }
+}
+
+function renderChaosToast(active) {
+  const old = document.getElementById('chaos-toast-box');
+  if (old) old.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'chaos-toast-box';
+  toast.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;padding:14px 22px;border-radius:10px;font-size:0.86rem;font-weight:600;display:flex;align-items:center;gap:12px;box-shadow:0 10px 35px rgba(0,0,0,0.7);transition:all 0.3s ease;';
+
+  if (active) {
+    toast.style.background = '#3d1214';
+    toast.style.color = '#ff7b72';
+    toast.style.border = '1px solid #f85149';
+    toast.innerHTML = '<span style="font-size:1.3rem">🐒💥</span> <div><div>Chaos Monkey Ativado!</div><div style="font-size:0.75rem;font-weight:400;color:#e6edf3">Requisições à API de inferência retornarão HTTP 500.</div></div>';
+  } else {
+    toast.style.background = '#0e2a1b';
+    toast.style.color = '#7ee787';
+    toast.style.border = '1px solid #2ea043';
+    toast.innerHTML = '<span style="font-size:1.3rem">✅</span> <div><div>Chaos Monkey Desativado!</div><div style="font-size:0.75rem;font-weight:400;color:#e6edf3">O workload da API foi normalizado.</div></div>';
+  }
+
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(15px)';
+    setTimeout(() => toast.remove(), 350);
+  }, 4500);
+}
+
+// Inicializa imediatamente e no carregamento
+window.addEventListener('load', syncChaosState);
+syncChaosState();
+</script>
 </body>
 </html>
+
