@@ -149,17 +149,24 @@ async def metrics_middleware(request: Request, call_next):
     """Collect RED metrics for every HTTP request."""
     start_time = time.time()
 
-    # Rotas excluídas do Chaos Monkey — "plano de controle" deve sobreviver ao incidente
+    # Rotas excluídas do Chaos Monkey — UI e plano de controle devem sobreviver para permitir resposta ao incidente
+    CHAOS_EXEMPT_EXACT = {"/", "/dashboard", "/board", "/favicon.ico"}
     CHAOS_EXEMPT_PREFIXES = (
-        "/healthz",       # health checks
-        "/ready",         # readiness probe
-        "/metrics",       # Prometheus scrape
-        "/static",        # assets do dashboard
-        "/docs",          # Swagger UI
-        "/openapi.json",  # schema
+        "/healthz",           # health checks
+        "/ready",             # readiness probe
+        "/startup",           # startup probe
+        "/metrics",           # Prometheus scrape
+        "/static",            # assets do dashboard
+        "/docs",              # Swagger UI
+        "/openapi.json",      # schema
         "/api/v1/incidents",  # controle da simulação — o SRE precisa agir!
+        "/api/v1/chaos",      # controle do chaos para permitir desativação
     )
-    if chaos_state.simulate_500 and not request.url.path.startswith(CHAOS_EXEMPT_PREFIXES):
+    is_exempt = (
+        request.url.path in CHAOS_EXEMPT_EXACT
+        or request.url.path.startswith(CHAOS_EXEMPT_PREFIXES)
+    )
+    if chaos_state.simulate_500 and not is_exempt:
         response = JSONResponse(status_code=500, content={"error": "Chaos Monkey injected 500 Internal Server Error"})
     else:
         response = await call_next(request)
@@ -233,6 +240,7 @@ async def metrics():
 # API Endpoints
 # ============================================================
 @app.get("/", response_class=HTMLResponse, tags=["Web"])
+@app.get("/dashboard", response_class=HTMLResponse, tags=["Web"])
 async def root(request: Request):
     """SRE Incident Simulation Dashboard."""
     scenarios = list(SCENARIOS.values())
