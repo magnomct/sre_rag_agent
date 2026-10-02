@@ -968,7 +968,7 @@ function renderMttrSparkline(history, avgMttr) {
 
   if (recent.length === 0) {
     svg.innerHTML = `
-      <text x="250" y="48" text-anchor="middle" fill="#6e7681" font-size="11" font-family="'JetBrains Mono', monospace">
+      <text x="250" y="48" text-anchor="middle" fill="#6e7681" font-size="12" font-family="'JetBrains Mono', monospace">
         ${t('chart_empty')}
       </text>
     `;
@@ -1005,11 +1005,11 @@ function renderMttrSparkline(history, avgMttr) {
         <rect x="${x}" y="${y}" width="${barWidth}" height="${h}" rx="3"
               fill="${color}" opacity="0.85" />
         <text x="${x + barWidth / 2}" y="${y - 4}" text-anchor="middle"
-              fill="#c9d1d9" font-size="9" font-family="'JetBrains Mono', monospace">
+              fill="#c9d1d9" font-size="10.5" font-family="'JetBrains Mono', monospace">
           ${formatTime(val)}
         </text>
         <text x="${x + barWidth / 2}" y="${svgHeight - 2}" text-anchor="middle"
-              fill="#6e7681" font-size="8.5" font-family="'JetBrains Mono', monospace">
+              fill="#6e7681" font-size="9.5" font-family="'JetBrains Mono', monospace">
           #${item.id}
         </text>
       </g>
@@ -1297,7 +1297,7 @@ function renderChaosSessions(sessions) {
         <td>${s.started_at}</td>
         <td>${durDisplay}</td>
         <td><strong style="color:${s.injected_count > 0 ? '#ff7b72' : '#8b949e'}">${s.injected_count}</strong></td>
-        <td style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:#58a6ff">${escapeHtml(epDisplay)}</td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:#58a6ff">${escapeHtml(epDisplay)}</td>
         <td>${statusBadge}</td>
       </tr>
     `;
@@ -1353,12 +1353,12 @@ function renderChaosToast(active) {
     toast.style.background = '#3d1214';
     toast.style.color = '#ff7b72';
     toast.style.border = '1px solid #f85149';
-    toast.innerHTML = `<span style="font-size:1.3rem">🐒💥</span> <div><div>${t('chaos_toast_active_title')}</div><div style="font-size:0.75rem;font-weight:400;color:#e6edf3">${t('chaos_toast_active_desc')}</div></div>`;
+    toast.innerHTML = `<span style="font-size:1.3rem">🐒💥</span> <div><div>${t('chaos_toast_active_title')}</div><div style="font-size:0.84rem;font-weight:400;color:#e6edf3">${t('chaos_toast_active_desc')}</div></div>`;
   } else {
     toast.style.background = '#0e2a1b';
     toast.style.color = '#7ee787';
     toast.style.border = '1px solid #2ea043';
-    toast.innerHTML = `<span style="font-size:1.3rem">✅</span> <div><div>${t('chaos_toast_inactive_title')}</div><div style="font-size:0.75rem;font-weight:400;color:#e6edf3">${t('chaos_toast_inactive_desc')}</div></div>`;
+    toast.innerHTML = `<span style="font-size:1.3rem">✅</span> <div><div>${t('chaos_toast_inactive_title')}</div><div style="font-size:0.84rem;font-weight:400;color:#e6edf3">${t('chaos_toast_inactive_desc')}</div></div>`;
   }
 
   document.body.appendChild(toast);
