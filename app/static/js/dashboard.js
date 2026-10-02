@@ -116,6 +116,7 @@ const TRANSLATIONS = {
     legend_incorrect: "Incorretos",
     chart_mttr_trend: "Performance Recente de MTTR (Últimas Simulações)",
     chart_avg_prefix: "Média:",
+    chart_empty: "Aguardando dados de simulação...",
     table_th_num: "#",
     table_th_scenario: "Cenário de Incidente",
     table_th_severity: "Severidade",
@@ -247,6 +248,7 @@ const TRANSLATIONS = {
     legend_incorrect: "Incorrect",
     chart_mttr_trend: "Recent MTTR Performance (Latest Simulations)",
     chart_avg_prefix: "Average:",
+    chart_empty: "Awaiting simulation data...",
     table_th_num: "#",
     table_th_scenario: "Incident Scenario",
     table_th_severity: "Severity",
@@ -966,8 +968,8 @@ function renderMttrSparkline(history, avgMttr) {
 
   if (recent.length === 0) {
     svg.innerHTML = `
-      <text x="250" y="50" text-anchor="middle" fill="#6e7681" font-size="12" font-family="'JetBrains Mono', monospace">
-        ${t('table_empty')}
+      <text x="250" y="48" text-anchor="middle" fill="#6e7681" font-size="11" font-family="'JetBrains Mono', monospace">
+        ${t('chart_empty')}
       </text>
     `;
     return;
