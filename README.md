@@ -60,7 +60,17 @@ Este projeto evoluiu de um protótipo para um **Laboratório de Engenharia SRE d
 
 5. **🛡️ Endurecimento de Segurança & Swagger Gating**:
    - Documentação Swagger/OpenAPI ativa exclusivamente em ambiente de desenvolvimento/teste (`ENVIRONMENT=development`).
-   - Em produção (`ENVIRONMENT=production`), o Swagger é automaticamente desativado (`docs_url=None`).
+   - Em produção (`ENVIRONMENT=production`), o Swagger é desativado nativamente (`docs_url=None, redoc_url=None, openapi_url=None`) para prevenir reconhecimento de superfície de ataque e enumeração de rotas.
+   - Remoção de links públicos ao Swagger na interface principal em consonância com as melhores práticas de DevSecOps.
+
+6. **📑 Navegação por Abas & Visual Clean (v2.1)**:
+   - Separação clara entre a área operacional (`🎯 Simulação & Chaos Lab`) e o painel analítico (`📊 Painel de Histórico & Métricas`), reduzindo a sobrecarga cognitiva durante incidentes.
+   - Roteamento por hash (`#simulation` / `#history`) com persistência imediata e alternância sem recarregamento de página.
+   - Escala tipográfica modernizada (v2.1.2) com badges expandidos, contraste balanceado e correção de overflow no gráfico de MTTR.
+
+7. **🌐 Suporte Bilíngue Nativo (pt-BR / en-US)**:
+   - Seletor de idiomas dinâmico com persistência em `localStorage`.
+   - Cobertura completa de traduções: 8 cenários de incidentes, sintomas, diagnósticos de IA, opções de mitigação, estados do Chaos Monkey e relatórios postmortem.
 
 ---
 

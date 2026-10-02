@@ -60,7 +60,17 @@ This project was built and evolved into a **Google SRE-standard Practice and Tra
 
 5. **🛡️ Production Security & Swagger Gating**:
    - Swagger / OpenAPI documentation is active exclusively in development/testing mode (`ENVIRONMENT=development`).
-   - In production (`ENVIRONMENT=production`), Swagger is disabled (`docs_url=None`) to prevent attack surface discovery.
+   - In production (`ENVIRONMENT=production`), Swagger is natively disabled (`docs_url=None, redoc_url=None, openapi_url=None`) to prevent endpoint enumeration and schema reconnaissance.
+   - Public Swagger links removed from the main header following DevSecOps hardening best practices.
+
+6. **📑 Tabbed Architecture & Clean UI (v2.1)**:
+   - Clear separation between the operational workspace (`🎯 Simulação & Chaos Lab`) and the analytical postmortem panel (`📊 Painel de Histórico & Métricas`), significantly reducing on-call cognitive load.
+   - URL hash routing (`#simulation` / `#history`) providing seamless instant tab switching with state persistence.
+   - Modernized typography scale (v2.1.2) featuring enhanced readability, expanded badge padding, and fixed MTTR sparkline chart overflow.
+
+7. **🌐 Native Bilingual Support (pt-BR / en-US)**:
+   - Dynamic client-side language switcher with `localStorage` state persistence.
+   - 100% translation coverage across all 8 incident scenarios, symptoms, AI root-cause diagnostics, mitigation options, Chaos Monkey states, and metrics.
 
 ---
 
