@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SRE RAG - History Board</title>
+    <title>SRE RAG - History Board v2.1</title>
     <style>
         :root {
             --bg: #0d1117;
@@ -54,19 +54,57 @@
         .answer {
             color: #8b949e;
         }
+        .lang-switch-group {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #30363d;
+            border-radius: 20px;
+            padding: 2px;
+            gap: 2px;
+        }
+        .lang-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 16px;
+            border: none;
+            background: transparent;
+            color: #8b949e;
+            font-size: 0.72rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .lang-btn:hover { color: #f0f6fc; }
+        .lang-btn.active {
+            background: var(--accent);
+            color: #0d1117;
+            box-shadow: 0 0 10px rgba(88, 166, 255, 0.4);
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:10px;">
             <div style="display:flex;align-items:center;gap:10px;">
-                <h1 style="border-bottom:none;padding-bottom:0;margin:0;">SRE RAG - Consultas Recentes</h1>
+                <h1 style="border-bottom:none;padding-bottom:0;margin:0;" id="board-title">SRE RAG - Consultas Recentes</h1>
                 <span style="background:rgba(88,166,255,0.15);border:1px solid rgba(88,166,255,0.4);color:#58a6ff;font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:12px;letter-spacing:0.04em;">v2.1</span>
             </div>
-            <a href="/" style="color:#58a6ff;text-decoration:none;font-size:0.85rem;">&larr; Voltar ao Dashboard</a>
+            <div style="display:flex;align-items:center;gap:14px;">
+                <div class="lang-switch-group">
+                    <button class="lang-btn active" id="lang-btn-pt" onclick="setBoardLang('pt')" title="Português (Brasil)">
+                        <span>🇧🇷</span> PT
+                    </button>
+                    <button class="lang-btn" id="lang-btn-en" onclick="setBoardLang('en')" title="English (US)">
+                        <span>🇺🇸</span> EN
+                    </button>
+                </div>
+                <a href="/" style="color:#58a6ff;text-decoration:none;font-size:0.85rem;" id="back-link">&larr; Voltar ao Dashboard</a>
+            </div>
         </div>
         <div class="board" id="board">
-            <!-- Os cards serão renderizados pelo Jinja -->
             {% for item in history %}
             <div class="card">
                 <div class="card-header">
@@ -77,17 +115,17 @@
                 <div class="answer">A: {{ item.answer }}</div>
             </div>
             {% else %}
-            <div class="card">
-                <p>Nenhum histórico encontrado. Execute consultas na API de inferência ou simule incidentes no Dashboard.</p>
+            <div class="card" id="empty-card">
+                <p id="empty-text">Nenhum histórico encontrado. Execute consultas na API de inferência ou simule incidentes no Dashboard.</p>
             </div>
             {% endfor %}
         </div>
-            <footer class="app-footer" style="margin-top: 40px; border-radius: 8px; border: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; background: var(--card-bg);">
+        <footer class="app-footer" style="margin-top: 40px; border-radius: 8px; border: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; background: var(--card-bg);">
             <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="width: 6px; height: 6px; border-radius: 50%; background: #3fb950; box-shadow: 0 0 6px #3fb950; display: inline-block;"></span>
                 <span style="font-weight: 600; color: #e6edf3;">SRE Incident Lab</span>
                 <span style="color: #484f58; margin: 0 4px;">·</span>
-                <span style="color: #8b949e;">Autor: <strong style="color: #e6edf3;">Carlos Magno Cordeiro</strong> &copy; 2026</span>
+                <span style="color: #8b949e;"><span id="footer-author-label">Autor:</span> <strong style="color: #e6edf3;">Carlos Magno Cordeiro</strong> &copy; 2026</span>
             </div>
 
             <div style="display: flex; align-items: center; gap: 12px;">
@@ -101,7 +139,7 @@
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1zM2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1zM7 21h10M12 3v18M3 7h18"/>
                     </svg>
-                    <span>Licença MIT</span>
+                    <span id="footer-license-label">Licença MIT</span>
                 </a>
 
                 <a
@@ -118,5 +156,39 @@
             </div>
         </footer>
     </div>
+
+    <script>
+        function setBoardLang(lang) {
+            localStorage.setItem('sre_lab_lang', lang);
+            const btnPt = document.getElementById('lang-btn-pt');
+            const btnEn = document.getElementById('lang-btn-en');
+            const title = document.getElementById('board-title');
+            const backLink = document.getElementById('back-link');
+            const emptyText = document.getElementById('empty-text');
+            const author = document.getElementById('footer-author-label');
+            const license = document.getElementById('footer-license-label');
+
+            if (lang === 'en') {
+                if (btnPt) btnPt.classList.remove('active');
+                if (btnEn) btnEn.classList.add('active');
+                if (title) title.textContent = 'SRE RAG - Recent Queries';
+                if (backLink) backLink.innerHTML = '&larr; Back to Dashboard';
+                if (emptyText) emptyText.textContent = 'No query history found. Execute queries via the inference API or simulate incidents on the Dashboard.';
+                if (author) author.textContent = 'Author:';
+                if (license) license.textContent = 'MIT License';
+            } else {
+                if (btnPt) btnPt.classList.add('active');
+                if (btnEn) btnEn.classList.remove('active');
+                if (title) title.textContent = 'SRE RAG - Consultas Recentes';
+                if (backLink) backLink.innerHTML = '&larr; Voltar ao Dashboard';
+                if (emptyText) emptyText.textContent = 'Nenhum histórico encontrado. Execute consultas na API de inferência ou simule incidentes no Dashboard.';
+                if (author) author.textContent = 'Autor:';
+                if (license) license.textContent = 'Licença MIT';
+            }
+        }
+
+        const savedLang = localStorage.getItem('sre_lab_lang') || 'pt';
+        setBoardLang(savedLang);
+    </script>
 </body>
 </html>

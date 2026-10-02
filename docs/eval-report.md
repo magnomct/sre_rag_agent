@@ -1,6 +1,6 @@
 # 📊 Relatório de Avaliação SRE-Eval: RAG & Decisão Operacional
 
-**Data da Avaliação:** 2026-10-01 13:07:14
+**Data da Avaliação:** 2026-10-02 07:53:08
 **Modelo de Embeddings:** `all-MiniLM-L6-v2` (384-d)
 **Total de Casos Avaliados:** `10`
 **Classificação Geral:** **🥇 A (Aprovado)**
