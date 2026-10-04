@@ -1,5 +1,5 @@
 /**
- * SRE Incident Simulation Dashboard — JavaScript Controller v2.1
+ * SRE Incident Simulation Dashboard — JavaScript Controller v3.0
  * - Tab navigation (Simulação & Chaos Lab vs Métricas & Histórico SRE)
  * - Complete bilingual support (pt-BR / en-US) with dynamic live switching
  * - Chaos Monkey real-time telemetry, sessions tracking & audit trail
@@ -367,21 +367,43 @@ function switchDashboardTab(tabName) {
   currentTab = tabName;
   const simTabBtn = document.getElementById('tab-btn-sim');
   const histTabBtn = document.getElementById('tab-btn-hist');
+  const warroomTabBtn = document.getElementById('tab-btn-warroom');
+  
   const simView = document.getElementById('view-simulation');
   const histView = document.getElementById('view-history');
+  const warroomView = document.getElementById('view-warroom');
+
+  // Remove active from all
+  if (simTabBtn) { simTabBtn.classList.remove('active'); simTabBtn.setAttribute('aria-selected', 'false'); }
+  if (histTabBtn) { histTabBtn.classList.remove('active'); histTabBtn.setAttribute('aria-selected', 'false'); }
+  if (warroomTabBtn) { warroomTabBtn.classList.remove('active'); warroomTabBtn.setAttribute('aria-selected', 'false'); }
+  
+  if (simView) simView.style.display = 'none';
+  if (histView) histView.style.display = 'none';
+  if (warroomView) warroomView.style.display = 'none';
+
+  const layout = document.querySelector('.layout');
+  const sidebar = document.querySelector('.sidebar');
 
   if (tabName === 'history') {
-    if (simTabBtn) { simTabBtn.classList.remove('active'); simTabBtn.setAttribute('aria-selected', 'false'); }
     if (histTabBtn) { histTabBtn.classList.add('active'); histTabBtn.setAttribute('aria-selected', 'true'); }
-    if (simView) simView.style.display = 'none';
     if (histView) histView.style.display = 'block';
+    if (layout) layout.style.display = 'block';
+    if (sidebar) sidebar.style.display = 'none';
     refreshHistory();
     history.replaceState(null, null, '#history');
+  } else if (tabName === 'warroom') {
+    if (warroomTabBtn) { warroomTabBtn.classList.add('active'); warroomTabBtn.setAttribute('aria-selected', 'true'); }
+    if (warroomView) warroomView.style.display = 'block';
+    if (layout) layout.style.display = 'block';
+    if (sidebar) sidebar.style.display = 'none';
+    history.replaceState(null, null, '#warroom');
   } else {
-    if (histTabBtn) { histTabBtn.classList.remove('active'); histTabBtn.setAttribute('aria-selected', 'false'); }
+    // simulation
     if (simTabBtn) { simTabBtn.classList.add('active'); simTabBtn.setAttribute('aria-selected', 'true'); }
-    if (histView) histView.style.display = 'none';
     if (simView) simView.style.display = 'block';
+    if (layout) layout.style.display = ''; // restore grid
+    if (sidebar) sidebar.style.display = ''; // restore flex
     history.replaceState(null, null, '#simulation');
   }
 }
@@ -1392,3 +1414,89 @@ document.addEventListener('DOMContentLoaded', () => {
   syncChaosState();
   startChaosPolling();
 });
+
+// --- New War Room Logic ---
+let activeWarroomSimId = null;
+
+async function startSimDifficulty(difficulty) {
+  try {
+    const res = await fetch(`/api/v1/incidents/simulate/${difficulty}`, { method: 'POST' });
+    if(!res.ok) throw new Error("Erro ao iniciar cenário aleatório");
+    const data = await res.json();
+    
+    document.getElementById('warroom-sim-area').style.display = 'block';
+    
+    document.getElementById('warroom-details-panel').innerHTML = `
+      <div class="incident-card" style="border-left: 4px solid #a371f7; margin-bottom: 20px; padding: 15px; background: #161b22; border-radius: 6px;">
+        <h3 style="color: #e6edf3; margin-bottom: 10px;">[${difficulty.toUpperCase()}] ${data.title}</h3>
+        <p style="color: #8b949e; margin-bottom: 10px;">${data.description}</p>
+        <p style="color: #c9d1d9; font-size: 0.9rem;"><strong>Severidade:</strong> ${data.severity} | <strong>Categoria:</strong> ${data.category}</p>
+      </div>
+    `;
+    
+    activeWarroomSimId = data.id;
+    
+    const term = document.getElementById('terminal-output');
+    term.innerHTML = `
+      <div style="color:#58a6ff;">Welcome to SRE Incident Lab Web Terminal v3.0</div>
+      <div style="color:#a371f7;">[SYSTEM] New incident detected. War Room initialized.</div>
+      <div style="color:#d29922;">[WARN] Active incident: ${data.id}</div>
+    `;
+    
+    document.getElementById('terminal-input').value = '';
+    document.getElementById('terminal-input').focus();
+    
+  } catch (err) {
+    console.error(err);
+    alert("Falha ao iniciar simulação. A API backend precisa suportar /simulate/" + difficulty);
+  }
+}
+
+async function handleTerminalInput(event) {
+  if (event.key === 'Enter') {
+    const inputEl = document.getElementById('terminal-input');
+    const cmd = inputEl.value.trim();
+    if(!cmd) return;
+    
+    inputEl.value = '';
+    const term = document.getElementById('terminal-output');
+    
+    const cmdLine = document.createElement('div');
+    cmdLine.className = 'term-output-line term-output-cmd';
+    cmdLine.textContent = `sre-admin@cluster:~$ ${cmd}`;
+    term.appendChild(cmdLine);
+    
+    if(!activeWarroomSimId) {
+      term.innerHTML += `<div class="term-output-error">Nenhuma simulação ativa. Escolha uma dificuldade.</div>`;
+      term.scrollTop = term.scrollHeight;
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/v1/incidents/solve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          scenario_id: activeWarroomSimId, 
+          solution_id: cmd // passing command string for backend to evaluate
+        })
+      });
+      
+      const data = await res.json();
+      
+      if(data.correct) {
+        term.innerHTML += `<div class="term-output-success">[SUCCESS] ${data.explanation}</div>`;
+        term.innerHTML += `<div class="term-output-success" style="margin-top: 15px; color:#a371f7;">[SYSTEM] Incident Resolved! Select a difficulty button above to request a new scenario.</div>`;
+        activeWarroomSimId = null;
+        if (typeof fetchHistory === 'function') fetchHistory();
+      } else {
+        term.innerHTML += `<div class="term-output-error">bash: ${cmd}: command not found or not permitted</div>`;
+        term.innerHTML += `<div class="term-output-error" style="opacity: 0.8; font-size: 0.85em;">> System hint: ${data.explanation}</div>`;
+      }
+      
+    } catch(err) {
+      term.innerHTML += `<div class="term-output-error">Error connecting to server.</div>`;
+    }
+    term.scrollTop = term.scrollHeight;
+  }
+}

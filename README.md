@@ -3,7 +3,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Language-Portugu%C3%AAs-blue?style=for-the-badge" alt="Idioma Português" />
   <a href="README_EN.md"><img src="https://img.shields.io/badge/Language-English-green?style=for-the-badge" alt="English Documentation" /></a>
-  <img src="https://img.shields.io/badge/Version-v2.1-blue?style=for-the-badge" alt="Versão v2.1" />
+  <img src="https://img.shields.io/badge/Version-v3.0-blue?style=for-the-badge" alt="Versão v3.0" />
   <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12" />
   <img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Kubernetes-Kind-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" alt="Kubernetes" />
@@ -63,10 +63,10 @@ Este projeto evoluiu de um protótipo para um **Laboratório de Engenharia SRE d
    - Em produção (`ENVIRONMENT=production`), o Swagger é desativado nativamente (`docs_url=None, redoc_url=None, openapi_url=None`) para prevenir reconhecimento de superfície de ataque e enumeração de rotas.
    - Remoção de links públicos ao Swagger na interface principal em consonância com as melhores práticas de DevSecOps.
 
-6. **📑 Navegação por Abas & Visual Clean (v2.1)**:
+6. **📑 Navegação por Abas & Visual Clean (v3.0)**:
    - Separação clara entre a área operacional (`🎯 Simulação & Chaos Lab`) e o painel analítico (`📊 Painel de Histórico & Métricas`), reduzindo a sobrecarga cognitiva durante incidentes.
    - Roteamento por hash (`#simulation` / `#history`) com persistência imediata e alternância sem recarregamento de página.
-   - Escala tipográfica modernizada (v2.1.2) com badges expandidos, contraste balanceado e correção de overflow no gráfico de MTTR.
+   - Escala tipográfica modernizada (v3.0.2) com badges expandidos, contraste balanceado e correção de overflow no gráfico de MTTR.
 
 7. **🌐 Suporte Bilíngue Nativo (pt-BR / en-US)**:
    - Seletor de idiomas dinâmico com persistência em `localStorage`.

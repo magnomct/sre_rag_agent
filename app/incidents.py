@@ -3,6 +3,7 @@ SRE Incident Simulation Engine
 Manages incident scenarios, active simulations, and solution validation with bilingual support (pt / en).
 """
 import time
+import random
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
@@ -16,6 +17,7 @@ SCENARIOS = {
         "title": "High Error Rate (HTTP 500 Spike)",
         "title_en": "High Error Rate (HTTP 500 Spike)",
         "severity": "SEV-1",
+        "difficulty": "easy",
         "category": "Disponibilidade",
         "category_en": "Availability",
         "icon": "💥",
@@ -36,6 +38,7 @@ SCENARIOS = {
         "solutions": [
             {
                 "id": "rollback",
+                "command": "helm rollback sre-rag",
                 "label": "Executar rollback do Helm release (`helm rollback sre-rag`)",
                 "label_en": "Perform Helm release rollback (`helm rollback sre-rag`)",
                 "correct": True,
@@ -69,6 +72,7 @@ SCENARIOS = {
         "title": "High Latency (P99 > 2s)",
         "title_en": "High Latency (P99 > 2s)",
         "severity": "SEV-2",
+        "difficulty": "hard",
         "category": "Latência",
         "category_en": "Latency",
         "icon": "🐢",
@@ -89,6 +93,7 @@ SCENARIOS = {
         "solutions": [
             {
                 "id": "scale-hpa",
+                "command": "kubectl scale hpa sre-rag-api --min=5 --max=20",
                 "label": "Escalar HPA + investigar e otimizar queries lentas no PostgreSQL",
                 "label_en": "Scale HPA + investigate and optimize slow queries in PostgreSQL",
                 "correct": True,
@@ -122,6 +127,7 @@ SCENARIOS = {
         "title": "API CrashLoopBackOff",
         "title_en": "API CrashLoopBackOff",
         "severity": "SEV-1",
+        "difficulty": "medium",
         "category": "Confiabilidade",
         "category_en": "Reliability",
         "icon": "🔄",
@@ -142,6 +148,7 @@ SCENARIOS = {
         "solutions": [
             {
                 "id": "fix-configmap",
+                "command": "helm upgrade sre-rag . --set env.EMBEDDING_BATCH_SIZE=32",
                 "label": "Adicionar EMBEDDING_BATCH_SIZE no ConfigMap/values e aplicar via Helm",
                 "label_en": "Inject missing EMBEDDING_BATCH_SIZE in ConfigMap/values and redeploy",
                 "correct": True,
@@ -175,6 +182,7 @@ SCENARIOS = {
         "title": "Certificado TLS Próximo do Vencimento",
         "title_en": "TLS Certificate Expiring Soon",
         "severity": "SEV-3",
+        "difficulty": "medium",
         "category": "Segurança",
         "category_en": "Security",
         "icon": "🔒",
@@ -195,6 +203,7 @@ SCENARIOS = {
         "solutions": [
             {
                 "id": "fix-acme-ingress",
+                "command": "kubectl annotate ingress sre-rag cert-manager.io/cluster-issuer=letsencrypt-prod",
                 "label": "Corrigir rota do Ingress para o solver do cert-manager e forçar renovação",
                 "label_en": "Fix ACME HTTP-01 ingress path + force certificate renewal",
                 "correct": True,
@@ -227,6 +236,7 @@ SCENARIOS = {
         "id": "disk-pressure",
         "title": "DiskPressure em Node do Kubernetes",
         "severity": "SEV-2",
+        "difficulty": "hard",
         "category": "Armazenamento",
         "category_en": "Storage",
         "icon": "💾",
@@ -247,6 +257,7 @@ SCENARIOS = {
         "solutions": [
             {
                 "id": "prune-images-logs",
+                "command": "crictl rmi --prune",
                 "label": "Executar crictl rmi --prune para remover imagens antigas + rotacionar logs",
                 "label_en": "Purge dead container images via crictl rmi --prune + rotate node log files",
                 "correct": True,
@@ -280,6 +291,7 @@ SCENARIOS = {
         "title": "Redis Connection Exhaustion",
         "title_en": "Redis Connection Pool Exhaustion",
         "severity": "SEV-1",
+        "difficulty": "extreme",
         "category": "Desempenho",
         "category_en": "Performance",
         "icon": "🔴",
@@ -300,6 +312,7 @@ SCENARIOS = {
         "solutions": [
             {
                 "id": "fix-connection-pool",
+                "command": "kubectl set env deployment/sre-rag-api REDIS_MAX_CONNECTIONS=100 REDIS_TIMEOUT=30",
                 "label": "Configurar ConnectionPool no cliente Redis com max_connections e timeout",
                 "label_en": "Configure connection pool limits on API + enable Redis timeout idle clients",
                 "correct": True,
@@ -386,6 +399,7 @@ SCENARIOS = {
         "title": "DNS Resolution Failure",
         "title_en": "DNS Resolution Failure",
         "severity": "SEV-1",
+        "difficulty": "extreme",
         "category": "Rede",
         "category_en": "Network",
         "icon": "🌐",
@@ -406,6 +420,7 @@ SCENARIOS = {
         "solutions": [
             {
                 "id": "coredns-netpol",
+                "command": "kubectl rollout restart deployment/coredns -n kube-system",
                 "label": "Reiniciar CoreDNS pods + validar NetworkPolicy (permitir porta 53/UDP)",
                 "label_en": "Restart CoreDNS pods + verify NetworkPolicy allows egress port 53/UDP",
                 "correct": True,
@@ -476,6 +491,14 @@ class IncidentSimulationEngine:
         self.history: list[SimulationResult] = []
         self._counter = 1
 
+    def get_random_incident(self, difficulty: str) -> dict:
+        matching = [s_id for s_id, s in SCENARIOS.items() if s.get("difficulty") == difficulty]
+        if not matching:
+            return {"error": f"Nenhum cenário encontrado para a dificuldade: {difficulty}"}
+        
+        selected_id = random.choice(matching)
+        return self.start(selected_id)
+
     def start(self, scenario_id: str) -> dict:
         if scenario_id not in SCENARIOS:
             return {"error": f"Scenario '{scenario_id}' not found"}
@@ -516,8 +539,20 @@ class IncidentSimulationEngine:
 
         scenario = SCENARIOS[scenario_id]
         solution = next((s for s in scenario["solutions"] if s["id"] == solution_id), None)
+        
         if not solution:
-            return {"error": "Invalid solution"}
+            # Fallback to Terminal Command Mode matching
+            cmd_submitted = solution_id.strip()
+            correct_sol = next((s for s in scenario["solutions"] if s["correct"]), None)
+            
+            if correct_sol and correct_sol.get("command") and cmd_submitted == correct_sol["command"]:
+                solution = correct_sol
+            else:
+                return {
+                    "correct": False,
+                    "explanation": f"Comando não reconhecido ou incorreto. Dica: o comando correto é `{correct_sol.get('command', 'indisponível')}`",
+                    "explanation_en": "Command not recognized or incorrect."
+                }
 
         elapsed = time.time() - self.active.started_at
         mttd = scenario["detection_delay_seconds"]
