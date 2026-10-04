@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SRE Incident Simulation Lab v2.1</title>
+  <link rel="stylesheet" href="/static/css/dashboard.css?v=2.1.2">
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────── -->
+<header class="header">
+  <div class="header-title">
+    <span style="font-size:1.4rem">🚨</span>
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <h1 data-i18n="app_title">SRE Incident Simulation Lab</h1>
+        <span class="version-badge" style="background:rgba(88,166,255,0.15);border:1px solid rgba(88,166,255,0.4);color:#58a6ff;font-size:0.78rem;font-weight:700;padding:2px 8px;border-radius:12px;letter-spacing:0.04em;">v2.1</span>
+      </div>
+      <div class="header-subtitle" data-i18n="app_subtitle">RAG Agent · Kubernetes · Observability · Chaos & Incident Response</div>
+    </div>
+  </div>
+  <div class="header-controls">
+    <!-- Language Switcher -->
+    <div class="lang-switch-group">
+      <button
+        class="lang-btn active"
+        id="lang-btn-pt"
+        onclick="setLanguage('pt')"
+        title="Português (Brasil)"
+      >
+        <span>🇧🇷</span> PT
+      </button>
+      <button
+        class="lang-btn"
+        id="lang-btn-en"
+        onclick="setLanguage('en')"
+        title="English (US)"
+      >
+        <span>🇺🇸</span> EN
+      </button>
+    </div>
+
+    <button
+      id="chaos-monkey-toggle"
+      class="chaos-toggle-btn"
+      onclick="toggleChaosMonkey()"
+      title="Ativar/Desativar Chaos Monkey (injeção de HTTP 500 no workload da API)"
+    >
+      <span class="chaos-icon">🐒</span>
+      <span id="chaos-btn-text" data-i18n="chaos_btn_off">Chaos Monkey: Off</span>
+    </button>
+
+    <div class="status-badge">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text" data-i18n="status_all_ok">Todos os sistemas operacionais</span>
+      <span style="margin-left:16px;color:#484f58">|</span>
+      <a href="/board" style="margin-left:12px;color:#58a6ff;text-decoration:none;font-size:0.86rem" data-i18n="link_board">Board →</a>
+    </div>
+  </div>
+</header>
+
+<!-- ── Main Layout ──────────────────────────────────────────── -->
+<div class="layout">
+
+  <!-- ── Sidebar: Scenario List ─────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span>🎯</span> <span id="sidebar-header-label" data-i18n="sidebar_title">Cenários de Incidente</span> ({{ scenarios|length }})
+    </div>
+
+    <div class="sidebar-scenarios">
+      {% for scenario in scenarios %}
+      <div class="incident-card" data-scenario="{{ scenario.id }}">
+        <div class="incident-card-header">
+          <div class="incident-title">
+            <span class="incident-icon">{{ scenario.icon }}</span>
+            <span class="incident-name">{{ scenario.title }}</span>
+          </div>
+          <span class="severity-badge sev-{{ scenario.severity }}">{{ scenario.severity }}</span>
+        </div>
+        <div class="incident-category">
+          <span>📂</span> {{ scenario.category }}
+        </div>
+        <div class="incident-description">
+          {{ scenario.description }}
+        </div>
+        <button
+          class="simulate-btn"
+          id="btn-simulate-{{ scenario.id }}"
+          onclick="startSimulation('{{ scenario.id }}')"
+          data-i18n="btn_simulate"
+        >▶ Simular</button>
+      </div>
+      {% endfor %}
+    </div>
+  </aside>
+
+  <!-- ── Main Content Area ──────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- ── Dashboard Navigation Tabs ────────────────────────── -->
+    <nav class="dashboard-tabs" role="tablist">
+      <button
+        class="tab-btn active"
+        id="tab-btn-sim"
+        role="tab"
+        aria-selected="true"
+        onclick="switchDashboardTab('simulation')"
+      >
+        <span class="tab-icon">🎯</span>
+        <span data-i18n="tab_simulation">Simulação & Chaos Lab</span>
+      </button>
+      <button
+        class="tab-btn"
+        id="tab-btn-hist"
+        role="tab"
+        aria-selected="false"
+        onclick="switchDashboardTab('history')"
+      >
+        <span class="tab-icon">📊</span>
+        <span data-i18n="tab_history">Painel de Histórico & Métricas</span>
+        <span class="tab-count-badge" id="tab-history-badge">{{ history|length }}</span>
+      </button>
+    </nav>
+
+    <!-- ── TAB 1: Simulação & Chaos Lab ─────────────────────── -->
+    <div id="view-simulation" class="dashboard-tab-view active">
+
+      <!-- Empty state -->
+      <div class="empty-state" id="empty-state">
+        <div class="empty-state-icon">🖥️</div>
+        <h3 data-i18n="empty_title">Nenhuma Simulação Ativa</h3>
+        <p data-i18n="empty_desc">
+          Escolha um cenário de incidente no painel lateral à esquerda<br>
+          e clique em <strong>▶ Simular</strong> para iniciar a dinâmica de resposta.<br><br>
+          A timeline de <strong>MTTD → Investigação → Mitigação (MTTR)</strong> será ativada,<br>
+          junto com o seletor de soluções (as opções são embaralhadas aleatoriamente).
+        </p>
+      </div>
+
+      <!-- Active simulation panels rendered by JS -->
+      <div id="simulation-panels"></div>
+
+      <!-- ── Chaos Engineering & Audit Telemetry Section ────────── -->
+      <section class="chaos-section">
+        <div class="chaos-header">
+          <div class="chaos-header-info">
+            <div class="chaos-title">
+              <span class="chaos-badge-icon">🐒</span>
+              <span data-i18n="chaos_section_title">Chaos Monkey & Auditoria de Resiliência</span>
+              <span class="live-pill" id="chaos-live-indicator">
+                <span class="pulse-dot"></span> LIVE
+              </span>
+            </div>
+            <div class="chaos-subtitle" data-i18n="chaos_section_sub">
+              Telemetria em tempo real, injeção de falhas no workload da API e trilha de auditoria para observabilidade SRE.
+            </div>
+          </div>
+          <div class="chaos-header-actions">
+            <button class="action-btn" onclick="syncChaosState(true)" title="Atualizar telemetria do Chaos">
+              <span data-i18n="btn_refresh">🔄 Atualizar</span>
+            </button>
+            <button class="action-btn danger" onclick="confirmClearChaosHistory()" title="Limpar histórico de sessões e auditoria do caos">
+              <span data-i18n="btn_clear_audit">🗑️ Limpar Auditoria</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Chaos KPIs Row -->
+        <div class="analytics-grid" id="chaos-kpis-grid">
+          <!-- Card 1: Status Atual do Chaos -->
+          <div class="kpi-card" id="chaos-kpi-status-card">
+            <div class="kpi-card-header">
+              <span class="kpi-title" data-i18n="chaos_kpi_state">Estado do Injetor</span>
+              <span class="kpi-badge" id="chaos-status-badge" data-i18n="chaos_badge_inactive">Inativo</span>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-value-group">
+                <div class="kpi-main-value" id="chaos-main-state" data-i18n="chaos_main_state_normal">NORMAL</div>
+                <div class="kpi-sub-value" id="chaos-duration-sub" data-i18n="chaos_dur_inactive">Workload 100% Saudável</div>
+              </div>
+              <div class="kpi-extra-info">
+                <span class="tag-pill" id="chaos-fault-tag" data-i18n="chaos_tag_healthy">Workload Saudável</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Total de Falhas Injetadas All-Time -->
+          <div class="kpi-card">
+            <div class="kpi-card-header">
+              <span class="kpi-title" data-i18n="chaos_kpi_total">Falhas Injetadas (Total)</span>
+              <span class="kpi-icon">💥</span>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-value-group">
+                <div class="kpi-main-value" id="chaos-total-injections">0</div>
+                <div class="kpi-sub-value" data-i18n="chaos_kpi_total_sub">Erros HTTP 500 no workload</div>
+              </div>
+              <div class="kpi-extra-info">
+                <span class="tag-pill">Prometheus Counter</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: Sessão Recente / Atual -->
+          <div class="kpi-card">
+            <div class="kpi-card-header">
+              <span class="kpi-title" data-i18n="chaos_kpi_session">Sessão Atual / Recente</span>
+              <span class="kpi-icon">⏱️</span>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-value-group">
+                <div class="kpi-main-value" id="chaos-session-injections">0</div>
+                <div class="kpi-sub-value" id="chaos-session-sub" data-i18n="chaos_kpi_session_empty">Nenhuma sessão ativa no momento</div>
+              </div>
+              <div class="kpi-extra-info">
+                <span class="tag-pill" id="chaos-session-id-pill">Sessão #--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 4: Endpoints Impactados -->
+          <div class="kpi-card">
+            <div class="kpi-card-header">
+              <span class="kpi-title" data-i18n="chaos_kpi_targets">Alvos do Workload</span>
+              <span class="kpi-icon">🎯</span>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-value-group">
+                <div class="kpi-main-value" id="chaos-endpoints-count">0</div>
+                <div class="kpi-sub-value" id="chaos-endpoints-list" data-i18n="chaos_kpi_targets_none">Nenhum endpoint afetado</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live SRE Audit Terminal & Session History Split Row -->
+        <div class="chaos-split-row">
+          <!-- SRE Terminal Stream -->
+          <div class="chaos-terminal-card">
+            <div class="terminal-header">
+              <div class="terminal-controls">
+                <span class="term-dot red"></span>
+                <span class="term-dot yellow"></span>
+                <span class="term-dot green"></span>
+              </div>
+              <div class="terminal-title">
+                <span>📋</span> <span data-i18n="terminal_title">SRE Chaos Audit Stream</span> &middot; <code>events.log</code>
+              </div>
+              <div class="terminal-badge" id="terminal-event-count">0 eventos</div>
+            </div>
+            <div class="terminal-body" id="chaos-terminal-body">
+              <div class="terminal-line placeholder">
+                <span class="term-time">[--:--:--]</span>
+                <span class="term-dim" data-i18n="terminal_placeholder">Aguardando eventos de injeção ou ativação do Chaos Monkey...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Past Sessions Mini-Table -->
+          <div class="chaos-sessions-card">
+            <div class="sessions-header">
+              <div class="sessions-title">
+                <span>📜</span> <span data-i18n="sessions_title">Histórico de Sessões de Caos</span>
+              </div>
+              <span class="sessions-count" id="sessions-count-badge">0 sessões</span>
+            </div>
+            <div class="sessions-table-container">
+              <table class="sessions-table">
+                <thead>
+                  <tr>
+                    <th style="width:40px" data-i18n="col_session_id">#</th>
+                    <th data-i18n="col_start">Início</th>
+                    <th style="width:70px" data-i18n="col_duration">Duração</th>
+                    <th style="width:75px" data-i18n="col_faults">Falhas</th>
+                    <th data-i18n="col_endpoints">Endpoints</th>
+                    <th style="width:85px" data-i18n="col_status">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="chaos-sessions-body">
+                  <tr>
+                    <td colspan="6" class="history-empty" data-i18n="sessions_empty">Nenhuma sessão registrada.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ── TAB 2: Painel de Histórico & Métricas SRE ─────────── -->
+    <div id="view-history" class="dashboard-tab-view">
+
+      <!-- ── History & SRE Analytics Section ──────────────────── -->
+      <section class="history-section">
+        <div class="history-header">
+          <div class="history-header-info">
+            <div class="history-title" data-i18n="history_section_title">
+              📊 Painel de Métricas & Histórico SRE
+            </div>
+            <div class="history-subtitle" data-i18n="history_section_sub">
+              Estatísticas agregadas, taxa de assertividade e tempos médios de resolução (MTTR / MTTD)
+            </div>
+          </div>
+          <div class="history-header-actions">
+            <button class="action-btn" onclick="refreshHistory()" title="Atualizar dados">
+              <span data-i18n="btn_refresh">🔄 Atualizar</span>
+            </button>
+            <button class="action-btn danger" onclick="confirmClearHistory()" title="Limpar histórico de simulações">
+              <span data-i18n="btn_clear_history">🗑️ Limpar Histórico</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- SRE KPI Cards -->
+        <div class="analytics-grid" id="analytics-grid">
+          <!-- Card 1: Taxa de Resolução -->
+          <div class="kpi-card">
+            <div class="kpi-card-header">
+              <span class="kpi-title" data-i18n="kpi_success_rate">Taxa de Sucesso SRE</span>
+              <span class="kpi-badge" id="kpi-badge-rate" data-i18n="badge_waiting">Aguardando</span>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-value-group">
+                <div class="kpi-main-value" id="kpi-success-rate">0%</div>
+                <div class="kpi-sub-value" id="kpi-success-sub">0 corretos de 0</div>
+              </div>
+              <div class="kpi-chart-ring">
+                <svg viewBox="0 0 36 36" class="circular-chart" id="svg-rate-ring">
+                  <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  <path class="circle" id="kpi-rate-path" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: MTTD Médio -->
+          <div class="kpi-card">
+            <div class="kpi-card-header">
+              <span class="kpi-title" data-i18n="kpi_avg_mttd">MTTD Médio (Detecção)</span>
+              <span class="kpi-icon">⏱️</span>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-value-group">
+                <div class="kpi-main-value" id="kpi-avg-mttd">00:00</div>
+                <div class="kpi-sub-value" data-i18n="kpi_mttd_sub">Tempo médio até alerta</div>
+              </div>
+              <div class="kpi-extra-info">
+                <span class="tag-pill">Prometheus</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: MTTR Médio -->
+          <div class="kpi-card">
+            <div class="kpi-card-header">
+              <span class="kpi-title" data-i18n="kpi_avg_mttr">MTTR Médio (Mitigação)</span>
+              <span class="kpi-icon">⚡</span>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-value-group">
+                <div class="kpi-main-value" id="kpi-avg-mttr">00:00</div>
+                <div class="kpi-sub-value" data-i18n="kpi_mttr_sub">Tempo médio até mitigação</div>
+              </div>
+              <div class="kpi-extra-info">
+                <span class="tag-pill" id="kpi-mttr-pill">Meta &lt; 01:00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 4: Total & Distribuição -->
+          <div class="kpi-card">
+            <div class="kpi-card-header">
+              <span class="kpi-title" data-i18n="kpi_total_sims">Simulações Realizadas</span>
+              <span class="kpi-icon">🎯</span>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-value-group">
+                <div class="kpi-main-value" id="kpi-total-sims">0</div>
+                <div class="kpi-sub-value" id="kpi-sev-breakdown">SEV-1: 0 · SEV-2: 0 · SEV-3: 0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visual Charts Row -->
+        <div class="visual-charts-row" id="visual-charts-row">
+          <!-- Efficiency Ratio Bar -->
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <span class="chart-card-title" data-i18n="chart_distribution">Distribuição de Resultados (Assertividade)</span>
+              <span class="chart-card-legend">
+                <span class="legend-dot green"></span> <span data-i18n="legend_correct">Corretos</span>
+                <span class="legend-dot red" style="margin-left:10px"></span> <span data-i18n="legend_incorrect">Incorretos</span>
+              </span>
+            </div>
+            <div class="ratio-bar-wrapper">
+              <div class="ratio-bar">
+                <div class="ratio-segment ratio-green" id="ratio-green-bar" style="width: 0%"></div>
+                <div class="ratio-segment ratio-red" id="ratio-red-bar" style="width: 0%"></div>
+              </div>
+              <div class="ratio-labels">
+                <span id="ratio-green-label">0% Corretos (0)</span>
+                <span id="ratio-red-label">0% Incorretos (0)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent MTTR Trend (SVG Sparkline / Bar Chart) -->
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <span class="chart-card-title" data-i18n="chart_mttr_trend">Performance Recente de MTTR (Últimas Simulações)</span>
+              <span class="chart-card-legend" id="chart-avg-line-label">Média: --:--</span>
+            </div>
+            <div class="svg-chart-container" id="svg-chart-container">
+              <svg id="mttr-spark-chart" viewBox="0 0 500 90" preserveAspectRatio="none">
+                <!-- SVG chart elements generated dynamically by JS -->
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Structured History Table -->
+        <div class="table-container">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th style="width:50px" data-i18n="table_th_num">#</th>
+                <th data-i18n="table_th_scenario">Cenário de Incidente</th>
+                <th style="width:90px" data-i18n="table_th_severity">Severidade</th>
+                <th style="width:90px" data-i18n="table_th_mttd">MTTD</th>
+                <th style="width:90px" data-i18n="table_th_mttr">MTTR</th>
+                <th data-i18n="table_th_solution">Solução Escolhida</th>
+                <th style="width:120px" data-i18n="table_th_result">Resultado</th>
+              </tr>
+            </thead>
+            <tbody id="history-body">
+              <tr>
+                <td colspan="7" class="history-empty" data-i18n="table_loading">
+                  Carregando histórico...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </section>
+
+    </div>
+
+  </main>
+</div>
+
+<!-- ── App Footer ──────────────────────────────────────────── -->
+<footer class="app-footer">
+  <div class="footer-left">
+    <div class="footer-brand">
+      <span class="footer-dot" title="Core systems operational"></span>
+      <span class="footer-app-name" data-i18n="footer_app_name">SRE Incident Lab</span>
+      <span class="footer-separator">·</span>
+      <span class="footer-author"><span data-i18n="footer_author">Autor:</span> <strong style="color:#e6edf3">Carlos Magno Cordeiro</strong> &copy; 2026</span>
+    </div>
+  </div>
+
+  <div class="footer-center">
+    <a
+      href="https://github.com/magnomct/sre_rag_agent/blob/main/LICENSE"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="footer-badge license-badge"
+      title="Licença MIT — Código Aberto e Livre"
+    >
+      <svg class="footer-icon license-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1zM2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1zM7 21h10M12 3v18M3 7h18"/>
+      </svg>
+      <span data-i18n="footer_license">Licença MIT</span>
+    </a>
+    <span class="footer-tag" title="Versão da Plataforma">v2.1</span>
+  </div>
+
+  <div class="footer-right">
+    <a
+      href="https://github.com/magnomct/sre_rag_agent"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="footer-btn github-btn"
+      title="Acessar repositório no GitHub: magnomct/sre_rag_agent"
+    >
+      <svg class="footer-icon github-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+      </svg>
+      <span>magnomct/sre_rag_agent</span>
+      <svg class="external-icon" viewBox="0 0 12 12" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3.5 1.5h7v7M10.5 1.5L2 10"/>
+      </svg>
+    </a>
+  </div>
+</footer>
+
+<script src="/static/js/dashboard.js?v=2.1.2"></script>
+</body>
+</html>

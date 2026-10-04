@@ -1,9 +1,14 @@
 # 🚨 SRE RAG Agent — Incident Simulation Lab & Observability Platform
 
+## 🚀 What's New in v3.0
+- **War Room (Terminal Mode)**: An integrated Web Terminal that allows you to resolve incidents by typing real bash/kubectl commands. The environment is safe (string validation based) and prevents harmful execution on the real OS.
+- **Dynamic Difficulties**: Support for categorizing 100 scenarios across 4 difficulties: Easy, Medium, Hard, and Extreme.
+- **Multiple Tabs**: Preserved the original multiple-choice Quiz layout, added the War Room terminal tab, and enhanced the History & Metrics dashboard.
+
 <p align="center">
   <a href="README.md"><img src="https://img.shields.io/badge/Language-Portugu%C3%AAs-blue?style=for-the-badge" alt="Portuguese Documentation" /></a>
   <img src="https://img.shields.io/badge/Language-English-green?style=for-the-badge" alt="English Documentation" />
-  <img src="https://img.shields.io/badge/Version-v2.1-blue?style=for-the-badge" alt="Versão v2.1" />
+  <img src="https://img.shields.io/badge/Version-v3.0-blue?style=for-the-badge" alt="Versão v3.0" />
   <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12" />
   <img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Kubernetes-Kind-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" alt="Kubernetes" />
@@ -63,10 +68,10 @@ This project was built and evolved into a **Google SRE-standard Practice and Tra
    - In production (`ENVIRONMENT=production`), Swagger is natively disabled (`docs_url=None, redoc_url=None, openapi_url=None`) to prevent endpoint enumeration and schema reconnaissance.
    - Public Swagger links removed from the main header following DevSecOps hardening best practices.
 
-6. **📑 Tabbed Architecture & Clean UI (v2.1)**:
+6. **📑 Tabbed Architecture & Clean UI (v3.0)**:
    - Clear separation between the operational workspace (`🎯 Simulação & Chaos Lab`) and the analytical postmortem panel (`📊 Painel de Histórico & Métricas`), significantly reducing on-call cognitive load.
    - URL hash routing (`#simulation` / `#history`) providing seamless instant tab switching with state persistence.
-   - Modernized typography scale (v2.1.2) featuring enhanced readability, expanded badge padding, and fixed MTTR sparkline chart overflow.
+   - Modernized typography scale (v3.0.2) featuring enhanced readability, expanded badge padding, and fixed MTTR sparkline chart overflow.
 
 7. **🌐 Native Bilingual Support (pt-BR / en-US)**:
    - Dynamic client-side language switcher with `localStorage` state persistence.

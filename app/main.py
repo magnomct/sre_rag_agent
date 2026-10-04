@@ -364,6 +364,21 @@ async def list_scenarios():
     """List all available incident scenarios."""
     return list(SCENARIOS.values())
 
+
+@app.post("/api/v1/incidents/simulate/{difficulty}")
+def start_random_simulation(difficulty: str):
+    """Start a random incident simulation based on difficulty."""
+    from incidents import simulation_engine
+    res = simulation_engine.get_random_incident(difficulty)
+    if "error" in res:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail=res["error"])
+    
+    # Return the full scenario details so frontend can render it
+    scenario = simulation_engine.SCENARIOS[res["scenario_id"]] if hasattr(simulation_engine, "SCENARIOS") else __import__("incidents").SCENARIOS[res["scenario_id"]]
+    return scenario
+
+
 @app.post("/api/v1/incidents/simulate", tags=["Incidents"])
 async def start_simulation(body: SimulateRequest):
     """Start an incident simulation for a given scenario."""
