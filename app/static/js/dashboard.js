@@ -1500,3 +1500,173 @@ async function handleTerminalInput(event) {
     term.scrollTop = term.scrollHeight;
   }
 }
+
+
+// ── War Room Navigation State ─────────────────────────
+let warroomPlaylist  = [];   // Array of scenario IDs played in this session
+let warroomPlayIdx   = -1;   // Current position in the playlist
+let warroomDifficulty = null; // Last chosen difficulty (for Next)
+
+// Internal: renders a loaded scenario object into the War Room UI
+function _renderWarroomScenario(scenario, suppressHistory) {
+  const simArea = document.getElementById('warroom-sim-area');
+  const toolbar = document.getElementById('warroom-toolbar');
+  const term    = document.getElementById('terminal-output');
+  const details = document.getElementById('warroom-details-panel');
+
+  if (!simArea || !details || !term) return;
+
+  simArea.style.display = 'block';
+  if (toolbar) toolbar.style.display = 'flex';
+
+  activeWarroomSimId = scenario.id;
+
+  const sev = scenario.severity || '';
+  const sevColor = sev === 'SEV-1' ? '#f85149' : sev === 'SEV-2' ? '#d29922' : '#58a6ff';
+
+  details.innerHTML = `
+    <div style="border-left:4px solid ${sevColor}; padding:15px; background:#161b22; border-radius:6px; margin-bottom:20px;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+        <span style="font-size:1.4rem;">${scenario.icon || '🚨'}</span>
+        <h3 style="color:#e6edf3; margin:0;">[${sev}] ${scenario.title}</h3>
+      </div>
+      <p style="color:#8b949e; margin-bottom:10px; font-size:0.95rem;">${scenario.description}</p>
+      <div style="background:#0d1117; border-radius:5px; padding:10px; margin-top:8px;">
+        <p style="color:#58a6ff; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">Sintomas</p>
+        <ul style="margin:0; padding-left:20px; color:#c9d1d9; font-size:0.88rem;">
+          ${(scenario.symptoms || []).map(s => `<li>${s}</li>`).join('')}
+        </ul>
+      </div>
+    </div>
+  `;
+
+  term.innerHTML = `
+    <div style="color:#58a6ff;">SRE Incident Lab Web Terminal v3.0</div>
+    <div style="color:#a371f7;">[SYSTEM] War Room ativada — incidente: <strong>${scenario.id}</strong></div>
+    <div style="color:#d29922;">[INFO] Dificuldade: <strong>${warroomDifficulty || scenario.difficulty || 'n/a'}</strong> | Severidade: <strong>${sev}</strong></div>
+    <div style="color:#8b949e; margin-top:6px;">[HINT] Digite o comando correto e pressione Enter para resolver o incidente.</div>
+  `;
+
+  document.getElementById('terminal-input').value = '';
+  document.getElementById('terminal-input').focus();
+
+  // Update prev/next button states
+  const prevBtn = document.getElementById('wr-btn-prev');
+  if (prevBtn) prevBtn.disabled = (warroomPlayIdx <= 0);
+}
+
+// Overrides the old startSimDifficulty with history-aware version
+async function startSimDifficulty(difficulty, excludeId) {
+  warroomDifficulty = difficulty;
+  try {
+    let url = `/api/v1/incidents/simulate/${difficulty}`;
+    if (excludeId) url += `?exclude=${excludeId}`;
+    const res = await fetch(url, { method: 'POST' });
+    if (!res.ok) throw new Error(await res.text());
+    const scenario = await res.json();
+
+    // Update playlist
+    // If we navigated back and then clicked Next, truncate future entries
+    if (warroomPlayIdx < warroomPlaylist.length - 1) {
+      warroomPlaylist = warroomPlaylist.slice(0, warroomPlayIdx + 1);
+    }
+    warroomPlaylist.push(scenario.id);
+    warroomPlayIdx = warroomPlaylist.length - 1;
+
+    _renderWarroomScenario(scenario);
+  } catch (err) {
+    alert('Falha ao iniciar simulação: ' + err.message);
+  }
+}
+
+async function warroomNext() {
+  if (!warroomDifficulty) {
+    alert('Selecione uma dificuldade primeiro.');
+    return;
+  }
+  // If there are future entries in the playlist (user went back), advance to next
+  if (warroomPlayIdx < warroomPlaylist.length - 1) {
+    warroomPlayIdx++;
+    const scenarioId = warroomPlaylist[warroomPlayIdx];
+    const res = await fetch(`/api/v1/incidents/scenario/${scenarioId}`);
+    const scenario = await res.json();
+    _renderWarroomScenario(scenario);
+  } else {
+    // Fetch a new random scenario, excluding current
+    const excludeId = activeWarroomSimId;
+    await startSimDifficulty(warroomDifficulty, excludeId);
+  }
+}
+
+async function warroomPrev() {
+  if (warroomPlayIdx <= 0) return;
+  warroomPlayIdx--;
+  const scenarioId = warroomPlaylist[warroomPlayIdx];
+  const res = await fetch(`/api/v1/incidents/scenario/${scenarioId}`);
+  if (!res.ok) { console.error('Erro ao carregar cenário anterior'); return; }
+  const scenario = await res.json();
+  _renderWarroomScenario(scenario);
+}
+
+function warroomClean() {
+  if (!activeWarroomSimId) return;
+  const term = document.getElementById('terminal-output');
+  if (term) {
+    term.innerHTML = `
+      <div style="color:#58a6ff;">SRE Incident Lab Web Terminal v3.0</div>
+      <div style="color:#d29922;">[LIMPAR] Terminal limpo. Mesmo incidente ativo: <strong>${activeWarroomSimId}</strong></div>
+      <div style="color:#8b949e;">[HINT] Digite o comando correto e pressione Enter.</div>
+    `;
+  }
+  document.getElementById('terminal-input').value = '';
+  document.getElementById('terminal-input').focus();
+}
+
+async function warroomReview() {
+  if (!activeWarroomSimId) return;
+  const term = document.getElementById('terminal-output');
+  try {
+    const res = await fetch(`/api/v1/incidents/review/${activeWarroomSimId}`);
+    if (!res.ok) throw new Error('Gabarito não disponível');
+    const data = await res.json();
+    term.innerHTML += `
+      <div style="border-top:1px solid #30363d; margin-top:10px; padding-top:10px;">
+        <div style="color:#a371f7; font-weight:bold;">[REVISÃO] Gabarito do incidente ${activeWarroomSimId}</div>
+        <div style="color:#3fb950; margin-top:4px;">$ ${data.command}</div>
+        <div style="color:#c9d1d9; font-size:0.88rem; margin-top:4px; opacity:0.85;">${data.explanation}</div>
+        <div style="color:#8b949e; font-size:0.8rem; margin-top:6px; font-style:italic;">[INFO] Revisão não conta como acerto nas métricas.</div>
+      </div>
+    `;
+    term.scrollTop = term.scrollHeight;
+  } catch(err) {
+    term.innerHTML += `<div class="term-output-error">[ERRO] ${err.message}</div>`;
+    term.scrollTop = term.scrollHeight;
+  }
+}
+
+function warroomRestart() {
+  if (!confirm('Recomeçar o treinamento? Todo o histórico da sessão será apagado.')) return;
+
+  // Clear state
+  warroomPlaylist   = [];
+  warroomPlayIdx    = -1;
+  activeWarroomSimId = null;
+
+  // Reset engine via cancel API
+  fetch('/api/v1/incidents/cancel', { method: 'POST' }).catch(() => {});
+
+  // Hide sim area and toolbar
+  const simArea = document.getElementById('warroom-sim-area');
+  const toolbar = document.getElementById('warroom-toolbar');
+  if (simArea) simArea.style.display = 'none';
+  if (toolbar) toolbar.style.display = 'none';
+
+  // Reset difficulty buttons (re-enable all)
+  document.querySelectorAll('.diff-btn').forEach(b => b.disabled = false);
+
+  // Show confirmation in terminal if visible
+  const term = document.getElementById('terminal-output');
+  if (term) {
+    term.innerHTML = '<div style="color:#58a6ff;">SRE Incident Lab Web Terminal v3.0</div><div style="color:#f85149;">[RESET] Treinamento reiniciado. Escolha uma dificuldade para começar.</div>';
+  }
+}

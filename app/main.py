@@ -379,6 +379,33 @@ def start_random_simulation(difficulty: str):
     return scenario
 
 
+
+@app.get("/api/v1/incidents/scenario/{scenario_id}", tags=["Incidents"])
+def get_scenario_by_id(scenario_id: str):
+    """Load a specific scenario by ID (used by Prev/Next navigation)."""
+    if scenario_id not in SCENARIOS:
+        raise HTTPException(status_code=404, detail=f"Scenario '{scenario_id}' not found")
+    # Start simulation for this specific scenario
+    simulation_engine.start(scenario_id)
+    return SCENARIOS[scenario_id]
+
+
+@app.get("/api/v1/incidents/review/{scenario_id}", tags=["Incidents"])
+def review_scenario(scenario_id: str):
+    """Return the correct solution for a scenario (Review / Gabarito button)."""
+    if scenario_id not in SCENARIOS:
+        raise HTTPException(status_code=404, detail=f"Scenario '{scenario_id}' not found")
+    scenario = SCENARIOS[scenario_id]
+    correct = next((s for s in scenario["solutions"] if s.get("correct")), None)
+    if not correct:
+        raise HTTPException(status_code=404, detail="No correct solution found")
+    return {
+        "scenario_id": scenario_id,
+        "command": correct.get("command", ""),
+        "label": correct.get("label", ""),
+        "explanation": correct.get("explanation", ""),
+    }
+
 @app.post("/api/v1/incidents/simulate", tags=["Incidents"])
 async def start_simulation(body: SimulateRequest):
     """Start an incident simulation for a given scenario."""

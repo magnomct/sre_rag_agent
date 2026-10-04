@@ -319,6 +319,26 @@
       </div>
 
       <div id="warroom-sim-area" style="display:none; margin-top:30px;">
+
+      <!-- War Room Navigation Toolbar -->
+      <div class="warroom-toolbar" id="warroom-toolbar" style="display:none;">
+        <button class="wr-btn wr-btn-prev" id="wr-btn-prev" onclick="warroomPrev()" disabled title="Voltar ao cenário anterior">
+          ⬅️ Anterior
+        </button>
+        <button class="wr-btn wr-btn-clean" id="wr-btn-clean" onclick="warroomClean()" title="Limpa o terminal, mesmo cenário ativo">
+          🧹 Limpar
+        </button>
+        <button class="wr-btn wr-btn-review" id="wr-btn-review" onclick="warroomReview()">
+          📖 Revisão
+        </button>
+        <button class="wr-btn wr-btn-next" id="wr-btn-next" onclick="warroomNext()">
+          ➡️ Próximo
+        </button>
+        <button class="wr-btn wr-btn-restart" id="wr-btn-restart" onclick="warroomRestart()" title="Recomeça o treinamento do zero">
+          🔄 Recomeçar
+        </button>
+      </div>
+    
         <div id="warroom-details-panel"></div>
         
         <!-- Web Terminal -->
