@@ -1,3 +1,4 @@
+from typing import Optional
 from pathlib import Path
 """
 SRE RAG Agent — Main Application
@@ -366,16 +367,20 @@ async def list_scenarios():
 
 
 @app.post("/api/v1/incidents/simulate/{difficulty}")
-def start_random_simulation(difficulty: str):
-    """Start a random incident simulation based on difficulty."""
-    from incidents import simulation_engine
-    res = simulation_engine.get_random_incident(difficulty)
+def start_random_simulation(difficulty: str, exclude: Optional[str] = None):
+    """Start a random incident simulation based on difficulty.
+    
+    Args:
+        difficulty: easy | medium | hard | extreme
+        exclude: comma-separated list of scenario IDs to exclude from draw
+    """
+    exclude_ids = [e.strip() for e in exclude.split(",")] if exclude else []
+    res = simulation_engine.get_random_incident(difficulty, exclude_ids=exclude_ids)
     if "error" in res:
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail=res["error"])
     
     # Return the full scenario details so frontend can render it
-    scenario = simulation_engine.SCENARIOS[res["scenario_id"]] if hasattr(simulation_engine, "SCENARIOS") else __import__("incidents").SCENARIOS[res["scenario_id"]]
+    scenario = SCENARIOS[res["scenario_id"]]
     return scenario
 
 
@@ -389,6 +394,31 @@ def get_scenario_by_id(scenario_id: str):
     simulation_engine.start(scenario_id)
     return SCENARIOS[scenario_id]
 
+
+
+@app.get("/api/v1/incidents/hint/{scenario_id}", tags=["Incidents"])
+def get_hint(scenario_id: str, index: int = 0):
+    """Return a specific hint for a scenario (index 0 or 1). 
+    Also increments hints_used on the active simulation for score penalty.
+    """
+    if scenario_id not in SCENARIOS:
+        raise HTTPException(status_code=404, detail=f"Scenario '{scenario_id}' not found")
+    hints = SCENARIOS[scenario_id].get("hints", [])
+    if index >= len(hints):
+        raise HTTPException(status_code=404, detail=f"Hint index {index} not available")
+    
+    # Increment hints counter on active simulation for scoring
+    if simulation_engine.active and simulation_engine.active.scenario_id == scenario_id:
+        simulation_engine.active.hints_used = getattr(simulation_engine.active, "hints_used", 0) + 1
+    
+    return {
+        "scenario_id": scenario_id,
+        "index": index,
+        "total": len(hints),
+        "hint": hints[index],
+        "penalty_percent": (index + 1) * 20,
+        "score_after": max(0, 100 - (index + 1) * 20),
+    }
 
 @app.get("/api/v1/incidents/review/{scenario_id}", tags=["Incidents"])
 def review_scenario(scenario_id: str):
