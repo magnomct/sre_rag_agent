@@ -20,7 +20,11 @@
       <div class="header-subtitle" data-i18n="app_subtitle">RAG Agent · Kubernetes · Observability · Chaos & Incident Response</div>
     </div>
   </div>
-  <div class="header-controls">
+  <div class="header-controls" style="display:flex; align-items:center; gap: 15px;">
+    <!-- Theme Toggle -->
+    <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Alternar Tema (Claro/Escuro)" style="background:transparent; border:none; cursor:pointer; font-size: 1.2rem; filter: grayscale(0.5); transition: all 0.2s;">
+      🌙
+    </button>
     <!-- Language Switcher -->
     <div class="lang-switch-group">
       <button
@@ -320,6 +324,18 @@
 
       <div id="warroom-sim-area" style="display:none; margin-top:30px;">
 
+      
+      <!-- War Room Progress Counter -->
+      <div class="warroom-progress" id="warroom-progress" style="display:none; margin-bottom:16px;">
+        <div class="wp-label">
+          <span id="wp-text">Pergunta 1 de 10</span>
+          <span class="wp-score" id="wp-score">⭐ 100 pts</span>
+        </div>
+        <div class="wp-bar-track">
+          <div class="wp-bar-fill" id="wp-bar-fill" style="width:0%"></div>
+        </div>
+      </div>
+    
       <!-- War Room Navigation Toolbar -->
       <div class="warroom-toolbar" id="warroom-toolbar" style="display:none;">
         <button class="wr-btn wr-btn-prev" id="wr-btn-prev" onclick="warroomPrev()" disabled title="Voltar ao cenário anterior">
@@ -330,6 +346,9 @@
         </button>
         <button class="wr-btn wr-btn-review" id="wr-btn-review" onclick="warroomReview()">
           📖 Revisão
+        </button>
+        <button class="wr-btn wr-btn-hint" id="wr-btn-hint" onclick="warroomHint()" title="Máximo 2 dicas por cenário (-20pts cada)">
+          💡 Dica (<span id="hint-counter">0</span>/2)
         </button>
         <button class="wr-btn wr-btn-next" id="wr-btn-next" onclick="warroomNext()">
           ➡️ Próximo

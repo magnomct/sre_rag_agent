@@ -144,3 +144,7 @@ app/tests/fixtures/real_*
 *_GUIDE.md
 SRE_PROFESSOR_GUIDE.md
 TREINO_*.md
+
+# Local documentation (not pushed)
+desafios.md
+desafios_en.md

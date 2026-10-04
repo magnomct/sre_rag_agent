@@ -1752,3 +1752,137 @@ body {
 
 .wr-btn-next  { background: rgba(63,185,80,0.1); color: #3fb950; border-color: rgba(63,185,80,0.35); }
 .wr-btn-next:hover:not(:disabled)  { background: rgba(63,185,80,0.2); }
+
+/* ── War Room Progress Bar ─────────────────────── */
+.warroom-progress {
+  margin-bottom: 16px;
+}
+
+.wp-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 0.88rem;
+  color: #c9d1d9;
+  font-weight: 600;
+}
+
+.wp-score {
+  color: #d29922;
+  font-size: 0.85rem;
+}
+
+.wp-bar-track {
+  height: 6px;
+  background: #21262d;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.wp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3fb950, #58a6ff);
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+/* ── Hint Button ─────────────────────── */
+.wr-btn-hint { background: rgba(255,193,7,0.1); color: #f0c040; border-color: rgba(255,193,7,0.35); }
+.wr-btn-hint:hover:not(:disabled) { background: rgba(255,193,7,0.2); }
+.wr-btn-hint:disabled { opacity: 0.35; cursor: not-allowed; }
+
+
+:root.light-theme {
+  --bg-primary:    #ffffff;
+  --bg-secondary:  #f6f8fa;
+  --bg-tertiary:   #f3f4f6;
+  --bg-card:       #ffffff;
+  --border:        #d0d7de;
+  --border-hover:  #afb8c1;
+  --border-subtle: #ebf0f4;
+  --text-primary:  #24292f;
+  --text-secondary:#57606a;
+  --text-muted:    #8c959f;
+
+  --accent-glow:   rgba(9, 105, 218, 0.15);
+}
+
+.light-theme .theme-toggle-btn {
+  filter: grayscale(0) !important;
+}
+
+.light-theme #terminal-output {
+  background-color: #f6f8fa; /* Ensure terminal looks ok in light mode or keep it dark? Usually terminal is kept dark, but let's make it light */
+  color: #24292f;
+  border-color: #d0d7de;
+}
+
+.light-theme #terminal-input {
+  background-color: #ffffff;
+  color: #24292f;
+}
+
+/* ── SOFT LIGHT THEME OVERRIDES ─────────────────────── */
+:root.light-theme {
+  --bg-primary:    #f0f4f8 !important; /* Soft blue-gray */
+  --bg-secondary:  #ffffff !important; 
+  --bg-tertiary:   #e2e8f0 !important; 
+  --bg-card:       #ffffff !important;
+  --border:        #cbd5e1 !important;
+  --border-hover:  #94a3b8 !important;
+  --border-subtle: #e2e8f0 !important;
+  --text-primary:  #1e293b !important;
+  --text-secondary:#475569 !important;
+  --text-muted:    #64748b !important;
+}
+
+/* Sidebar and Main Header Tabs */
+.light-theme .sidebar-header {
+  background: #ffffff !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+}
+
+.light-theme .dashboard-tabs {
+  background: rgba(240, 244, 248, 0.95) !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+}
+
+.light-theme .tab-btn {
+  color: #475569 !important;
+}
+
+.light-theme .tab-btn:hover {
+  color: #1e293b !important;
+}
+
+.light-theme .tab-btn.active {
+  color: #0ea5e9 !important; /* Soft blue */
+  border-bottom-color: #0ea5e9 !important;
+}
+
+/* Terminals and Chaos Audit Stream */
+.light-theme .chaos-audit-stream,
+.light-theme #terminal-output {
+  background-color: #f8fafc !important; /* Very light slate */
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.light-theme .stream-header,
+.light-theme .term-header {
+  background-color: #e2e8f0 !important;
+  color: #1e293b !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+}
+
+/* War Room Details Box */
+.light-theme #warroom-details-panel > div {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.light-theme #warroom-details-panel ul {
+  color: #334155 !important;
+}

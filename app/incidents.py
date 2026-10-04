@@ -66,6 +66,10 @@ SCENARIOS = {
         "detection_delay_seconds": 35,
         "investigation_delay_seconds": 85,
         "chaos_action": "simulate_500",
+        "hints": [
+            "Dica 1: Verifique o histórico de deploys recentes com `helm history sre-rag`. A causa raiz está num deploy das últimas 2 horas.",
+            "Dica 2: O comando correto começa com `helm` e desfaz a última alteração no release `sre-rag`.",
+        ],
     },
     "high-latency": {
         "id": "high-latency",
@@ -121,6 +125,10 @@ SCENARIOS = {
         "detection_delay_seconds": 45,
         "investigation_delay_seconds": 90,
         "chaos_action": None,
+        "hints": [
+            "Dica 1: Observe o consumo de CPU dos pods — ele está em 95%. A solução precisa agir em dois fronts simultaneamente: escalar e investigar.",
+            "Dica 2: O comando começa com `kubectl scale hpa` e aponta para o deployment `sre-rag-api`.",
+        ],
     },
     "crashloopbackoff": {
         "id": "crashloopbackoff",
@@ -176,6 +184,10 @@ SCENARIOS = {
         "detection_delay_seconds": 20,
         "investigation_delay_seconds": 60,
         "chaos_action": None,
+        "hints": [
+            "Dica 1: Leia os logs do pod com `kubectl logs`. O erro é um `KeyError` de uma variável de ambiente que está faltando no ConfigMap.",
+            "Dica 2: O comando certo usa `helm upgrade` passando a variável `EMBEDDING_BATCH_SIZE=32` via `--set env.*`.",
+        ],
     },
     "tls-expiring": {
         "id": "tls-expiring",
@@ -231,6 +243,10 @@ SCENARIOS = {
         "detection_delay_seconds": 60,
         "investigation_delay_seconds": 120,
         "chaos_action": None,
+        "hints": [
+            "Dica 1: O problema está no Ingress bloqueando o caminho `/.well-known/acme-challenge/*`. O cert-manager não consegue completar o desafio ACME.",
+            "Dica 2: O comando usa `kubectl annotate ingress` para forçar o cert-manager a usar o `cluster-issuer` correto.",
+        ],
     },
     "disk-pressure": {
         "id": "disk-pressure",
@@ -285,6 +301,10 @@ SCENARIOS = {
         "detection_delay_seconds": 50,
         "investigation_delay_seconds": 100,
         "chaos_action": None,
+        "hints": [
+            "Dica 1: Use `df -h` no nó para confirmar que `/var/lib/docker` está acima de 85%. O problema são imagens de containers antigas acumuladas.",
+            "Dica 2: O comando começa com `crictl` e remove todas as imagens que não estão sendo usadas atualmente (`--prune`).",
+        ],
     },
     "redis-exhausted": {
         "id": "redis-exhausted",
@@ -340,6 +360,10 @@ SCENARIOS = {
         "detection_delay_seconds": 40,
         "investigation_delay_seconds": 80,
         "chaos_action": None,
+        "hints": [
+            "Dica 1: `redis-cli INFO clients` mostra `connected_clients=10000`. A aplicação cria uma nova conexão por request sem reaproveitá-las.",
+            "Dica 2: O comando usa `kubectl set env deployment/sre-rag-api` para configurar `REDIS_MAX_CONNECTIONS` e `REDIS_TIMEOUT`.",
+        ],
     },
     "oom-kill": {
         "id": "oom-kill",
@@ -393,6 +417,10 @@ SCENARIOS = {
         "detection_delay_seconds": 25,
         "investigation_delay_seconds": 70,
         "chaos_action": None,
+        "hints": [
+            "Dica 1: `kubectl describe pod` mostra `Reason: OOMKilled` e exit code `137`. O pod está ultrapassando o `resources.limits.memory` configurado.",
+            "Dica 2: O comando correto usa `helm upgrade` para aumentar `resources.limits.memory` e investigar o leak de memória.",
+        ],
     },
     "dns-failure": {
         "id": "dns-failure",
@@ -448,6 +476,10 @@ SCENARIOS = {
         "detection_delay_seconds": 30,
         "investigation_delay_seconds": 75,
         "chaos_action": None,
+        "hints": [
+            "Dica 1: `nslookup postgresql.sre-rag.svc.cluster.local` retorna SERVFAIL. O CoreDNS está sobrecarregado ou uma NetworkPolicy bloqueou a porta 53/UDP.",
+            "Dica 2: O comando começa com `kubectl rollout restart` para o deployment do CoreDNS no namespace `kube-system`.",
+        ],
     },
 }
 
@@ -473,6 +505,8 @@ class SimulationResult(BaseModel):
     correct: Optional[bool]
     explanation: Optional[str]
     explanation_en: Optional[str] = None
+    hints_used: int = 0
+    score: Optional[int] = 100
 
 
 class ActiveSimulation(BaseModel):
@@ -491,11 +525,19 @@ class IncidentSimulationEngine:
         self.history: list[SimulationResult] = []
         self._counter = 1
 
-    def get_random_incident(self, difficulty: str) -> dict:
-        matching = [s_id for s_id, s in SCENARIOS.items() if s.get("difficulty") == difficulty]
+    def get_random_incident(self, difficulty: str, exclude_ids: list = None) -> dict:
+        """Sorteio sem repetição dentro da sessão. exclude_ids lista cenários já jogados."""
+        exclude_ids = exclude_ids or []
+        matching = [
+            s_id for s_id, s in SCENARIOS.items()
+            if s.get("difficulty") == difficulty and s_id not in exclude_ids
+        ]
         if not matching:
-            return {"error": f"Nenhum cenário encontrado para a dificuldade: {difficulty}"}
-        
+            # All scenarios for this difficulty were played — reset the pool
+            matching = [s_id for s_id, s in SCENARIOS.items() if s.get("difficulty") == difficulty]
+            if not matching:
+                return {"error": f"Nenhum cenário encontrado para a dificuldade: {difficulty}"}
+
         selected_id = random.choice(matching)
         return self.start(selected_id)
 
@@ -557,6 +599,8 @@ class IncidentSimulationEngine:
         elapsed = time.time() - self.active.started_at
         mttd = scenario["detection_delay_seconds"]
 
+        hints_used = getattr(self.active, "hints_used", 0)
+        score = max(0, 100 - hints_used * 20) if solution["correct"] else 0
         result = SimulationResult(
             id=self._counter,
             scenario_id=scenario_id,
@@ -575,6 +619,8 @@ class IncidentSimulationEngine:
             correct=solution["correct"],
             explanation=solution["explanation"],
             explanation_en=solution.get("explanation_en", solution["explanation"]),
+            hints_used=hints_used,
+            score=score,
         )
 
         self.history.insert(0, result)

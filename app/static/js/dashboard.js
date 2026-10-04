@@ -1670,3 +1670,135 @@ function warroomRestart() {
     term.innerHTML = '<div style="color:#58a6ff;">SRE Incident Lab Web Terminal v3.0</div><div style="color:#f85149;">[RESET] Treinamento reiniciado. Escolha uma dificuldade para começar.</div>';
   }
 }
+
+
+// ── War Room — Hint & Progress State ─────────────────────────────────
+const DIFFICULTY_LIMITS = { easy: 10, medium: 20, hard: 30, extreme: 40 };
+let warroomCurrentScore  = 100;  // starts at 100, -20 per hint
+let warroomHintsUsed     = 0;    // reset per scenario
+
+// ── Internal: update progress bar and score display
+function _updateWarroomProgress() {
+  const limit     = DIFFICULTY_LIMITS[warroomDifficulty] || 10;
+  const current   = warroomPlayIdx + 1;
+  const pct       = Math.min(100, Math.round(((current - 1) / limit) * 100));
+
+  const textEl  = document.getElementById('wp-text');
+  const scoreEl = document.getElementById('wp-score');
+  const barEl   = document.getElementById('wp-bar-fill');
+  const progDiv = document.getElementById('warroom-progress');
+
+  if (progDiv) progDiv.style.display = 'block';
+  if (textEl)  textEl.textContent  = `Pergunta ${current} de ${limit}`;
+  if (scoreEl) scoreEl.textContent = `⭐ ${warroomCurrentScore} pts`;
+  if (barEl)   barEl.style.width   = pct + '%';
+
+  // Update hint button counter & state
+  const hintBtn = document.getElementById('wr-btn-hint');
+  const hintCounter = document.getElementById('hint-counter');
+  if (hintCounter) hintCounter.textContent = warroomHintsUsed;
+  if (hintBtn) hintBtn.disabled = (warroomHintsUsed >= 2);
+}
+
+// ── Override _renderWarroomScenario to also reset hint state
+const _origRenderWarroomScenario = typeof _renderWarroomScenario === 'function' ? _renderWarroomScenario : null;
+function _renderWarroomScenario(scenario, suppressHistory) {
+  // Reset per-scenario state
+  warroomHintsUsed    = 0;
+  warroomCurrentScore = 100;
+
+  // Call original render logic (defined in the nav block above)
+  if (_origRenderWarroomScenario) {
+    _origRenderWarroomScenario(scenario, suppressHistory);
+  } else {
+    // Fallback: minimal render if original somehow missing
+    activeWarroomSimId = scenario.id;
+    const simArea = document.getElementById('warroom-sim-area');
+    if (simArea) simArea.style.display = 'block';
+  }
+
+  // Update progress after render
+  _updateWarroomProgress();
+}
+
+// ── Override startSimDifficulty to send accumulated exclude_ids
+const _origStartSimDifficulty = typeof startSimDifficulty === 'function' ? startSimDifficulty : null;
+async function startSimDifficulty(difficulty, _legacyExclude) {
+  warroomDifficulty = difficulty;
+
+  // Build exclude list from full session history
+  const excludeParam = warroomPlaylist.length > 0
+    ? '?exclude=' + encodeURIComponent(warroomPlaylist.join(','))
+    : '';
+
+  try {
+    const res = await fetch(`/api/v1/incidents/simulate/${difficulty}${excludeParam}`, { method: 'POST' });
+    if (!res.ok) throw new Error(await res.text());
+    const scenario = await res.json();
+
+    // Update playlist (truncate future if navigated back)
+    if (warroomPlayIdx < warroomPlaylist.length - 1) {
+      warroomPlaylist = warroomPlaylist.slice(0, warroomPlayIdx + 1);
+    }
+    warroomPlaylist.push(scenario.id);
+    warroomPlayIdx = warroomPlaylist.length - 1;
+
+    _renderWarroomScenario(scenario);
+  } catch (err) {
+    alert('Falha ao iniciar simulação: ' + err.message);
+  }
+}
+
+// ── Hint button handler
+async function warroomHint() {
+  if (!activeWarroomSimId) return;
+  if (warroomHintsUsed >= 2) return;
+
+  const term = document.getElementById('terminal-output');
+
+  try {
+    const res = await fetch(`/api/v1/incidents/hint/${activeWarroomSimId}?index=${warroomHintsUsed}`);
+    if (!res.ok) throw new Error('Dica não disponível');
+    const data = await res.json();
+
+    warroomHintsUsed++;
+    warroomCurrentScore = data.score_after;
+
+    term.innerHTML += `
+      <div style="border-top:1px dashed #30363d; margin-top:8px; padding-top:8px;">
+        <div style="color:#f0c040; font-weight:bold;">[DICA ${warroomHintsUsed}/2] -20 pts → pontuação atual: ⭐ ${data.score_after} pts</div>
+        <div style="color:#c9d1d9; font-size:0.9rem; margin-top:4px;">${data.hint}</div>
+      </div>
+    `;
+    term.scrollTop = term.scrollHeight;
+
+    _updateWarroomProgress();
+  } catch(err) {
+    if (term) term.innerHTML += `<div class="term-output-error">[ERRO] ${err.message}</div>`;
+  }
+}
+
+
+// ── Theme Toggle Logic ─────────────────────────────────────────────
+function applyTheme(theme) {
+  const btn = document.getElementById('theme-toggle-btn');
+  if (theme === 'light') {
+    document.documentElement.classList.add('light-theme');
+    if (btn) btn.innerText = '☀️';
+  } else {
+    document.documentElement.classList.remove('light-theme');
+    if (btn) btn.innerText = '🌙';
+  }
+  localStorage.setItem('sre_theme', theme);
+}
+
+function toggleTheme() {
+  const current = localStorage.getItem('sre_theme') || 'dark';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+
+// Initialize theme on load
+document.addEventListener('DOMContentLoaded', () => {
+  const savedTheme = localStorage.getItem('sre_theme') || 'dark';
+  applyTheme(savedTheme);
+});
