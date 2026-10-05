@@ -1886,3 +1886,72 @@ body {
 .light-theme #warroom-details-panel ul {
   color: #334155 !important;
 }
+
+
+/* ── EXTRA TERMINAL FIXES FOR LIGHT THEME ──────────────── */
+.light-theme .chaos-terminal-card {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+}
+
+.light-theme .terminal-body,
+.light-theme #chaos-terminal-body {
+  background-color: #f8fafc !important;
+  color: #334155 !important;
+}
+
+.light-theme .terminal-line.placeholder {
+  color: #64748b !important;
+}
+
+.light-theme .chaos-terminal-card .terminal-header,
+.light-theme .terminal-header {
+  background-color: #e2e8f0 !important;
+  color: #1e293b !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+}
+
+
+/* ── FURTHER LIGHT THEME TEXT COLOR FIXES ──────────────── */
+.light-theme .term-msg {
+  color: #334155 !important;
+}
+
+.light-theme .term-dim {
+  color: #64748b !important;
+}
+
+/* History and Sessions Tables */
+.light-theme .sessions-table th,
+.light-theme .history-table th {
+  background-color: #e2e8f0 !important;
+  color: #475569 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+}
+
+.light-theme .sessions-table td,
+.light-theme .history-table td {
+  color: #334155 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.light-theme .sessions-table tr:hover td,
+.light-theme .history-table tr:hover td {
+  background: rgba(14, 165, 233, 0.05) !important;
+}
+
+/* Make sure the main app title/text doesn't inherit a hardcoded light color */
+.light-theme .header-title h1,
+.light-theme .header-subtitle {
+  color: #1e293b !important;
+}
+
+.light-theme .dashboard-tab-view {
+  color: #1e293b !important;
+}
+
+.light-theme .terminal-badge {
+  color: #334155 !important;
+  background: #e2e8f0 !important;
+  border: 1px solid #cbd5e1 !important;
+}
