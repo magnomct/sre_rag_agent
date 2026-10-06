@@ -85,6 +85,13 @@ helm-template: ## Dry-run Helm template
 # ---- Setup ----
 setup: cluster-create ## Full local setup (alias)
 
+# ---- Docker Compose (Lightweight) ----
+compose-up: ## Start lightweight stack via Docker Compose
+	docker compose up -d --build
+
+compose-down: ## Stop lightweight stack
+	docker compose down
+
 # ---- Observability ----
 slo-status: ## Check current SLO status
 	@echo "=== Availability SLI (1h) ==="

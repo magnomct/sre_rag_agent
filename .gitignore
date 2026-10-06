@@ -148,3 +148,12 @@ TREINO_*.md
 # Local documentation (not pushed)
 desafios.md
 desafios_en.md
+
+# Gemini (not pushed)
+.gemini--ignore
+
+# Graphify (not pushed)
+.graphify
+graphify*/
+
+

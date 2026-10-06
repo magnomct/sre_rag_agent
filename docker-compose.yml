@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # ----------------------------------------------------
+  # Reverse Proxy (Public Facing)
+  # ----------------------------------------------------
+  proxy:
+    image: nginx:alpine
+    container_name: sre_rag_proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - proxy_net
+    depends_on:
+      - api
+
+  # ----------------------------------------------------
+  # Application Backend
+  # ----------------------------------------------------
+  api:
+    build: 
+      context: ./app
+      dockerfile: ../docker/Dockerfile
+    container_name: sre_rag_api
+    environment:
+      - ENVIRONMENT=development
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PASSWORD=sre_password
+      - REDIS_HOST=redis
+    networks:
+      - proxy_net
+      - backend_net
+    depends_on:
+      - postgres
+      - redis
+    # Note: No ports mapped to the host! Access must go through the proxy.
+
+  # ----------------------------------------------------
+  # Databases (Isolated on internal network)
+  # ----------------------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: sre_rag_postgres
+    environment:
+      - POSTGRES_DB=sre_rag
+      - POSTGRES_USER=sre_user
+      - POSTGRES_PASSWORD=sre_password
+    networks:
+      - backend_net
+    # Note: No ports mapped. Isolated from the host and internet.
+
+  redis:
+    image: redis:7-alpine
+    container_name: sre_rag_redis
+    networks:
+      - backend_net
+    # Note: No ports mapped. Isolated from the host and internet.
+
+networks:
+  proxy_net:
+    driver: bridge
+    name: sre_rag_proxy_net
+  backend_net:
+    driver: bridge
+    name: sre_rag_backend_net
+    internal: true # This makes the network completely isolated from outside
