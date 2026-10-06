@@ -1,4 +1,4 @@
-# 🚨 SRE RAG Agent — Incident Simulation Lab & Observability Platform
+# 🚨 SRE RAG Agent — Incident Simulation Lab & Observability Platform v3.2
 
 [ 🇧🇷 Ler em Português ](#-versão-em-português) &nbsp;|&nbsp; [ 🇺🇸 Read in English ](#-english-version)
 
@@ -9,7 +9,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Language-Portugu%C3%AAs-blue?style=for-the-badge" alt="Idioma Português" />
-    <img src="https://img.shields.io/badge/Version-v3.12-blue?style=for-the-badge" alt="Versão v3.12" />
+    <img src="https://img.shields.io/badge/Version-v3.2-blue?style=for-the-badge" alt="Versão v3.2" />
   <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12" />
   <img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Kubernetes-Kind-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" alt="Kubernetes" />
@@ -18,6 +18,15 @@
 </p>
 
 > **Ambiente Completo de Prática e Engenharia de Confiabilidade (SRE)**: Simulação interativa de incidentes em Kubernetes, motor de busca vetorial RAG (*Retrieval-Augmented Generation*) para Runbooks, injeção de falhas com **Chaos Monkey**, auditoria em tempo real, framework de avaliação de IA e observabilidade ponta a ponta com Prometheus e Grafana.
+
+---
+
+## 🚀 Novidades da Versão v3.2
+- **⚡ Otimização Extrema de Imagens Docker**: Multi-stage build com wheel oficial CPU-only do PyTorch (`--index-url https://download.pytorch.org/whl/cpu`), descarte de binários CUDA da NVIDIA, supressão de bytecode (`PYTHONDONTWRITEBYTECODE=1`), e limpeza de caches na etapa de compilação. Redução de **mais de 70%** no tamanho da imagem (de ~3.5GB para ~800MB).
+- **🛡️ Isolamento de Redes no Docker Compose**: Separação estrita em duas redes Docker dedicadas: `proxy_net` (pública para Nginx e API) e `backend_net` (`internal: true` para comunicação interna entre API, PostgreSQL e Redis). Nenhuma porta de banco de dados é exposta no host.
+- **💻 War Room (Terminal Interativo Seguro)**: Resolução de incidentes via comandos simulados (`kubectl`, `helm`, etc.) validados estritamente no backend, sem risco de RCE no SO hospedeiro.
+- **🎯 4 Níveis de Dificuldade & Zero-Repetição**: Categorização em Fácil, Médio, Difícil e Extremo com filtragem inteligente por histórico local para evitar repetição consecutiva de cenários.
+- **📑 Navegação por Abas & Modo Claro Suave**: Abas isoladas para Simulação (Quiz), War Room (Terminal) e Métricas & Histórico, com paleta de cores soft pastel para o tema claro.
 
 ---
 
@@ -69,10 +78,10 @@ Este projeto evoluiu de um protótipo para um **Laboratório de Engenharia SRE d
    - Em produção (`ENVIRONMENT=production`), o Swagger é desativado nativamente (`docs_url=None, redoc_url=None, openapi_url=None`) para prevenir reconhecimento de superfície de ataque e enumeração de rotas.
    - Remoção de links públicos ao Swagger na interface principal em consonância com as melhores práticas de DevSecOps.
 
-6. **📑 Navegação por Abas & Visual Clean (v3.12)**:
+6. **📑 Navegação por Abas & Visual Clean (v3.2)**:
    - Separação clara entre a área operacional (`🎯 Simulação & Chaos Lab`) e o painel analítico (`📊 Painel de Histórico & Métricas`), reduzindo a sobrecarga cognitiva durante incidentes.
    - Roteamento por hash (`#simulation` / `#history`) com persistência imediata e alternância sem recarregamento de página.
-   - Escala tipográfica modernizada (v3.12.2) com badges expandidos, contraste balanceado e correção de overflow no gráfico de MTTR.
+   - Escala tipográfica modernizada (v3.2) com badges expandidos, contraste balanceado e correção de overflow no gráfico de MTTR.
 
 7. **🌐 Suporte Bilíngue Nativo (pt-BR / en-US)**:
    - Seletor de idiomas dinâmico com persistência em `localStorage`.
@@ -396,14 +405,16 @@ Distribuído sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para 
 <a id="-english-version"></a>
 ## 🇺🇸 English Version
 
-## 🚀 What's New in v3.12
-- **War Room (Terminal Mode)**: An integrated Web Terminal that allows you to resolve incidents by typing real bash/kubectl commands. The environment is safe (string validation based) and prevents harmful execution on the real OS.
-- **Dynamic Difficulties**: Support for categorizing 100 scenarios across 4 difficulties: Easy, Medium, Hard, and Extreme.
-- **Multiple Tabs**: Preserved the original multiple-choice Quiz layout, added the War Room terminal tab, and enhanced the History & Metrics dashboard.
+## 🚀 What's New in v3.2
+- **⚡ Extreme Docker Image Size Optimization**: Multi-stage build pulling the official CPU-only PyTorch wheel (`https://download.pytorch.org/whl/cpu`), eliminating massive NVIDIA CUDA/cuDNN GPU binaries, suppressing bytecode generation (`PYTHONDONTWRITEBYTECODE=1`), and stripping build caches. Image size reduced by **over 70%** (from ~3.5GB to ~800MB).
+- **🛡️ Docker Compose Dual-Network Isolation**: Strict network segmentation with `proxy_net` (public DMZ connecting Nginx proxy and FastAPI app) and `backend_net` (fully internal `internal: true` bridging the app to PostgreSQL and Redis). No database ports are exposed to the host machine or public internet.
+- **💻 War Room (Interactive Web Terminal)**: Simulated command-line interface allowing users to triage and remediate incidents using real `kubectl` and `helm` commands with strict string validation preventing any host RCE.
+- **🎯 4 Dynamic Difficulties & Zero-Repetition**: Incidents categorized into Easy, Medium, Hard, and Extreme with client-side history exclusion preventing immediate back-to-back question repeats.
+- **📑 Tabbed Architecture & Enhanced Light Theme**: Dedicated tabs for Quiz, War Room, and Metrics & History, with soft pastel color palettes and balanced typography.
 
 <p align="center">
     <img src="https://img.shields.io/badge/Language-English-green?style=for-the-badge" alt="English Documentation" />
-  <img src="https://img.shields.io/badge/Version-v3.12-blue?style=for-the-badge" alt="Versão v3.12" />
+  <img src="https://img.shields.io/badge/Version-v3.2-blue?style=for-the-badge" alt="Versão v3.2" />
   <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12" />
   <img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Kubernetes-Kind-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" alt="Kubernetes" />
@@ -463,10 +474,10 @@ This project was built and evolved into a **Google SRE-standard Practice and Tra
    - In production (`ENVIRONMENT=production`), Swagger is natively disabled (`docs_url=None, redoc_url=None, openapi_url=None`) to prevent endpoint enumeration and schema reconnaissance.
    - Public Swagger links removed from the main header following DevSecOps hardening best practices.
 
-6. **📑 Tabbed Architecture & Clean UI (v3.12)**:
+6. **📑 Tabbed Architecture & Clean UI (v3.2)**:
    - Clear separation between the operational workspace (`🎯 Simulação & Chaos Lab`) and the analytical postmortem panel (`📊 Painel de Histórico & Métricas`), significantly reducing on-call cognitive load.
    - URL hash routing (`#simulation` / `#history`) providing seamless instant tab switching with state persistence.
-   - Modernized typography scale (v3.12.2) featuring enhanced readability, expanded badge padding, and fixed MTTR sparkline chart overflow.
+   - Modernized typography scale (v3.2) featuring enhanced readability, expanded badge padding, and fixed MTTR sparkline chart overflow.
 
 7. **🌐 Native Bilingual Support (pt-BR / en-US)**:
    - Dynamic client-side language switcher with `localStorage` state persistence.

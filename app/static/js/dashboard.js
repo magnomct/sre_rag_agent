@@ -1,5 +1,5 @@
 /**
- * SRE Incident Simulation Dashboard — JavaScript Controller v3.12
+ * SRE Incident Simulation Dashboard — JavaScript Controller v3.2
  * - Tab navigation (Simulação & Chaos Lab vs Métricas & Histórico SRE)
  * - Complete bilingual support (pt-BR / en-US) with dynamic live switching
  * - Chaos Monkey real-time telemetry, sessions tracking & audit trail
@@ -1486,7 +1486,7 @@ function _renderWarroomScenario(scenario) {
   `;
 
   term.innerHTML = `
-    <div style="color:#58a6ff;">SRE Incident Lab Web Terminal v3.12</div>
+    <div style="color:#58a6ff;">SRE Incident Lab Web Terminal v3.2</div>
     <div style="color:#a371f7;">[SYSTEM] War Room ativada — incidente: <strong>${scenario.id}</strong></div>
     <div style="color:#d29922;">[INFO] Dificuldade: <strong>${warroomDifficulty || scenario.difficulty || 'n/a'}</strong> | Severidade: <strong>${sev}</strong></div>
     <div style="color:#8b949e; margin-top:6px;">[HINT] Digite o comando correto e pressione Enter para resolver o incidente.</div>
