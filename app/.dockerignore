@@ -1,0 +1,45 @@
+# Git and GitHub
+.git
+.github
+
+# Python caches and virtualenvs
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.egg-info
+.venv
+venv/
+ENV/
+env/
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Environment and secrets
+.env
+*.env
+.env.*
+
+# Documentation and design
+*.md
+docs/
+
+# Tests and evaluations
+tests/
+
+# Infrastructure and deployment
+terraform/
+terraform-oci/
+helm/
+kubernetes/
+monitoring/
+scripts/
+graphify-out/
+
+# Build and project files
+.dockerignore
+.gitignore
+Makefile
+docker-compose.yml
+scratch*
