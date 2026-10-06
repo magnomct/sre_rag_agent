@@ -721,6 +721,19 @@ Access the application services:
 - **Prometheus Metrics**: [http://localhost:8080/metrics](http://localhost:8080/metrics)
 - **Swagger Documentation (Dev)**: [http://localhost:8080/docs](http://localhost:8080/docs)
 
+### Alternative: Lightweight Run (Docker Compose)
+For a faster development environment using our secure isolated network architecture (Proxy -> API -> Internal DBs):
+```bash
+# Start the stack (Proxy port 80)
+make compose-up
+
+# Access locally
+# SRE Incident Lab Dashboard: http://localhost/dashboard
+
+# Stop the stack
+make compose-down
+```
+
 ### 3. Run the Automated Test Suite
 ```bash
 make test
