@@ -1417,6 +1417,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- New War Room Logic ---
 let activeWarroomSimId = null;
+let isWarroomResolved = false;
 let warroomPlaylist = [];
 let warroomPlayIdx = -1;
 let warroomDifficulty = null;
@@ -1426,36 +1427,63 @@ let warroomCurrentScore = 100;
 async function startSimDifficulty(difficulty, excludeId) {
   warroomDifficulty = difficulty;
   
-  // Build exclude list from full session history
-  const excludeParam = warroomPlaylist.length > 0
-    ? '?exclude=' + encodeURIComponent(warroomPlaylist.join(','))
-    : (excludeId ? '?exclude=' + encodeURIComponent(excludeId) : '');
+  // Build exclude list from current playlist
+  let excludeList = [...warroomPlaylist];
+  if (excludeId && !excludeList.includes(excludeId)) {
+    excludeList.push(excludeId);
+  }
+  const excludeParam = excludeList.length > 0
+    ? '?exclude=' + encodeURIComponent(excludeList.join(','))
+    : '';
 
   try {
     const res = await fetch(`/api/v1/incidents/simulate/${difficulty}${excludeParam}`, { method: 'POST' });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(errText);
+    }
     const scenario = await res.json();
     
     // Reset hints/score for new scenario
     warroomHintsUsed = 0;
     warroomCurrentScore = 100;
 
-    // Update playlist (truncate future if navigated back)
+    // Truncate future if navigated back
     if (warroomPlayIdx < warroomPlaylist.length - 1) {
       warroomPlaylist = warroomPlaylist.slice(0, warroomPlayIdx + 1);
     }
+    
+    const wasAlreadyInPlaylist = warroomPlaylist.includes(scenario.id);
     warroomPlaylist.push(scenario.id);
     warroomPlayIdx = warroomPlaylist.length - 1;
 
     _renderWarroomScenario(scenario);
+
+    if (wasAlreadyInPlaylist && warroomPlaylist.length > 1) {
+      const term = document.getElementById('terminal-output');
+      if (term) {
+        term.innerHTML += `<div style="color:#3fb950; margin-top:8px; font-weight:bold;">[INFO] 🎉 Todos os cenários da dificuldade '${difficulty}' foram completados! Iniciando novo ciclo.</div>`;
+        scrollTerminalToView();
+      }
+    }
   } catch (err) {
     alert('Falha ao iniciar simulação: ' + err.message);
+  }
+}
+
+function scrollTerminalToView() {
+  const term = document.getElementById('terminal-output');
+  if (term) scrollTerminalToView();
+  const inputEl = document.getElementById('terminal-input');
+  if (inputEl) {
+    inputEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 }
 
 function _renderWarroomScenario(scenario) {
   const simArea = document.getElementById('warroom-sim-area');
   const toolbar = document.getElementById('warroom-toolbar');
+  const progressEl = document.getElementById('warroom-progress');
   const term = document.getElementById('terminal-output');
   const details = document.getElementById('warroom-details-panel');
 
@@ -1463,8 +1491,10 @@ function _renderWarroomScenario(scenario) {
 
   simArea.style.display = 'block';
   if (toolbar) toolbar.style.display = 'flex';
+  if (progressEl) progressEl.style.display = 'block';
 
   activeWarroomSimId = scenario.id;
+  isWarroomResolved = false;
 
   const sev = scenario.severity || '';
   const sevColor = sev === 'SEV-1' ? '#f85149' : sev === 'SEV-2' ? '#d29922' : '#58a6ff';
@@ -1506,15 +1536,18 @@ function _renderWarroomScenario(scenario) {
 }
 
 function _updateWarroomProgress() {
-  const lbl = document.getElementById('wp-label-text');
+  const lbl = document.getElementById('wp-text') || document.getElementById('wp-label-text');
   const bar = document.getElementById('wp-bar-fill');
-  const scoreLbl = document.getElementById('wp-score-text');
+  const scoreLbl = document.getElementById('wp-score') || document.getElementById('wp-score-text');
   
+  const currentNum = warroomPlayIdx >= 0 ? warroomPlayIdx + 1 : 1;
+  const totalNum = Math.max(warroomPlaylist.length, 1);
+
   if (lbl) {
-    lbl.textContent = `Pergunta ${warroomPlayIdx + 1} de ${warroomPlaylist.length}`;
+    lbl.textContent = `Cenário ${currentNum} de ${totalNum}`;
   }
   if (bar) {
-    const pct = Math.max(5, Math.min(100, ((warroomPlayIdx + 1) / Math.max(warroomPlaylist.length, 1)) * 100));
+    const pct = Math.max(5, Math.min(100, (currentNum / totalNum) * 100));
     bar.style.width = pct + '%';
   }
   if (scoreLbl) {
@@ -1542,9 +1575,17 @@ async function handleTerminalInput(event) {
     cmdLine.textContent = `sre-admin@cluster:~$ ${cmd}`;
     term.appendChild(cmdLine);
     
-    if(!activeWarroomSimId) {
-      term.innerHTML += `<div class="term-output-error">Nenhuma simulação ativa. Escolha uma dificuldade.</div>`;
-      term.scrollTop = term.scrollHeight;
+    const scenarioId = activeWarroomSimId || (warroomPlaylist.length > 0 ? warroomPlaylist[warroomPlayIdx] : null);
+
+    if (!scenarioId) {
+      term.innerHTML += `<div class="term-output-error">Nenhuma simulação ativa. Escolha uma dificuldade acima.</div>`;
+      scrollTerminalToView();
+      return;
+    }
+
+    if (isWarroomResolved) {
+      term.innerHTML += `<div style="color:#a371f7; margin-top:6px;">[INFO] Este incidente já foi resolvido com sucesso! Clique em '➡️ Próximo' para ir ao próximo desafio.</div>`;
+      scrollTerminalToView();
       return;
     }
 
@@ -1553,27 +1594,29 @@ async function handleTerminalInput(event) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          scenario_id: activeWarroomSimId, 
+          scenario_id: scenarioId, 
           solution_id: cmd
         })
       });
       
       const data = await res.json();
       
-      if(data.correct) {
+      if (data.diagnostic) {
+        term.innerHTML += `<div style="color:#79c0ff; font-family:monospace; white-space:pre-wrap; margin:8px 0; padding:10px; background:rgba(56,139,253,0.1); border-left:3px solid #58a6ff; border-radius:4px; line-height:1.45;">${data.output}</div>`;
+      } else if (data.correct) {
+        isWarroomResolved = true;
         term.innerHTML += `<div class="term-output-success">[SUCCESS] ${data.explanation}</div>`;
-        term.innerHTML += `<div class="term-output-success" style="margin-top: 15px; color:#a371f7;">[SYSTEM] Incident Resolved! Select a difficulty button above to request a new scenario.</div>`;
-        activeWarroomSimId = null;
+        term.innerHTML += `<div class="term-output-success" style="margin-top: 15px; color:#a371f7;">[SYSTEM] Incidente Resolvido! Clique no botão '➡️ Próximo' para avançar ao próximo desafio.</div>`;
         if (typeof fetchHistory === 'function') fetchHistory();
       } else {
         term.innerHTML += `<div class="term-output-error">bash: ${cmd}: command not found or not permitted</div>`;
-        term.innerHTML += `<div class="term-output-error" style="opacity: 0.8; font-size: 0.85em;">> System hint: ${data.explanation}</div>`;
+        term.innerHTML += `<div class="term-output-error" style="opacity: 0.8; font-size: 0.85em;">> Dica do Sistema: ${data.explanation}</div>`;
       }
       
     } catch(err) {
-      term.innerHTML += `<div class="term-output-error">Error connecting to server.</div>`;
+      term.innerHTML += `<div class="term-output-error">Erro ao conectar com o servidor.</div>`;
     }
-    term.scrollTop = term.scrollHeight;
+    scrollTerminalToView();
   }
 }
 
@@ -1589,8 +1632,8 @@ async function warroomNext() {
     const scenario = await res.json();
     _renderWarroomScenario(scenario);
   } else {
-    const excludeId = activeWarroomSimId;
-    await startSimDifficulty(warroomDifficulty, excludeId);
+    const currentId = warroomPlaylist[warroomPlayIdx] || activeWarroomSimId;
+    await startSimDifficulty(warroomDifficulty, currentId);
   }
 }
 
@@ -1614,34 +1657,93 @@ function warroomRestart() {
   
   warroomPlaylist = [];
   warroomPlayIdx = -1;
+  activeWarroomSimId = null;
+  isWarroomResolved = false;
   startSimDifficulty(warroomDifficulty);
 }
 
 async function warroomHint() {
-  if (!activeWarroomSimId) return;
-  if (warroomHintsUsed >= 2) return;
-
+  const scenarioId = activeWarroomSimId || (warroomPlaylist.length > 0 ? warroomPlaylist[warroomPlayIdx] : null);
   const term = document.getElementById('terminal-output');
 
+  if (!scenarioId) {
+    if (term) {
+      term.innerHTML += `<div class="term-output-error">[INFO] Escolha uma dificuldade acima antes de solicitar dicas.</div>`;
+      scrollTerminalToView();
+    }
+    return;
+  }
+
+  if (warroomHintsUsed >= 2) {
+    if (term) {
+      term.innerHTML += `<div style="color:#d29922; margin-top:8px;">[INFO] Todas as dicas (2/2) para este cenário já foram utilizadas.</div>`;
+      scrollTerminalToView();
+    }
+    return;
+  }
+
   try {
-    const res = await fetch(`/api/v1/incidents/hint/${activeWarroomSimId}?index=${warroomHintsUsed}`);
-    if (!res.ok) throw new Error('Dica não disponível');
+    const res = await fetch(`/api/v1/incidents/hint/${scenarioId}?index=${warroomHintsUsed}`);
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.detail || 'Dica não disponível');
+    }
     const data = await res.json();
 
     warroomHintsUsed++;
     warroomCurrentScore = data.score_after;
 
-    term.innerHTML += `
-      <div style="border-top:1px dashed #30363d; margin-top:8px; padding-top:8px;">
-        <div style="color:#f0c040; font-weight:bold;">[DICA ${warroomHintsUsed}/2] -20 pts → pontuação atual: ⭐ ${data.score_after} pts</div>
-        <div style="color:var(--text-secondary); font-size:0.9rem; margin-top:4px;">${data.hint}</div>
-      </div>
-    `;
-    term.scrollTop = term.scrollHeight;
+    if (term) {
+      term.innerHTML += `
+        <div style="border-top:1px dashed #30363d; margin-top:8px; padding-top:8px;">
+          <div style="color:#f0c040; font-weight:bold;">[DICA ${warroomHintsUsed}/2] -20 pts → pontuação atual: ⭐ ${data.score_after} pts</div>
+          <div style="color:#e6edf3; font-size:0.9rem; margin-top:4px;">${data.hint}</div>
+        </div>
+      `;
+      scrollTerminalToView();
+    }
 
     _updateWarroomProgress();
   } catch(err) {
-    if (term) term.innerHTML += `<div class="term-output-error">[ERRO] ${err.message}</div>`;
+    if (term) {
+      term.innerHTML += `<div class="term-output-error">[ERRO] ${err.message}</div>`;
+      scrollTerminalToView();
+    }
+  }
+}
+
+async function warroomReview() {
+  const scenarioId = activeWarroomSimId || (warroomPlaylist.length > 0 ? warroomPlaylist[warroomPlayIdx] : null);
+  const term = document.getElementById('terminal-output');
+
+  if (!scenarioId) {
+    if (term) {
+      term.innerHTML += `<div class="term-output-error">[INFO] Nenhum cenário ativo para exibir revisão.</div>`;
+      scrollTerminalToView();
+    }
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/v1/incidents/review/${scenarioId}`);
+    if (!res.ok) throw new Error('Revisão não disponível');
+    const data = await res.json();
+
+    if (term) {
+      term.innerHTML += `
+        <div style="border-top:1px dashed #30363d; margin-top:8px; padding-top:8px;">
+          <div style="color:#58a6ff; font-weight:bold;">[GABARITO / REVISÃO DO CENÁRIO]</div>
+          <div style="color:#3fb950; font-family:monospace; margin-top:4px; font-weight:bold;">$ ${data.command || data.correct_command || "(Nenhum comando associado)"}</div>
+          <div style="color:var(--text-secondary); font-size:0.9rem; margin-top:4px;">${data.explanation}</div>
+        </div>
+      `;
+      scrollTerminalToView();
+    }
+  } catch(err) {
+    if (term) {
+      term.innerHTML += `<div class="term-output-error">[ERRO] ${err.message}</div>`;
+      scrollTerminalToView();
+    }
   }
 }
 

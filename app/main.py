@@ -409,7 +409,7 @@ def get_hint(scenario_id: str, index: int = 0):
     
     # Increment hints counter on active simulation for scoring
     if simulation_engine.active and simulation_engine.active.scenario_id == scenario_id:
-        simulation_engine.active.hints_used = getattr(simulation_engine.active, "hints_used", 0) + 1
+        simulation_engine.active.hints_used = simulation_engine.active.hints_used + 1
     
     return {
         "scenario_id": scenario_id,
