@@ -1,3 +1,107 @@
+
+DIAGNOSTIC_COMMANDS = {
+    "high-error-rate": {
+        "helm history sre-rag": (
+            "REVISION\tUPDATED                 \tSTATUS    \tCHART        \tAPP VERSION\tDESCRIPTION\n"
+            "1       \tTue Oct  6 18:00:00 2026\tsuperseded\tsre-rag-0.1.0\t3.1        \tInstall complete\n"
+            "2       \tTue Oct  6 20:15:30 2026\tdeployed  \tsre-rag-0.2.0\t3.2        \tRelease com bug (500 spike)\n\n"
+            "💡 [DIAGNÓSTICO]: A revisão 2 introduziu a falha. Para reverter para a revisão 1 estável, execute:\n"
+            "   helm rollback sre-rag"
+        ),
+        "helm history": (
+            "REVISION\tUPDATED                 \tSTATUS    \tCHART        \tAPP VERSION\tDESCRIPTION\n"
+            "1       \tTue Oct  6 18:00:00 2026\tsuperseded\tsre-rag-0.1.0\t3.1        \tInstall complete\n"
+            "2       \tTue Oct  6 20:15:30 2026\tdeployed  \tsre-rag-0.2.0\t3.2        \tRelease com bug (500 spike)\n\n"
+            "💡 [DIAGNÓSTICO]: A revisão 2 introduziu a falha. Para reverter para a revisão 1 estável, execute:\n"
+            "   helm rollback sre-rag"
+        ),
+        "kubectl get pods": (
+            "NAME                           READY   STATUS    RESTARTS   AGE\n"
+            "sre-rag-api-7b89f5d6cb-9k8lx   1/1     Running   0          25m\n"
+            "sre-rag-api-7b89f5d6cb-m42xq   1/1     Running   0          25m\n"
+            "sre-rag-postgres-0             1/1     Running   0          2d\n"
+            "sre-rag-redis-0                1/1     Running   0          2d"
+        ),
+        "kubectl logs": (
+            "[ERROR] 2026-10-06 20:16:02 - Unhandled Exception in /api/v1/query: KeyError('EMBEDDING_BATCH_SIZE')\n"
+            "[ERROR] 2026-10-06 20:16:05 - HTTP 500 Internal Server Error returned to ingress"
+        ),
+    },
+    "oom-kill": {
+        "kubectl describe pod": (
+            "Name:           sre-rag-api-7d498bd6df-m72zq\n"
+            "State:          Terminated\n"
+            "  Reason:       OOMKilled\n"
+            "  Exit Code:    137\n"
+            "Limits:\n"
+            "  memory:       512Mi\n\n"
+            "💡 [DIAGNÓSTICO]: O container estourou o limite de 512Mi. Aumente os limites com:\n"
+            "   helm upgrade sre-rag ./helm/sre-rag --set api.resources.limits.memory=1024Mi"
+        ),
+        "kubectl get pods": (
+            "NAME                           READY   STATUS             RESTARTS   AGE\n"
+            "sre-rag-api-7d498bd6df-m72zq   0/1     CrashLoopBackOff   4          12m"
+        ),
+    },
+    "crashloopbackoff": {
+        "kubectl logs": (
+            "Traceback (most recent call last):\n"
+            "  File 'main.py', line 12, in <module>\n"
+            "KeyError: 'EMBEDDING_BATCH_SIZE'\n\n"
+            "💡 [DIAGNÓSTICO]: Variável ausente. Atualize a release passando:\n"
+            "   helm upgrade sre-rag . --set env.EMBEDDING_BATCH_SIZE=32"
+        ),
+        "kubectl describe pod": (
+            "State:          Waiting\n"
+            "  Reason:       CrashLoopBackOff\n"
+            "Last State:     Terminated (Exit Code 1)"
+        ),
+    },
+    "tls-expiring": {
+        "kubectl get cert": (
+            "NAME             READY   SECRET           AGE   EXPIRATION\n"
+            "sre-rag-tls-cert False   sre-rag-tls-cert 90d   Expired (0d remaining)\n\n"
+            "💡 [DIAGNÓSTICO]: Certificado expirado. Reemita anotando o ingress:\n"
+            "   kubectl annotate ingress sre-rag cert-manager.io/cluster-issuer=letsencrypt-prod"
+        ),
+    },
+    "disk-pressure": {
+        "df -h": (
+            "Filesystem      Size  Used Avail Use% Mounted on\n"
+            "/dev/sda1        50G   44G  3.5G  93% /var/lib/docker\n\n"
+            "💡 [DIAGNÓSTICO]: Uso de disco acima de 85% dispara DiskPressure. Limpe imagens não utilizadas com:\n"
+            "   crictl rmi --prune"
+        ),
+    },
+    "high-latency": {
+        "kubectl top pods": (
+            "NAME                           CPU(cores)   MEMORY(bytes)\n"
+            "sre-rag-api-7b89f5d6cb-9k8lx   950m         420Mi\n"
+            "sre-rag-api-7b89f5d6cb-m42xq   980m         410Mi\n\n"
+            "💡 [DIAGNÓSTICO]: CPU saturada em 95%+. Escale os pods via HPA:\n"
+            "   kubectl scale hpa sre-rag-api --min=5 --max=20"
+        ),
+    },
+    "redis-exhausted": {
+        "redis-cli info clients": (
+            "# Clients\n"
+            "connected_clients:10000\n"
+            "maxclients:10000\n\n"
+            "💡 [DIAGNÓSTICO]: Conexões esgotadas. Ajuste o pool com:\n"
+            "   kubectl set env deployment/sre-rag-api REDIS_MAX_CONNECTIONS=100 REDIS_TIMEOUT=30"
+        ),
+    },
+    "dns-failure": {
+        "nslookup": (
+            "Server:    10.96.0.10\n"
+            "Address:   10.96.0.10#53\n"
+            "** server can't find postgresql.sre-rag.svc.cluster.local: SERVFAIL\n\n"
+            "💡 [DIAGNÓSTICO]: CoreDNS travado. Reinicie o deployment com:\n"
+            "   kubectl rollout restart deployment/coredns -n kube-system"
+        ),
+    },
+}
+
 """
 SRE Incident Simulation Engine
 Manages incident scenarios, active simulations, and solution validation with bilingual support (pt / en).
@@ -370,6 +474,7 @@ SCENARIOS = {
         "title": "OOM Kill em Pod da API",
         "title_en": "API Pod OOM Kill",
         "severity": "SEV-1",
+        "difficulty": "easy",
         "category": "Recursos",
         "category_en": "Resources",
         "icon": "💀",
@@ -390,6 +495,7 @@ SCENARIOS = {
         "solutions": [
             {
                 "id": "increase-memory",
+                "command": "helm upgrade sre-rag ./helm/sre-rag --set api.resources.limits.memory=1024Mi",
                 "label": "Aumentar `resources.limits.memory` no Helm values + investigar memory leak",
                 "label_en": "Increase resources.limits.memory in Helm values + profile memory leak",
                 "correct": True,
@@ -514,6 +620,7 @@ class ActiveSimulation(BaseModel):
     started_at: float
     phase: str  # "running" | "detected" | "investigating" | "solved"
     chaos_active: bool
+    hints_used: int = 0
 
 
 # ============================================================
@@ -534,9 +641,13 @@ class IncidentSimulationEngine:
         ]
         if not matching:
             # All scenarios for this difficulty were played — reset the pool
-            matching = [s_id for s_id, s in SCENARIOS.items() if s.get("difficulty") == difficulty]
-            if not matching:
+            all_for_diff = [s_id for s_id, s in SCENARIOS.items() if s.get("difficulty") == difficulty]
+            if not all_for_diff:
                 return {"error": f"Nenhum cenário encontrado para a dificuldade: {difficulty}"}
+            last_played = exclude_ids[-1] if exclude_ids else None
+            candidates = [s_id for s_id in all_for_diff if s_id != last_played] or all_for_diff
+            selected_id = random.choice(candidates)
+            return self.start(selected_id)
 
         selected_id = random.choice(matching)
         return self.start(selected_id)
@@ -583,16 +694,49 @@ class IncidentSimulationEngine:
         solution = next((s for s in scenario["solutions"] if s["id"] == solution_id), None)
         
         if not solution:
-            # Fallback to Terminal Command Mode matching
             cmd_submitted = solution_id.strip()
             correct_sol = next((s for s in scenario["solutions"] if s["correct"]), None)
             
-            if correct_sol and correct_sol.get("command") and cmd_submitted == correct_sol["command"]:
+            # Check for exact solution command
+            if correct_sol and correct_sol.get("command") and cmd_submitted.lower() == correct_sol["command"].lower():
                 solution = correct_sol
             else:
+                # Check for diagnostic commands
+                diag_map = DIAGNOSTIC_COMMANDS.get(scenario_id, {})
+                norm = cmd_submitted.lower()
+                matched_output = None
+                for d_cmd, d_out in diag_map.items():
+                    if norm == d_cmd.lower() or norm.startswith(d_cmd.lower()):
+                        matched_output = d_out
+                        break
+                
+                if not matched_output:
+                    if norm in ("help", "--help", "-h"):
+                        matched_output = (
+                            "Comandos Suportados:\n"
+                            "  Diagnóstico : helm history, kubectl get pods, kubectl describe pod, kubectl logs, df -h\n"
+                            "  Mitigação   : Digite o comando de remediação correspondente (ex: helm rollback, etc.)\n"
+                            "  Revisão     : Clique no botão '📖 Revisão' para ver a resposta correta."
+                        )
+                    elif norm in ("kubectl get pods", "kubectl get pod", "k get pods"):
+                        matched_output = (
+                            "NAME                           READY   STATUS    RESTARTS   AGE\n"
+                            "sre-rag-api-7b89f5d6cb-9k8lx   1/1     Running   0          25m\n"
+                            "sre-rag-api-7b89f5d6cb-m42xq   1/1     Running   0          25m"
+                        )
+
+                if matched_output:
+                    return {
+                        "diagnostic": True,
+                        "correct": False,
+                        "output": matched_output,
+                        "explanation": "Comando de diagnóstico executado com sucesso."
+                    }
+
                 return {
+                    "diagnostic": False,
                     "correct": False,
-                    "explanation": f"Comando não reconhecido ou incorreto. Dica: o comando correto é `{correct_sol.get('command', 'indisponível')}`",
+                    "explanation": f"Comando não reconhecido ou incorreto. Dica: Para mitigar este incidente, o comando correto é: `{correct_sol.get('command', 'indisponível')}`",
                     "explanation_en": "Command not recognized or incorrect."
                 }
 
