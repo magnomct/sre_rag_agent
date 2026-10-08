@@ -1710,7 +1710,7 @@ DIAGNOSTIC_COMMANDS = {'high-error-rate': {'helm history sre-rag': 'REVISION\tUP
                                              '1       \tTue Oct  6 18:00:00 2026\tsuperseded\tsre-rag-0.1.0\t'
                                              '3.1        \tInstall complete\n'
                                              '2       \tTue Oct  6 20:15:30 2026\tdeployed  \tsre-rag-0.2.0\t'
-                                             '3.2        \tRelease com bug (500 spike)\n'
+                                             '3.3        \tRelease com bug (500 spike)\n'
                                              '\n'
                                              '💡 [DIAGNÓSTICO]: A revisão 2 introduziu a falha. Para reverter para a '
                                              'revisão 1 estável, execute:\n'

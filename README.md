@@ -1,4 +1,4 @@
-# 🚨 SRE RAG Agent — Incident Simulation Lab & Observability Platform v3.2
+# 🚨 SRE RAG Agent — Incident Simulation Lab & Observability Platform v3.3
 
 [ 🇧🇷 Ler em Português ](#-versão-em-português) &nbsp;|&nbsp; [ 🇺🇸 Read in English ](#-english-version)
 
@@ -9,7 +9,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Language-Portugu%C3%AAs-blue?style=for-the-badge" alt="Idioma Português" />
-    <img src="https://img.shields.io/badge/Version-v3.2-blue?style=for-the-badge" alt="Versão v3.2" />
+    <img src="https://img.shields.io/badge/Version-v3.3-blue?style=for-the-badge" alt="Versão v3.3" />
   <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12" />
   <img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Kubernetes-Kind-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" alt="Kubernetes" />
@@ -21,7 +21,13 @@
 
 ---
 
-## 🚀 Novidades da Versão v3.2
+## 🚀 Novidades da Versão v3.3
+- **🔥 Catálogo Expandido com 16 Cenários de Produção**: Dobramos o acervo para **16 cenários reais e balanceados**, distribuídos uniformemente em 4 níveis (4 Fácil, 4 Médio, 4 Difícil, 4 Extremo), cobrindo os 8 pilares vitais de confiabilidade (Disponibilidade, Latência, Recursos & Cgroups, Confiabilidade & Probes, Redes & DNS, Armazenamento & PVCs, Segurança & TLS, e Concorrência de Banco de Dados).
+- **📖 Runbooks Estruturados em 5 Fases**: O botão `📖 Revisão` no terminal e a vitrine de cenários agora abrem um **Modal de Passo a Passo Interativo (`#runbook-modal`)** guiando o operador pelas 5 fases consagradas de incidentes: *1. Triagem & Alertas*, *2. Diagnóstico & Inspeção*, *3. Mitigação Imediata*, *4. Causa Raiz & Correção Permanente* e *5. Prevenção & Pós-Morte*.
+- **📚 Nova Aba "Conceitos SRE" (`#concepts`)**: Um portal de conhecimento arquitetural profundo integrado aos 16 cenários, dissecando mecanismos de baixo nível do Kernel Linux (cgroups, CFS scheduler throttling, OOM killer `oom_score_adj`, page cache, TCP sockets, epoll) e do Kubernetes Control Plane, com busca instantânea e atalho "Praticar no War Room".
+- **🎯 Vitrine de Cenários na Tela Principal**: Grade interativa de cards na aba de simulação com filtros rápidos por nível de dificuldade, componentes e atalhos rápidos para abrir o passo a passo ou simular diretamente.
+
+## 🚀 Histórico da Versão v3.2
 - **⚡ Otimização Extrema de Imagens Docker**: Multi-stage build com wheel oficial CPU-only do PyTorch (`--index-url https://download.pytorch.org/whl/cpu`), descarte de binários CUDA da NVIDIA, supressão de bytecode (`PYTHONDONTWRITEBYTECODE=1`), e limpeza de caches na etapa de compilação. Redução de **mais de 70%** no tamanho da imagem (de ~3.5GB para ~800MB).
 - **🛡️ Isolamento de Redes no Docker Compose**: Separação estrita em duas redes Docker dedicadas: `proxy_net` (pública para Nginx e API) e `backend_net` (`internal: true` para comunicação interna entre API, PostgreSQL e Redis). Nenhuma porta de banco de dados é exposta no host.
 - **💻 War Room (Terminal Interativo Seguro)**: Resolução de incidentes via comandos simulados (`kubectl`, `helm`, etc.) validados estritamente no backend, sem risco de RCE no SO hospedeiro.
@@ -51,7 +57,7 @@
 Este projeto evoluiu de um protótipo para um **Laboratório de Engenharia SRE de Padrão Google**:
 
 1. **🎯 Painel Interativo de Simulação de Incidentes (`/dashboard`)**:
-   - 8 cenários realistas de falha em Kubernetes (OOM-Kill, CrashLoopBackOff, Degradação TLS, Esgotamento Redis, Pressão de Disco, Falha de DNS, Alta Latência e Alta Taxa de Erro).
+   - 16 cenários realistas de falha em Kubernetes distribuídos em 4 dificuldades (Fácil, Médio, Difícil, Extremo) cobrindo 8 pilares da confiabilidade.
    - Embaralhamento aleatório das opções de solução a cada simulação, impedindo respostas mecânicas.
    - Cálculo e exibição em tempo real de KPIs: **MTTD Médio**, **MTTR Médio**, **Taxa de Assertividade** e gráficos SVG de tendências.
 
@@ -78,14 +84,15 @@ Este projeto evoluiu de um protótipo para um **Laboratório de Engenharia SRE d
    - Em produção (`ENVIRONMENT=production`), o Swagger é desativado nativamente (`docs_url=None, redoc_url=None, openapi_url=None`) para prevenir reconhecimento de superfície de ataque e enumeração de rotas.
    - Remoção de links públicos ao Swagger na interface principal em consonância com as melhores práticas de DevSecOps.
 
-6. **📑 Navegação por Abas & Visual Clean (v3.2)**:
-   - Separação clara entre a área operacional (`🎯 Simulação & Chaos Lab`) e o painel analítico (`📊 Painel de Histórico & Métricas`), reduzindo a sobrecarga cognitiva durante incidentes.
+6. **📑 Navegação por Abas & Hub Conceitual (v3.3)**:
+   - 4 abas especializadas: `🎯 Simulação (Quiz & Vitrine)`, `💻 War Room (Terminal Seguro)`, `📊 Histórico & Métricas`, e `📚 Conceitos SRE (Base Teórica e Kernel)`.
+   - Roteamento nativo por URL hash (`#simulation`, `#warroom`, `#history`, `#concepts`) com alternância instantânea.
    - Roteamento por hash (`#simulation` / `#history`) com persistência imediata e alternância sem recarregamento de página.
    - Escala tipográfica modernizada (v3.2) com badges expandidos, contraste balanceado e correção de overflow no gráfico de MTTR.
 
 7. **🌐 Suporte Bilíngue Nativo (pt-BR / en-US)**:
    - Seletor de idiomas dinâmico com persistência em `localStorage`.
-   - Cobertura completa de traduções: 8 cenários de incidentes, sintomas, diagnósticos de IA, opções de mitigação, estados do Chaos Monkey e relatórios postmortem.
+   - Cobertura completa de traduções: 16 cenários de incidentes, sintomas, diagnósticos de IA, opções de mitigação, estados do Chaos Monkey e relatórios postmortem.
 
 ---
 
@@ -405,7 +412,13 @@ Distribuído sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para 
 <a id="-english-version"></a>
 ## 🇺🇸 English Version
 
-## 🚀 What's New in v3.2
+## 🚀 What's New in v3.3
+- **🔥 Expanded Catalog with 16 Production Scenarios**: Doubled the scenario library to **16 production-grade, balanced scenarios**, evenly distributed across 4 tiers (4 Easy, 4 Medium, 4 Hard, 4 Extreme) covering the 8 vital reliability pillars (Availability, Latency, Resources & Cgroups, Reliability & Probes, Networking & DNS, Storage & PVCs, Security & TLS, and Database Concurrency).
+- **📖 5-Phase Interactive Runbooks**: The `📖 Review` button and scenario catalog cards open an **Interactive Step-by-Step Runbook Modal (`#runbook-modal`)** guiding engineers through the 5 industry-standard incident phases: *1. Triage & Alerting*, *2. Diagnosis & Cluster Inspection*, *3. Fast Mitigation*, *4. Root Cause Analysis & Permanent Fix*, and *5. Prevention & Postmortem*.
+- **📚 Dedicated "SRE Concepts" Tab (`#concepts`)**: A deep systems architecture knowledge hub mapped directly to all 16 scenarios, unpacking low-level Linux Kernel mechanics (cgroups, CFS scheduler throttling, OOM killer `oom_score_adj`, page cache, TCP socket states) and Kubernetes control plane controllers, featuring live search and direct "Practice in War Room" shortcuts.
+- **🎯 Main Screen Scenario Catalog**: Interactive scenario cards on the simulation dashboard with real-time difficulty filtering, affected components, and instant runbook inspection.
+
+## 🚀 Historical Highlights: v3.2
 - **⚡ Extreme Docker Image Size Optimization**: Multi-stage build pulling the official CPU-only PyTorch wheel (`https://download.pytorch.org/whl/cpu`), eliminating massive NVIDIA CUDA/cuDNN GPU binaries, suppressing bytecode generation (`PYTHONDONTWRITEBYTECODE=1`), and stripping build caches. Image size reduced by **over 70%** (from ~3.5GB to ~800MB).
 - **🛡️ Docker Compose Dual-Network Isolation**: Strict network segmentation with `proxy_net` (public DMZ connecting Nginx proxy and FastAPI app) and `backend_net` (fully internal `internal: true` bridging the app to PostgreSQL and Redis). No database ports are exposed to the host machine or public internet.
 - **💻 War Room (Interactive Web Terminal)**: Simulated command-line interface allowing users to triage and remediate incidents using real `kubectl` and `helm` commands with strict string validation preventing any host RCE.
@@ -414,7 +427,7 @@ Distribuído sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para 
 
 <p align="center">
     <img src="https://img.shields.io/badge/Language-English-green?style=for-the-badge" alt="English Documentation" />
-  <img src="https://img.shields.io/badge/Version-v3.2-blue?style=for-the-badge" alt="Versão v3.2" />
+  <img src="https://img.shields.io/badge/Version-v3.3-blue?style=for-the-badge" alt="Versão v3.3" />
   <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12" />
   <img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Kubernetes-Kind-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" alt="Kubernetes" />
@@ -447,7 +460,7 @@ Distribuído sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para 
 This project was built and evolved into a **Google SRE-standard Practice and Training Lab**:
 
 1. **🎯 Interactive Incident Simulation Dashboard (`/dashboard`)**:
-   - 8 authentic Kubernetes incident scenarios (OOM-Kill, CrashLoopBackOff, TLS Expiration, Redis Exhaustion, Disk Pressure, DNS Failure, High Latency, and High Error Rate).
+   - 16 authentic Kubernetes incident scenarios distributed across 4 difficulties (Easy, Medium, Hard, Extreme) covering 8 core reliability pillars.
    - Solution options are dynamically shuffled on each simulation to avoid rote memorization.
    - Real-time calculation and visualization of SRE KPIs: **Average MTTD**, **Average MTTR**, **Success Rate**, and SVG trend charts.
 
@@ -474,14 +487,15 @@ This project was built and evolved into a **Google SRE-standard Practice and Tra
    - In production (`ENVIRONMENT=production`), Swagger is natively disabled (`docs_url=None, redoc_url=None, openapi_url=None`) to prevent endpoint enumeration and schema reconnaissance.
    - Public Swagger links removed from the main header following DevSecOps hardening best practices.
 
-6. **📑 Tabbed Architecture & Clean UI (v3.2)**:
-   - Clear separation between the operational workspace (`🎯 Simulação & Chaos Lab`) and the analytical postmortem panel (`📊 Painel de Histórico & Métricas`), significantly reducing on-call cognitive load.
+6. **📑 Tabbed Architecture & Conceptual Hub (v3.3)**:
+   - 4 specialized workspaces: `🎯 Simulação (Quiz & Catalog)`, `💻 War Room (Secure Terminal)`, `📊 Histórico & Métricas`, and `📚 Conceitos SRE (Systems Internals & Kernel)`.
+   - Native URL hash routing (`#simulation`, `#warroom`, `#history`, `#concepts`) with instant view switching.
    - URL hash routing (`#simulation` / `#history`) providing seamless instant tab switching with state persistence.
    - Modernized typography scale (v3.2) featuring enhanced readability, expanded badge padding, and fixed MTTR sparkline chart overflow.
 
 7. **🌐 Native Bilingual Support (pt-BR / en-US)**:
    - Dynamic client-side language switcher with `localStorage` state persistence.
-   - 100% translation coverage across all 8 incident scenarios, symptoms, AI root-cause diagnostics, mitigation options, Chaos Monkey states, and metrics.
+   - 100% translation coverage across all 16 incident scenarios, symptoms, AI root-cause diagnostics, mitigation options, Chaos Monkey states, and metrics.
 
 ---
 
