@@ -10,8 +10,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 def test_scenarios_have_existing_runbooks():
-    """Verify that every scenario links to a runbook that actually exists on disk."""
-    assert len(SCENARIOS) == 8
+    """Verify that all 16 scenarios link to a runbook that actually exists on disk."""
+    assert len(SCENARIOS) == 16
     
     for sc_id, sc in SCENARIOS.items():
         runbook_path_str = sc.get("runbook", "")
@@ -21,6 +21,11 @@ def test_scenarios_have_existing_runbooks():
         fname = runbook_path_str.replace("/docs/runbooks/", "") + ".md"
         full_path = BASE_DIR / "docs" / "runbooks" / fname
         assert full_path.is_file(), f"Runbook file not found on disk: {full_path}"
+        
+        # Verify runbook_steps and concepts exist
+        assert "runbook_steps" in sc, f"Scenario {sc_id} missing runbook_steps"
+        assert "concepts" in sc, f"Scenario {sc_id} missing concepts"
+        assert "hints" in sc and len(sc["hints"]) >= 2, f"Scenario {sc_id} missing hints"
 
 
 def test_simulation_lifecycle():
@@ -40,7 +45,7 @@ def test_simulation_lifecycle():
     assert state["scenario_id"] == "crashloopbackoff"
 
     # 3. Solve with correct solution
-    solve_res = engine.solve("crashloopbackoff", "fix-configmap")
+    solve_res = engine.solve("crashloopbackoff", "adjust-startup-probe")
     assert solve_res.get("correct") is True
     assert engine.active is None
     assert len(engine.history) == 1

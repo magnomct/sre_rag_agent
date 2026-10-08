@@ -422,7 +422,7 @@ def get_hint(scenario_id: str, index: int = 0):
 
 @app.get("/api/v1/incidents/review/{scenario_id}", tags=["Incidents"])
 def review_scenario(scenario_id: str):
-    """Return the correct solution for a scenario (Review / Gabarito button)."""
+    """Return the correct solution and full step-by-step runbook for a scenario (Review / Gabarito button)."""
     if scenario_id not in SCENARIOS:
         raise HTTPException(status_code=404, detail=f"Scenario '{scenario_id}' not found")
     scenario = SCENARIOS[scenario_id]
@@ -431,10 +431,60 @@ def review_scenario(scenario_id: str):
         raise HTTPException(status_code=404, detail="No correct solution found")
     return {
         "scenario_id": scenario_id,
+        "title": scenario["title"],
+        "severity": scenario["severity"],
+        "category": scenario.get("category", "Geral"),
         "command": correct.get("command", ""),
         "label": correct.get("label", ""),
         "explanation": correct.get("explanation", ""),
+        "runbook_steps": scenario.get("runbook_steps", {}),
+        "concepts": scenario.get("concepts", {}),
     }
+
+@app.get("/api/v1/incidents/runbook/{scenario_id}", tags=["Incidents"])
+def get_scenario_runbook(scenario_id: str):
+    """Return step-by-step runbook and remediation playbook for a scenario."""
+    if scenario_id not in SCENARIOS:
+        raise HTTPException(status_code=404, detail=f"Scenario '{scenario_id}' not found")
+    scenario = SCENARIOS[scenario_id]
+    correct = next((s for s in scenario["solutions"] if s.get("correct")), None)
+    return {
+        "scenario_id": scenario_id,
+        "title": scenario["title"],
+        "title_en": scenario.get("title_en", scenario["title"]),
+        "severity": scenario["severity"],
+        "category": scenario.get("category", "Geral"),
+        "icon": scenario.get("icon", "🚨"),
+        "difficulty": scenario.get("difficulty", "medium"),
+        "description": scenario.get("description", ""),
+        "command": correct.get("command", "") if correct else "",
+        "explanation": correct.get("explanation", "") if correct else "",
+        "runbook_steps": scenario.get("runbook_steps", {}),
+        "concepts": scenario.get("concepts", {}),
+    }
+
+@app.get("/api/v1/incidents/concepts", tags=["Incidents"])
+def get_all_concepts():
+    """Return the complete catalog of SRE concepts, components, and best practices across all scenarios."""
+    result = []
+    for sid, sc in SCENARIOS.items():
+        if "concepts" in sc:
+            result.append({
+                "scenario_id": sid,
+                "title": sc["title"],
+                "title_en": sc.get("title_en", sc["title"]),
+                "icon": sc.get("icon", "📚"),
+                "severity": sc.get("severity", "SEV-2"),
+                "category": sc.get("category", "Geral"),
+                "difficulty": sc.get("difficulty", "medium"),
+                "resource_title": sc["concepts"].get("resource_title", ""),
+                "architecture_components": sc["concepts"].get("architecture_components", []),
+                "how_it_works": sc["concepts"].get("how_it_works", ""),
+                "best_practices": sc["concepts"].get("best_practices", []),
+                "golden_signals": sc["concepts"].get("golden_signals", []),
+                "remediation_command": sc.get("command", ""),
+            })
+    return result
 
 @app.post("/api/v1/incidents/simulate", tags=["Incidents"])
 async def start_simulation(body: SimulateRequest):

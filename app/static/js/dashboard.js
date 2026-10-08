@@ -368,19 +368,23 @@ function switchDashboardTab(tabName) {
   const simTabBtn = document.getElementById('tab-btn-sim');
   const histTabBtn = document.getElementById('tab-btn-hist');
   const warroomTabBtn = document.getElementById('tab-btn-warroom');
+  const conceptsTabBtn = document.getElementById('tab-btn-concepts');
   
   const simView = document.getElementById('view-simulation');
   const histView = document.getElementById('view-history');
   const warroomView = document.getElementById('view-warroom');
+  const conceptsView = document.getElementById('view-concepts');
 
   // Remove active from all
   if (simTabBtn) { simTabBtn.classList.remove('active'); simTabBtn.setAttribute('aria-selected', 'false'); }
   if (histTabBtn) { histTabBtn.classList.remove('active'); histTabBtn.setAttribute('aria-selected', 'false'); }
   if (warroomTabBtn) { warroomTabBtn.classList.remove('active'); warroomTabBtn.setAttribute('aria-selected', 'false'); }
+  if (conceptsTabBtn) { conceptsTabBtn.classList.remove('active'); conceptsTabBtn.setAttribute('aria-selected', 'false'); }
   
   if (simView) simView.style.display = 'none';
   if (histView) histView.style.display = 'none';
   if (warroomView) warroomView.style.display = 'none';
+  if (conceptsView) conceptsView.style.display = 'none';
 
   const layout = document.querySelector('.layout');
   const sidebar = document.querySelector('.sidebar');
@@ -398,6 +402,13 @@ function switchDashboardTab(tabName) {
     if (layout) layout.style.display = 'block';
     if (sidebar) sidebar.style.display = 'none';
     history.replaceState(null, null, '#warroom');
+  } else if (tabName === 'concepts') {
+    if (conceptsTabBtn) { conceptsTabBtn.classList.add('active'); conceptsTabBtn.setAttribute('aria-selected', 'true'); }
+    if (conceptsView) conceptsView.style.display = 'block';
+    if (layout) layout.style.display = 'block';
+    if (sidebar) sidebar.style.display = 'none';
+    loadConceptsCatalog();
+    history.replaceState(null, null, '#concepts');
   } else {
     // simulation
     if (simTabBtn) { simTabBtn.classList.add('active'); simTabBtn.setAttribute('aria-selected', 'true'); }
@@ -1735,6 +1746,11 @@ async function warroomReview() {
           <div style="color:#58a6ff; font-weight:bold;">[GABARITO / REVISÃO DO CENÁRIO]</div>
           <div style="color:#3fb950; font-family:monospace; margin-top:4px; font-weight:bold;">$ ${data.command || data.correct_command || "(Nenhum comando associado)"}</div>
           <div style="color:var(--text-secondary); font-size:0.9rem; margin-top:4px;">${data.explanation}</div>
+          <div style="margin-top:10px;">
+            <button class="btn btn-secondary" onclick="openRunbookModal('${scenarioId}')" style="padding:5px 12px; font-size:0.82rem; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+              <span>📘</span> Ver Passo a Passo Completo (Runbook de 5 Fases)
+            </button>
+          </div>
         </div>
       `;
       scrollTerminalToView();
@@ -1769,3 +1785,350 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedTheme = localStorage.getItem('sre_theme') || 'dark';
   applyTheme(savedTheme);
 });
+
+
+// ============================================================
+// Scenarios Catalog Filter (Tela Principal)
+// ============================================================
+function filterCatalogScenarios(diff) {
+  const filterBtns = document.querySelectorAll('.catalog-difficulty-filters .filter-pill-btn');
+  filterBtns.forEach(btn => {
+    const text = btn.textContent.toLowerCase();
+    if (diff === 'all' && text.includes('todos')) {
+      btn.classList.add('active');
+    } else if (diff !== 'all' && text.includes(diff)) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  const cards = document.querySelectorAll('.catalog-card');
+  cards.forEach(card => {
+    if (diff === 'all' || card.getAttribute('data-difficulty') === diff) {
+      card.style.display = 'flex';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+}
+
+// ============================================================
+// Runbook Passo a Passo Modal Logic
+// ============================================================
+let currentModalScenario = null;
+let currentRunbookStage = 'triage';
+
+async function openRunbookModal(scenarioId) {
+  try {
+    const res = await fetch(`/api/v1/incidents/runbook/${scenarioId}`);
+    if (!res.ok) throw new Error('Runbook não encontrado');
+    const data = await res.json();
+    currentModalScenario = data;
+
+    // Header
+    const iconEl = document.getElementById('rb-modal-icon');
+    const titleEl = document.getElementById('rb-modal-title');
+    const sevEl = document.getElementById('rb-modal-sev');
+    const catEl = document.getElementById('rb-modal-cat');
+    const diffEl = document.getElementById('rb-modal-diff');
+    const cmdPrevEl = document.getElementById('rb-modal-cmd-preview');
+
+    if (iconEl) iconEl.textContent = data.icon || '🚨';
+    if (titleEl) titleEl.textContent = data.title;
+    if (sevEl) {
+      sevEl.textContent = data.severity;
+      sevEl.className = `severity-badge sev-${data.severity}`;
+    }
+    if (catEl) catEl.textContent = `📂 ${data.category || 'Geral'}`;
+    if (diffEl) diffEl.textContent = `Dificuldade: ${data.difficulty || 'medium'}`;
+    if (cmdPrevEl) cmdPrevEl.textContent = data.command ? `Mitigação: $ ${data.command}` : '';
+
+    // Switch to first stage
+    switchRunbookStage('triage');
+
+    // Open Modal
+    const modal = document.getElementById('runbook-modal');
+    if (modal) modal.style.display = 'flex';
+  } catch(err) {
+    alert(`Erro ao carregar runbook: ${err.message}`);
+  }
+}
+
+function closeRunbookModal() {
+  const modal = document.getElementById('runbook-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function switchRunbookStage(stage) {
+  currentRunbookStage = stage;
+  const tabs = document.querySelectorAll('.rb-tab-btn');
+  tabs.forEach(tab => {
+    if (tab.id === `rb-tab-${stage}`) {
+      tab.classList.add('active');
+    } else {
+      tab.classList.remove('active');
+    }
+  });
+
+  const bodyEl = document.getElementById('rb-modal-body');
+  if (!bodyEl || !currentModalScenario) return;
+
+  const data = currentModalScenario;
+  const rb = data.runbook_steps || {};
+  const concepts = data.concepts || {};
+
+  if (stage === 'triage') {
+    const items = rb.triage || [
+      'Verificar alertas ativos no Alertmanager.',
+      'Consultar o dashboard de SLO e disponibilidade no Grafana.',
+      'Identificar taxa de descarte ou queima de Error Budget.'
+    ];
+    bodyEl.innerHTML = `
+      <div class="runbook-step-box">
+        <h4 style="margin:0 0 12px; color:#f0f6fc; font-size:1.05rem; display:flex; align-items:center; gap:8px;">
+          <span>🚨</span> Fase 1: Triagem & Alertas Prometheus
+        </h4>
+        <p style="color:#8b949e; font-size:0.88rem; margin-bottom:16px;">
+          Identifique os primeiros sinais vitais, consulte as métricas de Golden Signals e confirme o escopo da violação do SLO.
+        </p>
+        <ul style="padding-left:22px; margin:0; line-height:1.7;">
+          ${items.map(it => `<li style="margin-bottom:8px;">${escapeHtml(it)}</li>`).join('')}
+        </ul>
+      </div>
+    `;
+  } else if (stage === 'diagnosis') {
+    const items = rb.diagnosis || [
+      'kubectl get pods -n sre-rag -o wide',
+      'kubectl describe pod <nome-do-pod>',
+      'kubectl logs -l app=sre-rag-api --tail=50'
+    ];
+    bodyEl.innerHTML = `
+      <div class="runbook-step-box">
+        <h4 style="margin:0 0 12px; color:#f0f6fc; font-size:1.05rem; display:flex; align-items:center; gap:8px;">
+          <span>🔍</span> Fase 2: Comandos de Diagnóstico & Triagem no Cluster
+        </h4>
+        <p style="color:#8b949e; font-size:0.88rem; margin-bottom:14px;">
+          Execute os comandos abaixo para inspecionar os logs de aplicação, eventos de container e métricas de sistema:
+        </p>
+        ${items.map(it => `
+          <div class="runbook-code-block">
+            <code>${escapeHtml(it)}</code>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  } else if (stage === 'mitigation') {
+    const mit = rb.mitigation || {};
+    bodyEl.innerHTML = `
+      <div class="runbook-step-box" style="border-left: 4px solid #3fb950;">
+        <h4 style="margin:0 0 12px; color:#3fb950; font-size:1.05rem; display:flex; align-items:center; gap:8px;">
+          <span>⚡</span> Fase 3: Mitigação Imediata (Estancar Impacto & Reduzir MTTR)
+        </h4>
+        <p style="margin:0 0 14px; font-weight:500; color:#e6edf3;">
+          ${escapeHtml(mit.action || 'Executar comando de remediação rápida para reestabelecer o tráfego do usuário.')}
+        </p>
+        <div class="runbook-code-block" style="border-color:#238636; color:#56d364; font-size:0.95rem; font-weight:bold;">
+          <code>$ ${escapeHtml(mit.command || data.command || '')}</code>
+        </div>
+        <div style="font-size:0.88rem; color:#8b949e; margin-top:14px; background:rgba(0,0,0,0.25); padding:10px 14px; border-radius:6px;">
+          <strong style="color:#38bdf8;">Validação de Estabilidade:</strong> ${escapeHtml(mit.validation || 'Acompanhar retorno dos endpoints para HTTP 200 e normalização da latência.')}
+        </div>
+      </div>
+    `;
+  } else if (stage === 'root_cause') {
+    const rc = rb.root_cause || {};
+    bodyEl.innerHTML = `
+      <div class="runbook-step-box">
+        <h4 style="margin:0 0 14px; color:#f0f6fc; font-size:1.05rem; display:flex; align-items:center; gap:8px;">
+          <span>🛠️</span> Fase 4: Análise de Causa Raiz & Correção Permanente
+        </h4>
+        <div style="margin-bottom:18px;">
+          <strong style="color:#d2a8ff; font-size:0.92rem; text-transform:uppercase; letter-spacing:0.5px;">Causa Raiz Identificada:</strong>
+          <p style="margin:6px 0 0; color:#c9d1d9; line-height:1.6;">
+            ${escapeHtml(rc.analysis || data.explanation || 'Falha de configuração de recurso ou dependência não sincronizada.')}
+          </p>
+        </div>
+        <div style="border-top:1px solid #30363d; padding-top:14px;">
+          <strong style="color:#58a6ff; font-size:0.92rem; text-transform:uppercase; letter-spacing:0.5px;">Correção Definitiva no Repositório / GitOps:</strong>
+          <p style="margin:6px 0 0; color:#c9d1d9; line-height:1.6;">
+            ${escapeHtml(rc.permanent_fix || 'Atualizar manifesto no repositório de GitOps e submeter Pull Request com validações de CI/CD.')}
+          </p>
+        </div>
+      </div>
+    `;
+  } else if (stage === 'prevention') {
+    const prev = rb.prevention || [
+      'Documentar timeline do incidente e publicar postmortem blameless.',
+      'Ajustar thresholds de alertas no Alertmanager para detecção proativa.',
+      'Executar teste de injeção de caos para certificar a resiliência contínua.'
+    ];
+    bodyEl.innerHTML = `
+      <div class="runbook-step-box">
+        <h4 style="margin:0 0 12px; color:#f0f6fc; font-size:1.05rem; display:flex; align-items:center; gap:8px;">
+          <span>🛡️</span> Fase 5: Prevenção, Pós-Morte & Chaos Engineering
+        </h4>
+        <p style="color:#8b949e; font-size:0.88rem; margin-bottom:16px;">
+          Lições aprendidas e ações contínuas para impedir a reincidência do problema em produção:
+        </p>
+        <ul style="padding-left:22px; margin:0; line-height:1.7;">
+          ${prev.map(p => `<li style="margin-bottom:8px;">${escapeHtml(p)}</li>`).join('')}
+        </ul>
+      </div>
+    `;
+  } else if (stage === 'concepts') {
+    bodyEl.innerHTML = `
+      <div class="runbook-step-box">
+        <h4 style="margin:0 0 10px; color:#38bdf8; font-size:1.05rem;">
+          <span>📚</span> ${escapeHtml(concepts.resource_title || 'Recursos Envolvidos')}
+        </h4>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
+          ${(concepts.architecture_components || []).map(c => `<span class="concept-component-tag">${escapeHtml(c)}</span>`).join('')}
+        </div>
+        <p style="color:#c9d1d9; line-height:1.6; margin-bottom:16px;">
+          ${escapeHtml(concepts.how_it_works || 'Componente arquitetural de infraestrutura e orquestração.')}
+        </p>
+        <h5 style="color:#f0f6fc; margin:16px 0 8px; font-size:0.95rem;">⭐ Melhores Práticas Recomendadas:</h5>
+        <ul style="padding-left:22px; margin:0; line-height:1.6;">
+          ${(concepts.best_practices || []).map(b => `<li style="margin-bottom:6px;">${escapeHtml(b)}</li>`).join('')}
+        </ul>
+      </div>
+    `;
+  }
+}
+
+function playCurrentModalScenario() {
+  if (!currentModalScenario) return;
+  const sid = currentModalScenario.scenario_id;
+  closeRunbookModal();
+  switchDashboardTab('warroom');
+  warroomStartScenario(sid);
+}
+
+// ============================================================
+// SRE Concepts Knowledge Base Logic (Aba de Conceitos)
+// ============================================================
+let cachedConceptsList = null;
+
+async function loadConceptsCatalog() {
+  const grid = document.getElementById('concepts-cards-grid');
+  if (!grid) return;
+
+  if (cachedConceptsList) {
+    renderConceptsCards(cachedConceptsList);
+    return;
+  }
+
+  try {
+    grid.innerHTML = '<div style="color:#8b949e; font-size:0.95rem;">Carregando conceitos de SRE...</div>';
+    const res = await fetch('/api/v1/incidents/concepts');
+    if (!res.ok) throw new Error('Falha ao carregar conceitos');
+    cachedConceptsList = await res.json();
+    renderConceptsCards(cachedConceptsList);
+  } catch(err) {
+    grid.innerHTML = `<div class="term-output-error">Erro ao carregar conceitos: ${err.message}</div>`;
+  }
+}
+
+function renderConceptsCards(concepts) {
+  const grid = document.getElementById('concepts-cards-grid');
+  if (!grid) return;
+
+  if (concepts.length === 0) {
+    grid.innerHTML = '<div style="color:#8b949e; grid-column:1/-1;">Nenhum conceito encontrado para este filtro.</div>';
+    return;
+  }
+
+  grid.innerHTML = concepts.map(item => `
+    <div class="concept-card" data-category="${escapeHtml(item.category)}" data-difficulty="${escapeHtml(item.difficulty)}">
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:2rem;">${escapeHtml(item.icon)}</span>
+            <div>
+              <h3 style="margin:0; font-size:1.1rem; color:var(--text-primary);">${escapeHtml(item.resource_title || item.title)}</h3>
+              <div style="font-size:0.78rem; color:#58a6ff; margin-top:2px;">Cenário: ${escapeHtml(item.title)}</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <span class="severity-badge sev-${item.severity}">${item.severity}</span>
+            <span class="difficulty-badge diff-${item.difficulty}" style="font-size:0.72rem; padding:2px 8px; border-radius:12px; font-weight:600; text-transform:uppercase;">${item.difficulty}</span>
+          </div>
+        </div>
+
+        <!-- Tags de Componentes -->
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
+          ${(item.architecture_components || []).map(comp => `
+            <span class="concept-component-tag">${escapeHtml(comp)}</span>
+          `).join('')}
+        </div>
+
+        <!-- Como Funciona -->
+        <div style="background:rgba(0,0,0,0.22); border-left:3px solid #38bdf8; padding:10px 14px; border-radius:0 6px 6px 0; margin-bottom:14px;">
+          <div style="font-size:0.78rem; font-weight:600; color:#38bdf8; text-transform:uppercase; margin-bottom:4px;">🏗️ Mecanismo Interno</div>
+          <p style="margin:0; font-size:0.85rem; color:var(--text-secondary); line-height:1.5;">${escapeHtml(item.how_it_works)}</p>
+        </div>
+
+        <!-- Melhores Práticas -->
+        <div style="margin-bottom:14px;">
+          <div style="font-size:0.78rem; font-weight:600; color:#3fb950; text-transform:uppercase; margin-bottom:6px;">⭐ Melhores Práticas SRE</div>
+          <ul style="margin:0; padding-left:18px; font-size:0.83rem; color:var(--text-secondary); line-height:1.5;">
+            ${(item.best_practices || []).slice(0, 2).map(bp => `<li style="margin-bottom:4px;">${escapeHtml(bp)}</li>`).join('')}
+          </ul>
+        </div>
+      </div>
+
+      <!-- Footer Ações -->
+      <div style="display:flex; gap:8px; border-top:1px solid var(--border-color); padding-top:12px; margin-top:10px;">
+        <button class="btn btn-secondary" onclick="openRunbookModal('${item.scenario_id}')" style="flex:1; padding:7px; font-size:0.82rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+          <span>📘</span> Ver Runbook
+        </button>
+        <button class="btn btn-primary" onclick="jumpToWarroomScenario('${item.scenario_id}')" style="flex:1; padding:7px; font-size:0.82rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+          <span>🚀</span> Praticar no Terminal
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterConceptsCategory(cat) {
+  const btns = document.querySelectorAll('.concepts-filter-bar .concept-filter-btn');
+  btns.forEach(btn => {
+    if ((cat === 'all' && btn.textContent.includes('Todos')) || btn.textContent.includes(cat)) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  if (!cachedConceptsList) return;
+  if (cat === 'all') {
+    renderConceptsCards(cachedConceptsList);
+  } else {
+    const filtered = cachedConceptsList.filter(c => c.category === cat);
+    renderConceptsCards(filtered);
+  }
+}
+
+function filterConcepts() {
+  const query = (document.getElementById('concepts-search')?.value || '').toLowerCase().trim();
+  if (!cachedConceptsList) return;
+
+  if (!query) {
+    renderConceptsCards(cachedConceptsList);
+    return;
+  }
+
+  const filtered = cachedConceptsList.filter(c => {
+    return c.title.toLowerCase().includes(query) ||
+           (c.resource_title || '').toLowerCase().includes(query) ||
+           (c.how_it_works || '').toLowerCase().includes(query) ||
+           (c.architecture_components || []).some(comp => comp.toLowerCase().includes(query));
+  });
+  renderConceptsCards(filtered);
+}
+
+function jumpToWarroomScenario(scenarioId) {
+  switchDashboardTab('warroom');
+  warroomStartScenario(scenarioId);
+}
