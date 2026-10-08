@@ -386,26 +386,24 @@ function switchDashboardTab(tabName) {
   if (warroomView) warroomView.style.display = 'none';
   if (conceptsView) conceptsView.style.display = 'none';
 
-  const layout = document.querySelector('.layout');
   const sidebar = document.querySelector('.sidebar');
+  const mainContent = document.querySelector('.main-content');
+  if (mainContent) mainContent.scrollTop = 0;
 
   if (tabName === 'history') {
     if (histTabBtn) { histTabBtn.classList.add('active'); histTabBtn.setAttribute('aria-selected', 'true'); }
     if (histView) histView.style.display = 'block';
-    if (layout) layout.style.display = 'block';
     if (sidebar) sidebar.style.display = 'none';
     refreshHistory();
     history.replaceState(null, null, '#history');
   } else if (tabName === 'warroom') {
     if (warroomTabBtn) { warroomTabBtn.classList.add('active'); warroomTabBtn.setAttribute('aria-selected', 'true'); }
     if (warroomView) warroomView.style.display = 'block';
-    if (layout) layout.style.display = 'block';
     if (sidebar) sidebar.style.display = 'none';
     history.replaceState(null, null, '#warroom');
   } else if (tabName === 'concepts') {
     if (conceptsTabBtn) { conceptsTabBtn.classList.add('active'); conceptsTabBtn.setAttribute('aria-selected', 'true'); }
     if (conceptsView) conceptsView.style.display = 'block';
-    if (layout) layout.style.display = 'block';
     if (sidebar) sidebar.style.display = 'none';
     loadConceptsCatalog();
     history.replaceState(null, null, '#concepts');
@@ -413,8 +411,7 @@ function switchDashboardTab(tabName) {
     // simulation
     if (simTabBtn) { simTabBtn.classList.add('active'); simTabBtn.setAttribute('aria-selected', 'true'); }
     if (simView) simView.style.display = 'block';
-    if (layout) layout.style.display = ''; // restore grid
-    if (sidebar) sidebar.style.display = ''; // restore flex
+    if (sidebar) sidebar.style.display = '';
     history.replaceState(null, null, '#simulation');
   }
 }
