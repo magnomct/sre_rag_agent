@@ -135,7 +135,18 @@
         onclick="switchDashboardTab('warroom')"
       >
         <span class="tab-icon">💻</span>
-        <span >War Room (Terminal)</span>
+        <span>War Room (Terminal)</span>
+      </button>
+
+      <button
+        class="tab-btn"
+        id="tab-btn-concepts"
+        role="tab"
+        aria-selected="false"
+        onclick="switchDashboardTab('concepts')"
+      >
+        <span class="tab-icon">📚</span>
+        <span>Conceitos SRE</span>
       </button>
     
     </nav>
@@ -157,6 +168,59 @@
 
       <!-- Active simulation panels rendered by JS -->
       <div id="simulation-panels"></div>
+
+      
+      <!-- ── Catálogo de Cenários de Incidente (16 Cenários) ──────── -->
+      <section class="scenarios-catalog-section" style="margin-top: 25px; margin-bottom: 35px;">
+        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h3 style="margin: 0; font-size: 1.25rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+              <span>🗂️</span> Catálogo de Cenários de Incidente ({{ scenarios|length }})
+            </h3>
+            <p style="margin: 4px 0 0; font-size: 0.85rem; color: var(--text-secondary);">
+              Explore os 16 cenários de produção. Clique em <strong>▶ Simular</strong> para abrir o incidente ou em <strong>📘 Passo a Passo</strong> para estudar o runbook completo.
+            </p>
+          </div>
+          <div class="catalog-difficulty-filters" style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <button class="filter-pill-btn active" onclick="filterCatalogScenarios('all')">Todos ({{ scenarios|length }})</button>
+            <button class="filter-pill-btn" onclick="filterCatalogScenarios('easy')">🟢 Fácil</button>
+            <button class="filter-pill-btn" onclick="filterCatalogScenarios('medium')">🟡 Médio</button>
+            <button class="filter-pill-btn" onclick="filterCatalogScenarios('hard')">🔴 Difícil</button>
+            <button class="filter-pill-btn" onclick="filterCatalogScenarios('extreme')">💀 Extremo</button>
+          </div>
+        </div>
+
+        <div class="catalog-grid" id="catalog-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;">
+          {% for scenario in scenarios %}
+          <div class="catalog-card" data-difficulty="{{ scenario.difficulty }}" data-scenario-id="{{ scenario.id }}" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, border-color 0.2s;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <span style="font-size: 1.8rem;">{{ scenario.icon }}</span>
+                <div style="display: flex; gap: 6px;">
+                  <span class="severity-badge sev-{{ scenario.severity }}">{{ scenario.severity }}</span>
+                  <span class="difficulty-badge diff-{{ scenario.difficulty }}" style="font-size: 0.72rem; padding: 2px 8px; border-radius: 12px; font-weight: 600; text-transform: uppercase;">{{ scenario.difficulty }}</span>
+                </div>
+              </div>
+              <h4 style="margin: 0 0 6px; font-size: 1rem; color: var(--text-primary);">{{ scenario.title }}</h4>
+              <div style="font-size: 0.78rem; color: #58a6ff; margin-bottom: 8px; font-weight: 500;">
+                📂 {{ scenario.category }}
+              </div>
+              <p style="margin: 0 0 14px; font-size: 0.83rem; color: var(--text-secondary); line-height: 1.45;">
+                {{ scenario.description }}
+              </p>
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 10px; border-top: 1px solid #30363d; padding-top: 12px;">
+              <button class="btn btn-primary" onclick="startSimulation('{{ scenario.id }}')" style="flex: 1; padding: 7px 10px; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;">
+                <span>▶</span> Simular
+              </button>
+              <button class="btn btn-secondary" onclick="openRunbookModal('{{ scenario.id }}')" style="flex: 1; padding: 7px 10px; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;">
+                <span>📘</span> Passo a Passo
+              </button>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
 
       <!-- ── Chaos Engineering & Audit Telemetry Section ────────── -->
       <section class="chaos-section">
@@ -378,6 +442,46 @@
         </div>
       </div>
     </div>
+
+    <!-- ── TAB 3: Conceitos SRE & Melhores Práticas ───────────── -->
+    <div id="view-concepts" class="dashboard-tab-view" style="display: none; padding-bottom: 60px;">
+      <section class="concepts-section">
+        <div class="concepts-header" style="margin-bottom: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+            <div>
+              <h2 style="margin: 0; font-size: 1.6rem; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
+                <span>📚</span> Conceitos SRE & Melhores Práticas
+              </h2>
+              <p style="margin: 6px 0 0; font-size: 0.92rem; color: var(--text-secondary); max-width: 820px;">
+                Guia arquitetural completo dos 16 cenários: entenda o comportamento interno do Linux Kernel, do Kubernetes e dos bancos de dados, os motivos das falhas e as melhores práticas consagradas de confiabilidade.
+              </p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <input type="text" id="concepts-search" placeholder="🔍 Buscar por termo (ex: cgroups, CoreDNS, OOM)..." oninput="filterConcepts()" style="background: var(--bg-card, #161b22); border: 1px solid var(--border-color, #30363d); color: var(--text-primary, #f0f6fc); padding: 8px 14px; border-radius: 6px; font-size: 0.88rem; width: 320px; outline: none;">
+            </div>
+          </div>
+
+          <!-- Category Pills -->
+          <div class="concepts-filter-bar" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px;">
+            <button class="concept-filter-btn active" onclick="filterConceptsCategory('all')">Todos (16)</button>
+            <button class="concept-filter-btn" onclick="filterConceptsCategory('Disponibilidade')">Disponibilidade</button>
+            <button class="concept-filter-btn" onclick="filterConceptsCategory('Latência')">Latência & Desempenho</button>
+            <button class="concept-filter-btn" onclick="filterConceptsCategory('Recursos')">Recursos & Cgroups</button>
+            <button class="concept-filter-btn" onclick="filterConceptsCategory('Confiabilidade')">Confiabilidade & Probes</button>
+            <button class="concept-filter-btn" onclick="filterConceptsCategory('Rede')">Rede, DNS & CNI</button>
+            <button class="concept-filter-btn" onclick="filterConceptsCategory('Armazenamento')">Armazenamento & PVC</button>
+            <button class="concept-filter-btn" onclick="filterConceptsCategory('Segurança')">Segurança & TLS</button>
+            <button class="concept-filter-btn" onclick="filterConceptsCategory('Concorrência')">Concorrência & Pools</button>
+          </div>
+        </div>
+
+        <!-- Concepts Dynamic Grid -->
+        <div id="concepts-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(460px, 1fr)); gap: 20px;">
+          <!-- Populated via JS -->
+        </div>
+      </section>
+    </div>
+
     
 <div id="view-history" class="dashboard-tab-view">
 
@@ -588,5 +692,53 @@
 </footer>
 
 <script src="/static/js/dashboard.js?v=2.1.2"></script>
+
+<!-- ── Runbook Passo a Passo Modal ──────────────────────────── -->
+<div id="runbook-modal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.78); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center;">
+  <div class="modal-container" style="background: #0d1117; border: 1px solid #30363d; border-radius: 12px; width: 92%; max-width: 900px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.8); overflow: hidden;">
+    <!-- Modal Header -->
+    <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; background: #161b22;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span id="rb-modal-icon" style="font-size: 2rem;">🚨</span>
+        <div>
+          <h3 id="rb-modal-title" style="margin: 0; font-size: 1.15rem; color: #f0f6fc; display: flex; align-items: center; gap: 8px;">Runbook Passo a Passo</h3>
+          <div style="display: flex; gap: 8px; margin-top: 4px; align-items: center;">
+            <span id="rb-modal-sev" class="severity-badge sev-SEV-1">SEV-1</span>
+            <span id="rb-modal-cat" style="font-size: 0.78rem; color: #8b949e;">Categoria</span>
+            <span id="rb-modal-diff" style="font-size: 0.78rem; color: #58a6ff; font-weight: 600;">Dificuldade</span>
+          </div>
+        </div>
+      </div>
+      <button onclick="closeRunbookModal()" style="background: transparent; border: none; color: #8b949e; font-size: 1.6rem; cursor: pointer; padding: 4px 8px; border-radius: 4px;">&times;</button>
+    </div>
+
+    <!-- Modal Stage Navigation Tabs -->
+    <div class="modal-tabs" style="display: flex; background: #090d13; border-bottom: 1px solid #30363d; padding: 0 10px; overflow-x: auto;">
+      <button class="rb-tab-btn active" id="rb-tab-triage" onclick="switchRunbookStage('triage')">🚨 1. Triagem & Alertas</button>
+      <button class="rb-tab-btn" id="rb-tab-diagnosis" onclick="switchRunbookStage('diagnosis')">🔍 2. Diagnóstico</button>
+      <button class="rb-tab-btn" id="rb-tab-mitigation" onclick="switchRunbookStage('mitigation')">⚡ 3. Mitigação Imediata</button>
+      <button class="rb-tab-btn" id="rb-tab-root_cause" onclick="switchRunbookStage('root_cause')">🛠️ 4. Causa Raiz & Correção</button>
+      <button class="rb-tab-btn" id="rb-tab-prevention" onclick="switchRunbookStage('prevention')">🛡️ 5. Prevenção</button>
+      <button class="rb-tab-btn" id="rb-tab-concepts" onclick="switchRunbookStage('concepts')">📚 6. Conceito Arquitetural</button>
+    </div>
+
+    <!-- Modal Body / Content -->
+    <div class="modal-body" id="rb-modal-body" style="padding: 24px; overflow-y: auto; flex: 1; color: #c9d1d9; font-size: 0.92rem; line-height: 1.6;">
+      <!-- Injected dynamically by JS -->
+    </div>
+
+    <!-- Modal Footer Actions -->
+    <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid #30363d; background: #161b22; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <div id="rb-modal-cmd-preview" style="font-family: monospace; font-size: 0.82rem; color: #79c0ff; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-secondary" onclick="closeRunbookModal()" style="padding: 6px 14px; font-size: 0.85rem; cursor: pointer;">Fechar</button>
+        <button class="btn btn-primary" id="rb-modal-play-btn" onclick="playCurrentModalScenario()" style="padding: 6px 14px; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+          <span>🚀</span> Praticar no War Room
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
