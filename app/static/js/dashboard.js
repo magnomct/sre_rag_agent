@@ -138,9 +138,108 @@ const TRANSLATIONS = {
     footer_app_name: "SRE Incident Lab",
     footer_author: "Autor:",
     footer_license: "Licença MIT",
+
+    // Extended i18n keys for v3.3
+    tab_warroom: "War Room (Terminal)",
+    tab_concepts: "Conceitos SRE",
+    catalog_title: "Catálogo de Cenários de Incidente",
+    catalog_subtitle: "Explore os 16 cenários de produção. Clique em <strong>▶ Simular</strong> para abrir o incidente ou em <strong>📘 Passo a Passo</strong> para estudar o runbook completo.",
+    diff_all: "Todos (16)",
+    diff_easy: "🟢 Fácil",
+    diff_medium: "🟡 Médio",
+    diff_hard: "🔴 Difícil",
+    diff_extreme: "💀 Extremo",
+    warroom_header_title: "🎮 Iniciar Treinamento SRE (Terminal Mode)",
+    warroom_header_subtitle: "Selecione a dificuldade para sortear um cenário. Use comandos reais no terminal para resolvê-lo.",
+    wr_btn_prev: "⬅️ Anterior",
+    wr_btn_clean: "🧹 Limpar",
+    wr_btn_review: "📖 Revisão",
+    wr_btn_hint_prefix: "💡 Dica",
+    wr_btn_next: "➡️ Próximo",
+    wr_btn_restart: "🔄 Recomeçar",
+    concepts_title: "Conceitos SRE & Melhores Práticas",
+    concepts_subtitle: "Guia arquitetural completo dos 16 cenários: entenda o comportamento interno do Linux Kernel, do Kubernetes e dos bancos de dados, os motivos das falhas e as melhores práticas consagradas de confiabilidade.",
+    concepts_search_placeholder: "🔍 Buscar por termo (ex: cgroups, CoreDNS, OOM)...",
+    cat_all: "Todos (16)",
+    cat_availability: "Disponibilidade",
+    cat_latency: "Latência & Desempenho",
+    cat_resources: "Recursos & Cgroups",
+    cat_reliability: "Confiabilidade & Probes",
+    cat_network: "Rede, DNS & CNI",
+    cat_storage: "Armazenamento & PVC",
+    cat_security: "Segurança & TLS",
+    cat_concurrency: "Concorrência & Pools",
+    rb_tab_triage: "🚨 1. Triagem & Alertas",
+    rb_tab_diagnosis: "🔍 2. Diagnóstico",
+    rb_tab_mitigation: "⚡ 3. Mitigação Imediata",
+    rb_tab_root_cause: "🛠️ 4. Causa Raiz & Correção",
+    rb_tab_prevention: "🛡️ 5. Prevenção",
+    rb_tab_concepts: "📚 6. Conceito Arquitetural",
+    rb_modal_title: "Runbook Passo a Passo",
+    btn_close: "Fechar",
+    btn_copy_cmd: "Copiar Comando",
+    btn_practice_warroom: "Praticar no War Room",
+    lbl_scenario: "Cenário:",
+    lbl_mechanism: "🏗️ Mecanismo Interno",
+    lbl_best_practices: "⭐ Melhores Práticas SRE",
+    lbl_golden_signals: "📊 Golden Signals Afetados",
+    btn_runbook: "Ver Runbook",
+    btn_practice: "Praticar no Terminal",
+    btn_step_by_step: "Passo a Passo",
+    btn_sim: "Simular",
   },
 
   en: {
+
+    // Extended i18n keys for v3.3
+    tab_warroom: "War Room (Terminal)",
+    tab_concepts: "SRE Concepts",
+    catalog_title: "Incident Scenario Catalog",
+    catalog_subtitle: "Explore all 16 production scenarios. Click <strong>▶ Simulate</strong> to launch the incident or <strong>📘 Step-by-Step</strong> to review the full runbook.",
+    diff_all: "All (16)",
+    diff_easy: "🟢 Easy",
+    diff_medium: "🟡 Medium",
+    diff_hard: "🔴 Hard",
+    diff_extreme: "💀 Extreme",
+    warroom_header_title: "🎮 Start SRE Training (Terminal Mode)",
+    warroom_header_subtitle: "Select difficulty to draw a scenario. Use real terminal commands to investigate and resolve it.",
+    wr_btn_prev: "⬅️ Previous",
+    wr_btn_clean: "🧹 Clear",
+    wr_btn_review: "📖 Review",
+    wr_btn_hint_prefix: "💡 Hint",
+    wr_btn_next: "➡️ Next",
+    wr_btn_restart: "🔄 Restart",
+    concepts_title: "SRE Concepts & Best Practices",
+    concepts_subtitle: "Complete architectural guide for all 16 scenarios: understand internal Linux Kernel, Kubernetes, and database mechanisms, root causes of failures, and industry-standard reliability best practices.",
+    concepts_search_placeholder: "🔍 Search by term (e.g., cgroups, CoreDNS, OOM)...",
+    cat_all: "All (16)",
+    cat_availability: "Availability",
+    cat_latency: "Latency & Performance",
+    cat_resources: "Resources & Cgroups",
+    cat_reliability: "Reliability & Probes",
+    cat_network: "Network, DNS & CNI",
+    cat_storage: "Storage & PVC",
+    cat_security: "Security & TLS",
+    cat_concurrency: "Concurrency & Pools",
+    rb_tab_triage: "🚨 1. Triage & Alerts",
+    rb_tab_diagnosis: "🔍 2. Diagnosis",
+    rb_tab_mitigation: "⚡ 3. Immediate Mitigation",
+    rb_tab_root_cause: "🛠️ 4. Root Cause & Fix",
+    rb_tab_prevention: "🛡️ 5. Prevention",
+    rb_tab_concepts: "📚 6. Architectural Concept",
+    rb_modal_title: "Step-by-Step Runbook",
+    btn_close: "Close",
+    btn_copy_cmd: "Copy Command",
+    btn_practice_warroom: "Practice in War Room",
+    lbl_scenario: "Scenario:",
+    lbl_mechanism: "🏗️ Internal Mechanism",
+    lbl_best_practices: "⭐ SRE Best Practices",
+    lbl_golden_signals: "📊 Affected Golden Signals",
+    btn_runbook: "View Runbook",
+    btn_practice: "Practice in Terminal",
+    btn_step_by_step: "Step-by-Step",
+    btn_sim: "Simulate",
+
     // Header & Navigation
     app_title: "SRE Incident Simulation Lab",
     app_subtitle: "RAG Agent · Kubernetes · Observability · Chaos & Incident Response",
@@ -319,13 +418,79 @@ function setLanguage(lang) {
     el.setAttribute('title', t(key));
   });
 
+  // Apply placeholders if any
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    el.setAttribute('placeholder', t(key));
+  });
+
   // Update dynamic elements
   updateSidebarLanguage();
+  updateCatalogLanguage();
+  if (cachedConceptsList) {
+    renderConceptsCards(cachedConceptsList);
+  }
+  if (currentModalScenario) {
+    updateRunbookModalLanguage();
+  }
   if (activeScenarioId) {
     renderSimulationPanel(activeScenarioId, false);
   }
   syncChaosState();
   refreshHistory();
+}
+
+function updateCatalogLanguage() {
+  const isEn = (currentLang === 'en');
+  document.querySelectorAll('#catalog-grid .catalog-card').forEach(card => {
+    const titleEl = card.querySelector('.catalog-card-title') || card.querySelector('h4');
+    const catEl = card.querySelector('.catalog-card-cat') || card.querySelector('div[style*="#58a6ff"]');
+    const descEl = card.querySelector('.catalog-card-desc') || card.querySelector('p');
+    const simBtnText = card.querySelector('.cat-btn-sim-text');
+    const rbBtnText = card.querySelector('.cat-btn-rb-text');
+
+    if (titleEl && card.dataset.titlePt) {
+      titleEl.textContent = (isEn && card.dataset.titleEn) ? card.dataset.titleEn : card.dataset.titlePt;
+    }
+    if (catEl && card.dataset.catPt) {
+      catEl.textContent = '📂 ' + ((isEn && card.dataset.catEn) ? card.dataset.catEn : card.dataset.catPt);
+    }
+    if (descEl && card.dataset.descPt) {
+      descEl.textContent = (isEn && card.dataset.descEn) ? card.dataset.descEn : card.dataset.descPt;
+    }
+    if (simBtnText) {
+      simBtnText.textContent = t('btn_sim');
+    }
+    if (rbBtnText) {
+      rbBtnText.textContent = t('btn_step_by_step');
+    }
+  });
+}
+
+function updateRunbookModalLanguage() {
+  if (!currentModalScenario) return;
+  const isEn = (currentLang === 'en');
+  const data = currentModalScenario;
+
+  const titleEl = document.getElementById('rb-modal-title');
+  if (titleEl) {
+    titleEl.textContent = (isEn && data.title_en) ? data.title_en : (data.title || t('rb_modal_title'));
+  }
+  const catEl = document.getElementById('rb-modal-cat');
+  if (catEl) {
+    catEl.textContent = '📂 ' + ((isEn && data.category_en) ? data.category_en : (data.category || 'Geral'));
+  }
+  const diffEl = document.getElementById('rb-modal-diff');
+  if (diffEl) {
+    diffEl.textContent = (isEn ? 'Difficulty: ' : 'Dificuldade: ') + (data.difficulty || 'medium');
+  }
+  const cmdPrevEl = document.getElementById('rb-modal-cmd-preview');
+  if (cmdPrevEl) {
+    cmdPrevEl.textContent = data.command ? ((isEn ? 'Mitigation: $ ' : 'Mitigação: $ ') + data.command) : '';
+  }
+
+  // Refresh current open stage body
+  switchRunbookStage(currentRunbookStage);
 }
 
 async function updateSidebarLanguage() {
@@ -1701,11 +1866,15 @@ async function warroomHint() {
     warroomHintsUsed++;
     warroomCurrentScore = data.score_after;
 
+    const isEn = (currentLang === 'en');
+    const hintText = (isEn && data.hint_en) ? data.hint_en : data.hint;
+    const hintHeader = isEn ? `[HINT ${warroomHintsUsed}/2] -20 pts → current score: ⭐ ${data.score_after} pts` : `[DICA ${warroomHintsUsed}/2] -20 pts → pontuação atual: ⭐ ${data.score_after} pts`;
+
     if (term) {
       term.innerHTML += `
         <div style="border-top:1px dashed #30363d; margin-top:8px; padding-top:8px;">
-          <div style="color:#f0c040; font-weight:bold;">[DICA ${warroomHintsUsed}/2] -20 pts → pontuação atual: ⭐ ${data.score_after} pts</div>
-          <div style="color:#e6edf3; font-size:0.9rem; margin-top:4px;">${data.hint}</div>
+          <div style="color:#f0c040; font-weight:bold;">${hintHeader}</div>
+          <div style="color:#e6edf3; font-size:0.9rem; margin-top:4px;">${hintText}</div>
         </div>
       `;
       scrollTerminalToView();
@@ -1737,15 +1906,20 @@ async function warroomReview() {
     if (!res.ok) throw new Error('Revisão não disponível');
     const data = await res.json();
 
+    const isEn = (currentLang === 'en');
+    const reviewExplanation = (isEn && data.explanation_en) ? data.explanation_en : data.explanation;
+    const reviewHeader = isEn ? '[SOLUTION / SCENARIO REVIEW]' : '[GABARITO / REVISÃO DO CENÁRIO]';
+    const btnText = isEn ? 'View Full Step-by-Step (5-Phase Runbook)' : 'Ver Passo a Passo Completo (Runbook de 5 Fases)';
+
     if (term) {
       term.innerHTML += `
         <div style="border-top:1px dashed #30363d; margin-top:8px; padding-top:8px;">
-          <div style="color:#58a6ff; font-weight:bold;">[GABARITO / REVISÃO DO CENÁRIO]</div>
-          <div style="color:#3fb950; font-family:monospace; margin-top:4px; font-weight:bold;">$ ${data.command || data.correct_command || "(Nenhum comando associado)"}</div>
-          <div style="color:var(--text-secondary); font-size:0.9rem; margin-top:4px;">${data.explanation}</div>
+          <div style="color:#58a6ff; font-weight:bold;">${reviewHeader}</div>
+          <div style="color:#3fb950; font-family:monospace; margin-top:4px; font-weight:bold;">$ ${data.command || data.correct_command || (isEn ? "(No command associated)" : "(Nenhum comando associado)")}</div>
+          <div style="color:var(--text-secondary); font-size:0.9rem; margin-top:4px;">${reviewExplanation}</div>
           <div style="margin-top:10px;">
             <button class="btn btn-secondary" onclick="openRunbookModal('${scenarioId}')" style="padding:5px 12px; font-size:0.82rem; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
-              <span>📘</span> Ver Passo a Passo Completo (Runbook de 5 Fases)
+              <span>📘</span> ${btnText}
             </button>
           </div>
         </div>
@@ -1831,15 +2005,16 @@ async function openRunbookModal(scenarioId) {
     const diffEl = document.getElementById('rb-modal-diff');
     const cmdPrevEl = document.getElementById('rb-modal-cmd-preview');
 
+    const isEn = (currentLang === 'en');
     if (iconEl) iconEl.textContent = data.icon || '🚨';
-    if (titleEl) titleEl.textContent = data.title;
+    if (titleEl) titleEl.textContent = (isEn && data.title_en) ? data.title_en : data.title;
     if (sevEl) {
       sevEl.textContent = data.severity;
       sevEl.className = `severity-badge sev-${data.severity}`;
     }
-    if (catEl) catEl.textContent = `📂 ${data.category || 'Geral'}`;
-    if (diffEl) diffEl.textContent = `Dificuldade: ${data.difficulty || 'medium'}`;
-    if (cmdPrevEl) cmdPrevEl.textContent = data.command ? `Mitigação: $ ${data.command}` : '';
+    if (catEl) catEl.textContent = `📂 ${(isEn && data.category_en) ? data.category_en : (data.category || 'Geral')}`;
+    if (diffEl) diffEl.textContent = (isEn ? 'Difficulty: ' : 'Dificuldade: ') + (data.difficulty || 'medium');
+    if (cmdPrevEl) cmdPrevEl.textContent = data.command ? ((isEn ? 'Mitigation: $ ' : 'Mitigação: $ ') + data.command) : '';
 
     // Switch to first stage
     switchRunbookStage('triage');
@@ -1871,23 +2046,30 @@ function switchRunbookStage(stage) {
   const bodyEl = document.getElementById('rb-modal-body');
   if (!bodyEl || !currentModalScenario) return;
 
+  const isEn = (currentLang === 'en');
   const data = currentModalScenario;
   const rb = data.runbook_steps || {};
   const concepts = data.concepts || {};
 
   if (stage === 'triage') {
-    const items = rb.triage || [
+    const defaultItems = isEn ? [
+      'Check active firing alerts in Alertmanager.',
+      'Inspect Grafana SLO and availability dashboards.',
+      'Assess request drop rates and Error Budget burn rate.'
+    ] : [
       'Verificar alertas ativos no Alertmanager.',
       'Consultar o dashboard de SLO e disponibilidade no Grafana.',
       'Identificar taxa de descarte ou queima de Error Budget.'
     ];
+    const items = (isEn && rb.triage_en && rb.triage_en.length) ? rb.triage_en : (rb.triage || defaultItems);
+
     bodyEl.innerHTML = `
       <div class="runbook-step-box">
         <h4 style="margin:0 0 12px; color:#f0f6fc; font-size:1.05rem; display:flex; align-items:center; gap:8px;">
-          <span>🚨</span> Fase 1: Triagem & Alertas Prometheus
+          <span>🚨</span> ${isEn ? 'Phase 1: Triage & Prometheus Alerts' : 'Fase 1: Triagem & Alertas Prometheus'}
         </h4>
         <p style="color:#8b949e; font-size:0.88rem; margin-bottom:16px;">
-          Identifique os primeiros sinais vitais, consulte as métricas de Golden Signals e confirme o escopo da violação do SLO.
+          ${isEn ? 'Identify primary telemetry signals, inspect Golden Signals metrics, and confirm SLO breach scope.' : 'Identifique os primeiros sinais vitais, consulte as métricas de Golden Signals e confirme o escopo da violação do SLO.'}
         </p>
         <ul style="padding-left:22px; margin:0; line-height:1.7;">
           ${items.map(it => `<li style="margin-bottom:8px;">${escapeHtml(it)}</li>`).join('')}
@@ -1895,18 +2077,18 @@ function switchRunbookStage(stage) {
       </div>
     `;
   } else if (stage === 'diagnosis') {
-    const items = rb.diagnosis || [
+    const items = (isEn && rb.diagnosis_en && rb.diagnosis_en.length) ? rb.diagnosis_en : (rb.diagnosis || [
       'kubectl get pods -n sre-rag -o wide',
       'kubectl describe pod <nome-do-pod>',
       'kubectl logs -l app=sre-rag-api --tail=50'
-    ];
+    ]);
     bodyEl.innerHTML = `
       <div class="runbook-step-box">
         <h4 style="margin:0 0 12px; color:#f0f6fc; font-size:1.05rem; display:flex; align-items:center; gap:8px;">
-          <span>🔍</span> Fase 2: Comandos de Diagnóstico & Triagem no Cluster
+          <span>🔍</span> ${isEn ? 'Phase 2: Diagnosis & Cluster Inspection Commands' : 'Fase 2: Comandos de Diagnóstico & Triagem no Cluster'}
         </h4>
         <p style="color:#8b949e; font-size:0.88rem; margin-bottom:14px;">
-          Execute os comandos abaixo para inspecionar os logs de aplicação, eventos de container e métricas de sistema:
+          ${isEn ? 'Execute the diagnostic commands below to inspect application logs, container lifecycle events, and system metrics:' : 'Execute os comandos abaixo para inspecionar os logs de aplicação, eventos de container e métricas de sistema:'}
         </p>
         ${items.map(it => `
           <div class="runbook-code-block">
@@ -1917,56 +2099,68 @@ function switchRunbookStage(stage) {
     `;
   } else if (stage === 'mitigation') {
     const mit = rb.mitigation || {};
+    const mitAction = isEn ? (mit.action_en || mit.action || 'Execute rapid remediation command to restore healthy user traffic.') : (mit.action || 'Executar comando de remediação rápida para reestabelecer o tráfego do usuário.');
+    const mitVal = isEn ? (mit.validation_en || mit.validation || 'Monitor endpoint return to HTTP 200 and latency normalization.') : (mit.validation || 'Acompanhar retorno dos endpoints para HTTP 200 e normalização da latência.');
+
     bodyEl.innerHTML = `
       <div class="runbook-step-box" style="border-left: 4px solid #3fb950;">
         <h4 style="margin:0 0 12px; color:#3fb950; font-size:1.05rem; display:flex; align-items:center; gap:8px;">
-          <span>⚡</span> Fase 3: Mitigação Imediata (Estancar Impacto & Reduzir MTTR)
+          <span>⚡</span> ${isEn ? 'Phase 3: Immediate Mitigation (Halt Impact & Minimize MTTR)' : 'Fase 3: Mitigação Imediata (Estancar Impacto & Reduzir MTTR)'}
         </h4>
         <p style="margin:0 0 14px; font-weight:500; color:#e6edf3;">
-          ${escapeHtml(mit.action || 'Executar comando de remediação rápida para reestabelecer o tráfego do usuário.')}
+          ${escapeHtml(mitAction)}
         </p>
         <div class="runbook-code-block" style="border-color:#238636; color:#56d364; font-size:0.95rem; font-weight:bold;">
           <code>$ ${escapeHtml(mit.command || data.command || '')}</code>
         </div>
         <div style="font-size:0.88rem; color:#8b949e; margin-top:14px; background:rgba(0,0,0,0.25); padding:10px 14px; border-radius:6px;">
-          <strong style="color:#38bdf8;">Validação de Estabilidade:</strong> ${escapeHtml(mit.validation || 'Acompanhar retorno dos endpoints para HTTP 200 e normalização da latência.')}
+          <strong style="color:#38bdf8;">${isEn ? 'Stability Validation:' : 'Validação de Estabilidade:'}</strong> ${escapeHtml(mitVal)}
         </div>
       </div>
     `;
   } else if (stage === 'root_cause') {
     const rc = rb.root_cause || {};
+    const rcAnalysis = isEn ? (rc.analysis_en || rc.analysis || data.explanation_en || data.explanation || 'Resource configuration defect or out-of-sync dependency.') : (rc.analysis || data.explanation || 'Falha de configuração de recurso ou dependência não sincronizada.');
+    const rcFix = isEn ? (rc.permanent_fix_en || rc.permanent_fix || 'Update manifest in GitOps repository and submit Pull Request with automated validation.') : (rc.permanent_fix || 'Atualizar manifesto no repositório de GitOps e submeter Pull Request com validações de CI/CD.');
+
     bodyEl.innerHTML = `
       <div class="runbook-step-box">
         <h4 style="margin:0 0 14px; color:#f0f6fc; font-size:1.05rem; display:flex; align-items:center; gap:8px;">
-          <span>🛠️</span> Fase 4: Análise de Causa Raiz & Correção Permanente
+          <span>🛠️</span> ${isEn ? 'Phase 4: Root Cause Analysis & Permanent Resolution' : 'Fase 4: Análise de Causa Raiz & Correção Permanente'}
         </h4>
         <div style="margin-bottom:18px;">
-          <strong style="color:#d2a8ff; font-size:0.92rem; text-transform:uppercase; letter-spacing:0.5px;">Causa Raiz Identificada:</strong>
+          <strong style="color:#d2a8ff; font-size:0.92rem; text-transform:uppercase; letter-spacing:0.5px;">${isEn ? 'Identified Root Cause:' : 'Causa Raiz Identificada:'}</strong>
           <p style="margin:6px 0 0; color:#c9d1d9; line-height:1.6;">
-            ${escapeHtml(rc.analysis || data.explanation || 'Falha de configuração de recurso ou dependência não sincronizada.')}
+            ${escapeHtml(rcAnalysis)}
           </p>
         </div>
         <div style="border-top:1px solid #30363d; padding-top:14px;">
-          <strong style="color:#58a6ff; font-size:0.92rem; text-transform:uppercase; letter-spacing:0.5px;">Correção Definitiva no Repositório / GitOps:</strong>
+          <strong style="color:#58a6ff; font-size:0.92rem; text-transform:uppercase; letter-spacing:0.5px;">${isEn ? 'Permanent Fix in GitOps / Repository:' : 'Correção Definitiva no Repositório / GitOps:'}</strong>
           <p style="margin:6px 0 0; color:#c9d1d9; line-height:1.6;">
-            ${escapeHtml(rc.permanent_fix || 'Atualizar manifesto no repositório de GitOps e submeter Pull Request com validações de CI/CD.')}
+            ${escapeHtml(rcFix)}
           </p>
         </div>
       </div>
     `;
   } else if (stage === 'prevention') {
-    const prev = rb.prevention || [
+    const defaultPrev = isEn ? [
+      'Document incident timeline and publish a blameless postmortem.',
+      'Fine-tune Alertmanager alert thresholds for proactive detection.',
+      'Execute continuous chaos injection tests to certify ongoing resilience.'
+    ] : [
       'Documentar timeline do incidente e publicar postmortem blameless.',
       'Ajustar thresholds de alertas no Alertmanager para detecção proativa.',
       'Executar teste de injeção de caos para certificar a resiliência contínua.'
     ];
+    const prev = (isEn && rb.prevention_en && rb.prevention_en.length) ? rb.prevention_en : (rb.prevention || defaultPrev);
+
     bodyEl.innerHTML = `
       <div class="runbook-step-box">
         <h4 style="margin:0 0 12px; color:#f0f6fc; font-size:1.05rem; display:flex; align-items:center; gap:8px;">
-          <span>🛡️</span> Fase 5: Prevenção, Pós-Morte & Chaos Engineering
+          <span>🛡️</span> ${isEn ? 'Phase 5: Prevention, Postmortem & Chaos Engineering' : 'Fase 5: Prevenção, Pós-Morte & Chaos Engineering'}
         </h4>
         <p style="color:#8b949e; font-size:0.88rem; margin-bottom:16px;">
-          Lições aprendidas e ações contínuas para impedir a reincidência do problema em produção:
+          ${isEn ? 'Lessons learned and proactive practices to prevent recurrence in production:' : 'Lições aprendidas e ações contínuas para impedir a reincidência do problema em produção:'}
         </p>
         <ul style="padding-left:22px; margin:0; line-height:1.7;">
           ${prev.map(p => `<li style="margin-bottom:8px;">${escapeHtml(p)}</li>`).join('')}
@@ -1974,20 +2168,24 @@ function switchRunbookStage(stage) {
       </div>
     `;
   } else if (stage === 'concepts') {
+    const resTitle = isEn ? (concepts.resource_title_en || concepts.resource_title || 'Involved Architecture') : (concepts.resource_title || 'Recursos Envolvidos');
+    const how = isEn ? (concepts.how_it_works_en || concepts.how_it_works || 'Architectural infrastructure and orchestration component.') : (concepts.how_it_works || 'Componente arquitetural de infraestrutura e orquestração.');
+    const bpList = (isEn && concepts.best_practices_en && concepts.best_practices_en.length) ? concepts.best_practices_en : (concepts.best_practices || []);
+
     bodyEl.innerHTML = `
       <div class="runbook-step-box">
         <h4 style="margin:0 0 10px; color:#38bdf8; font-size:1.05rem;">
-          <span>📚</span> ${escapeHtml(concepts.resource_title || 'Recursos Envolvidos')}
+          <span>📚</span> ${escapeHtml(resTitle)}
         </h4>
         <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
           ${(concepts.architecture_components || []).map(c => `<span class="concept-component-tag">${escapeHtml(c)}</span>`).join('')}
         </div>
         <p style="color:#c9d1d9; line-height:1.6; margin-bottom:16px;">
-          ${escapeHtml(concepts.how_it_works || 'Componente arquitetural de infraestrutura e orquestração.')}
+          ${escapeHtml(how)}
         </p>
-        <h5 style="color:#f0f6fc; margin:16px 0 8px; font-size:0.95rem;">⭐ Melhores Práticas Recomendadas:</h5>
+        <h5 style="color:#f0f6fc; margin:16px 0 8px; font-size:0.95rem;">${isEn ? '⭐ Recommended Best Practices:' : '⭐ Melhores Práticas Recomendadas:'}</h5>
         <ul style="padding-left:22px; margin:0; line-height:1.6;">
-          ${(concepts.best_practices || []).map(b => `<li style="margin-bottom:6px;">${escapeHtml(b)}</li>`).join('')}
+          ${bpList.map(b => `<li style="margin-bottom:6px;">${escapeHtml(b)}</li>`).join('')}
         </ul>
       </div>
     `;
@@ -2031,20 +2229,27 @@ function renderConceptsCards(concepts) {
   const grid = document.getElementById('concepts-cards-grid');
   if (!grid) return;
 
+  const isEn = (currentLang === 'en');
   if (concepts.length === 0) {
-    grid.innerHTML = '<div style="color:#8b949e; grid-column:1/-1;">Nenhum conceito encontrado para este filtro.</div>';
+    grid.innerHTML = `<div style="color:#8b949e; grid-column:1/-1;">${isEn ? 'No concepts found for this filter.' : 'Nenhum conceito encontrado para este filtro.'}</div>`;
     return;
   }
 
-  grid.innerHTML = concepts.map(item => `
+  grid.innerHTML = concepts.map(item => {
+    const cardTitle = isEn && item.resource_title_en ? item.resource_title_en : (item.resource_title || (isEn && item.title_en ? item.title_en : item.title));
+    const scTitle = isEn && item.title_en ? item.title_en : item.title;
+    const mechanism = isEn && item.how_it_works_en ? item.how_it_works_en : item.how_it_works;
+    const bpList = (isEn && item.best_practices_en && item.best_practices_en.length) ? item.best_practices_en : (item.best_practices || []);
+
+    return `
     <div class="concept-card" data-category="${escapeHtml(item.category)}" data-difficulty="${escapeHtml(item.difficulty)}">
       <div>
         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
           <div style="display:flex; align-items:center; gap:10px;">
             <span style="font-size:2rem;">${escapeHtml(item.icon)}</span>
             <div>
-              <h3 style="margin:0; font-size:1.1rem; color:var(--text-primary);">${escapeHtml(item.resource_title || item.title)}</h3>
-              <div style="font-size:0.78rem; color:#58a6ff; margin-top:2px;">Cenário: ${escapeHtml(item.title)}</div>
+              <h3 style="margin:0; font-size:1.1rem; color:var(--text-primary);">${escapeHtml(cardTitle)}</h3>
+              <div style="font-size:0.78rem; color:#58a6ff; margin-top:2px;">${t('lbl_scenario')} ${escapeHtml(scTitle)}</div>
             </div>
           </div>
           <div style="display:flex; gap:6px;">
@@ -2062,15 +2267,15 @@ function renderConceptsCards(concepts) {
 
         <!-- Como Funciona -->
         <div style="background:rgba(0,0,0,0.22); border-left:3px solid #38bdf8; padding:10px 14px; border-radius:0 6px 6px 0; margin-bottom:14px;">
-          <div style="font-size:0.78rem; font-weight:600; color:#38bdf8; text-transform:uppercase; margin-bottom:4px;">🏗️ Mecanismo Interno</div>
-          <p style="margin:0; font-size:0.85rem; color:var(--text-secondary); line-height:1.5;">${escapeHtml(item.how_it_works)}</p>
+          <div style="font-size:0.78rem; font-weight:600; color:#38bdf8; text-transform:uppercase; margin-bottom:4px;">${t('lbl_mechanism')}</div>
+          <p style="margin:0; font-size:0.85rem; color:var(--text-secondary); line-height:1.5;">${escapeHtml(mechanism)}</p>
         </div>
 
         <!-- Melhores Práticas -->
         <div style="margin-bottom:14px;">
-          <div style="font-size:0.78rem; font-weight:600; color:#3fb950; text-transform:uppercase; margin-bottom:6px;">⭐ Melhores Práticas SRE</div>
+          <div style="font-size:0.78rem; font-weight:600; color:#3fb950; text-transform:uppercase; margin-bottom:6px;">${t('lbl_best_practices')}</div>
           <ul style="margin:0; padding-left:18px; font-size:0.83rem; color:var(--text-secondary); line-height:1.5;">
-            ${(item.best_practices || []).slice(0, 2).map(bp => `<li style="margin-bottom:4px;">${escapeHtml(bp)}</li>`).join('')}
+            ${bpList.slice(0, 2).map(bp => `<li style="margin-bottom:4px;">${escapeHtml(bp)}</li>`).join('')}
           </ul>
         </div>
       </div>
@@ -2078,20 +2283,22 @@ function renderConceptsCards(concepts) {
       <!-- Footer Ações -->
       <div style="display:flex; gap:8px; border-top:1px solid var(--border-color); padding-top:12px; margin-top:10px;">
         <button class="btn btn-secondary" onclick="openRunbookModal('${item.scenario_id}')" style="flex:1; padding:7px; font-size:0.82rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
-          <span>📘</span> Ver Runbook
+          <span>📘</span> ${t('btn_runbook')}
         </button>
         <button class="btn btn-primary" onclick="jumpToWarroomScenario('${item.scenario_id}')" style="flex:1; padding:7px; font-size:0.82rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
-          <span>🚀</span> Praticar no Terminal
+          <span>🚀</span> ${t('btn_practice')}
         </button>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function filterConceptsCategory(cat) {
   const btns = document.querySelectorAll('.concepts-filter-bar .concept-filter-btn');
   btns.forEach(btn => {
-    if ((cat === 'all' && btn.textContent.includes('Todos')) || btn.textContent.includes(cat)) {
+    const btnCat = btn.getAttribute('data-cat') || (btn.textContent.includes('Todos') || btn.textContent.includes('All') ? 'all' : '');
+    if (btnCat === cat || (cat === 'all' && btnCat === 'all')) {
       btn.classList.add('active');
     } else {
       btn.classList.remove('active');
