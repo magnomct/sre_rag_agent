@@ -432,11 +432,15 @@ def review_scenario(scenario_id: str):
     return {
         "scenario_id": scenario_id,
         "title": scenario["title"],
+        "title_en": scenario.get("title_en", scenario["title"]),
         "severity": scenario["severity"],
         "category": scenario.get("category", "Geral"),
+        "category_en": scenario.get("category_en", scenario.get("category", "General")),
         "command": correct.get("command", ""),
         "label": correct.get("label", ""),
+        "label_en": correct.get("label_en", correct.get("label", "")),
         "explanation": correct.get("explanation", ""),
+        "explanation_en": correct.get("explanation_en", correct.get("explanation", "")),
         "runbook_steps": scenario.get("runbook_steps", {}),
         "concepts": scenario.get("concepts", {}),
     }
@@ -454,11 +458,14 @@ def get_scenario_runbook(scenario_id: str):
         "title_en": scenario.get("title_en", scenario["title"]),
         "severity": scenario["severity"],
         "category": scenario.get("category", "Geral"),
+        "category_en": scenario.get("category_en", scenario.get("category", "General")),
         "icon": scenario.get("icon", "🚨"),
         "difficulty": scenario.get("difficulty", "medium"),
         "description": scenario.get("description", ""),
+        "description_en": scenario.get("description_en", scenario.get("description", "")),
         "command": correct.get("command", "") if correct else "",
         "explanation": correct.get("explanation", "") if correct else "",
+        "explanation_en": correct.get("explanation_en", correct.get("explanation", "")) if correct else "",
         "runbook_steps": scenario.get("runbook_steps", {}),
         "concepts": scenario.get("concepts", {}),
     }
@@ -469,6 +476,7 @@ def get_all_concepts():
     result = []
     for sid, sc in SCENARIOS.items():
         if "concepts" in sc:
+            c = sc["concepts"]
             result.append({
                 "scenario_id": sid,
                 "title": sc["title"],
@@ -476,12 +484,17 @@ def get_all_concepts():
                 "icon": sc.get("icon", "📚"),
                 "severity": sc.get("severity", "SEV-2"),
                 "category": sc.get("category", "Geral"),
+                "category_en": c.get("category_en", sc.get("category_en", sc.get("category", "General"))),
                 "difficulty": sc.get("difficulty", "medium"),
-                "resource_title": sc["concepts"].get("resource_title", ""),
-                "architecture_components": sc["concepts"].get("architecture_components", []),
-                "how_it_works": sc["concepts"].get("how_it_works", ""),
-                "best_practices": sc["concepts"].get("best_practices", []),
-                "golden_signals": sc["concepts"].get("golden_signals", []),
+                "resource_title": c.get("resource_title", ""),
+                "resource_title_en": c.get("resource_title_en", c.get("resource_title", "")),
+                "architecture_components": c.get("architecture_components", []),
+                "how_it_works": c.get("how_it_works", ""),
+                "how_it_works_en": c.get("how_it_works_en", c.get("how_it_works", "")),
+                "best_practices": c.get("best_practices", []),
+                "best_practices_en": c.get("best_practices_en", c.get("best_practices", [])),
+                "golden_signals": c.get("golden_signals", []),
+                "golden_signals_en": c.get("golden_signals_en", c.get("golden_signals", [])),
                 "remediation_command": sc.get("command", ""),
             })
     return result
