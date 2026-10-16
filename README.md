@@ -1,4 +1,4 @@
-# 🚨 SRE RAG Agent — Incident Simulation Lab & Observability Platform v3.3
+# 🚨 SRE RAG Agent — Incident Simulation Lab & Observability Platform v3.4
 
 [ 🇧🇷 Ler em Português ](#-versão-em-português) &nbsp;|&nbsp; [ 🇺🇸 Read in English ](#-english-version)
 
@@ -9,7 +9,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Language-Portugu%C3%AAs-blue?style=for-the-badge" alt="Idioma Português" />
-    <img src="https://img.shields.io/badge/Version-v3.3-blue?style=for-the-badge" alt="Versão v3.3" />
+    <img src="https://img.shields.io/badge/Version-v3.4-blue?style=for-the-badge" alt="Versão v3.4" />
   <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12" />
   <img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Kubernetes-Kind-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" alt="Kubernetes" />
@@ -21,7 +21,14 @@
 
 ---
 
-## 🚀 Novidades da Versão v3.3
+## 🚀 Novidades da Versão v3.4 (Quick Wins & Hardening)
+- **🛡️ Pydantic V2 ConfigDict**: Migração completa para `SettingsConfigDict` eliminando todos os warnings de depreciação na inicialização das configurações.
+- **⚡ Health Check com Cache TTL & Latência Real**: Proteção contra connection storms causados por probes de liveness/readiness via cache TTL de 5s, com medição precisa de latência para PostgreSQL e Redis.
+- **🚀 Embeddings Assíncronos**: Desacoplamento da inferência de embeddings do SentenceTransformer via `asyncio.to_thread`, liberando o event loop do FastAPI sob alta concorrência.
+- **🗜️ Compressão GZip Transparente**: Middleware GZip ativo para respostas HTTP maiores que 1KB e compressão de assets estáticos otimizada no proxy Nginx.
+- **🔒 Defesa em Profundidade & Segurança HTTP**: Injeção automática de Security Headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy), CORS restrito por ambiente e Rate Limiting defensivo com `slowapi`.
+
+## 🚀 Histórico da Versão v3.3
 - **🔥 Catálogo Expandido com 16 Cenários de Produção**: Dobramos o acervo para **16 cenários reais e balanceados**, distribuídos uniformemente em 4 níveis (4 Fácil, 4 Médio, 4 Difícil, 4 Extremo), cobrindo os 8 pilares vitais de confiabilidade (Disponibilidade, Latência, Recursos & Cgroups, Confiabilidade & Probes, Redes & DNS, Armazenamento & PVCs, Segurança & TLS, e Concorrência de Banco de Dados).
 - **📖 Runbooks Estruturados em 5 Fases**: O botão `📖 Revisão` no terminal e a vitrine de cenários agora abrem um **Modal de Passo a Passo Interativo (`#runbook-modal`)** guiando o operador pelas 5 fases consagradas de incidentes: *1. Triagem & Alertas*, *2. Diagnóstico & Inspeção*, *3. Mitigação Imediata*, *4. Causa Raiz & Correção Permanente* e *5. Prevenção & Pós-Morte*.
 - **📚 Nova Aba "Conceitos SRE" (`#concepts`)**: Um portal de conhecimento arquitetural profundo integrado aos 16 cenários, dissecando mecanismos de baixo nível do Kernel Linux (cgroups, CFS scheduler throttling, OOM killer `oom_score_adj`, page cache, TCP sockets, epoll) e do Kubernetes Control Plane, com busca instantânea e atalho "Praticar no War Room".
@@ -431,7 +438,14 @@ Distribuído sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para 
 <a id="-english-version"></a>
 ## 🇺🇸 English Version
 
-## 🚀 What's New in v3.3
+## 🚀 What's New in v3.4 (Quick Wins & Hardening)
+- **🛡️ Pydantic V2 ConfigDict**: Full migration to `SettingsConfigDict`, completely eliminating Pydantic deprecation warnings upon configuration bootstrap.
+- **⚡ Health Check TTL Cache & Real Latency Measurement**: Protection against probe connection storms via 5s TTL caching, with accurate round-trip latency measurements for PostgreSQL and Redis.
+- **🚀 Non-Blocking Asynchronous Embeddings**: SentenceTransformer query embedding offloaded to thread pools via `asyncio.to_thread`, keeping FastAPI's async event loop unblocked under heavy concurrent traffic.
+- **🗜️ Transparent GZip Compression**: Automatic GZip compression middleware for HTTP responses over 1KB, paired with optimized Nginx asset caching and compression.
+- **🔒 Defense in Depth & HTTP Security**: Automated security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy), environment-aware CORS restrictions, and defensive Redis-backed Rate Limiting via `slowapi`.
+
+## 🚀 Historical Highlights: v3.3
 - **🔥 Expanded Catalog with 16 Production Scenarios**: Doubled the scenario library to **16 production-grade, balanced scenarios**, evenly distributed across 4 tiers (4 Easy, 4 Medium, 4 Hard, 4 Extreme) covering the 8 vital reliability pillars (Availability, Latency, Resources & Cgroups, Reliability & Probes, Networking & DNS, Storage & PVCs, Security & TLS, and Database Concurrency).
 - **📖 5-Phase Interactive Runbooks**: The `📖 Review` button and scenario catalog cards open an **Interactive Step-by-Step Runbook Modal (`#runbook-modal`)** guiding engineers through the 5 industry-standard incident phases: *1. Triage & Alerting*, *2. Diagnosis & Cluster Inspection*, *3. Fast Mitigation*, *4. Root Cause Analysis & Permanent Fix*, and *5. Prevention & Postmortem*.
 - **📚 Dedicated "SRE Concepts" Tab (`#concepts`)**: A deep systems architecture knowledge hub mapped directly to all 16 scenarios, unpacking low-level Linux Kernel mechanics (cgroups, CFS scheduler throttling, OOM killer `oom_score_adj`, page cache, TCP socket states) and Kubernetes control plane controllers, featuring live search and direct "Practice in War Room" shortcuts.
@@ -447,7 +461,7 @@ Distribuído sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para 
 
 <p align="center">
     <img src="https://img.shields.io/badge/Language-English-green?style=for-the-badge" alt="English Documentation" />
-  <img src="https://img.shields.io/badge/Version-v3.3-blue?style=for-the-badge" alt="Versão v3.3" />
+  <img src="https://img.shields.io/badge/Version-v3.4-blue?style=for-the-badge" alt="Versão v3.4" />
   <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12" />
   <img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Kubernetes-Kind-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" alt="Kubernetes" />

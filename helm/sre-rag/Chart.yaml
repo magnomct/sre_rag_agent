@@ -2,8 +2,8 @@ apiVersion: v2
 name: sre-rag
 description: SRE RAG Agent — Production Lab Helm Chart
 type: application
-version: 0.1.0
-appVersion: "3.3"
+version: 0.2.0
+appVersion: "3.4"
 maintainers:
   - name: SRE Team
     email: sre@example.com

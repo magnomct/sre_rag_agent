@@ -3,6 +3,7 @@ SRE RAG Agent — RAG Engine Module
 Core retrieval-augmented generation logic with caching, live vector retrieval and metrics.
 """
 
+import asyncio
 import json
 import time
 import hashlib
@@ -118,8 +119,8 @@ class RAGEngine:
                 cached["from_cache"] = True
                 return cached
 
-            # 2. Generate query embedding
-            query_embedding = generate_query_embedding(question)
+            # 2. Generate query embedding (offloaded to thread pool to avoid blocking event loop)
+            query_embedding = await asyncio.to_thread(generate_query_embedding, question)
 
             # 3. Retrieve relevant documents
             with DB_QUERY_DURATION.labels(
