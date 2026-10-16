@@ -3,16 +3,22 @@ SRE RAG Agent — Configuration Module
 Loads settings from environment variables with sensible defaults.
 """
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
+    model_config = SettingsConfigDict(
+        env_prefix="",
+        case_sensitive=False,
+        extra="ignore",
+    )
+
     # Application
     app_name: str = Field(default="sre-rag-api", description="Application name")
-    app_version: str = Field(default="3.3", description="Application version")
+    app_version: str = Field(default="3.4", description="Application version")
     debug: bool = Field(default=False, description="Debug mode")
     environment: str = Field(
         default="development",
@@ -88,10 +94,6 @@ class Settings(BaseSettings):
     def redis_url(self) -> str:
         auth = f":{self.redis_password}@" if self.redis_password else ""
         return f"redis://{auth}{self.redis_host}:{self.redis_port}/{self.redis_db}"
-
-    class Config:
-        env_prefix = ""
-        case_sensitive = False
 
 
 settings = Settings()

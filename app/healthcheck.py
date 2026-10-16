@@ -4,12 +4,16 @@ Implements liveness, readiness, and startup probe endpoints.
 """
 
 import time
+from typing import Optional
 import redis
 import psycopg2
 import structlog
 from config import settings
 
 logger = structlog.get_logger()
+
+# Cache TTL in seconds — shields databases from probe storms
+_HEALTH_CACHE_TTL = 5.0
 
 
 class HealthChecker:
@@ -18,6 +22,11 @@ class HealthChecker:
     def __init__(self):
         self._started = False
         self._start_time = time.time()
+        # TTL-cached health check results
+        self._cached_postgres: Optional[dict] = None
+        self._cached_postgres_at: float = 0.0
+        self._cached_redis: Optional[dict] = None
+        self._cached_redis_at: float = 0.0
 
     def mark_started(self):
         """Mark application as fully started."""
@@ -28,8 +37,13 @@ class HealthChecker:
         return time.time() - self._start_time
 
     def check_postgres(self) -> dict:
-        """Check PostgreSQL connectivity."""
+        """Check PostgreSQL connectivity with TTL cache."""
+        now = time.time()
+        if self._cached_postgres and (now - self._cached_postgres_at) < _HEALTH_CACHE_TTL:
+            return self._cached_postgres
+
         try:
+            start = time.time()
             conn = psycopg2.connect(
                 host=settings.postgres_host,
                 port=settings.postgres_port,
@@ -42,13 +56,22 @@ class HealthChecker:
             cursor.execute("SELECT 1")
             cursor.close()
             conn.close()
-            return {"status": "healthy", "latency_ms": 0}
+            latency = (time.time() - start) * 1000
+            result = {"status": "healthy", "latency_ms": round(latency, 2)}
         except Exception as e:
             logger.error("postgres_health_check_failed", error=str(e))
-            return {"status": "unhealthy", "error": str(e)}
+            result = {"status": "unhealthy", "error": str(e)}
+
+        self._cached_postgres = result
+        self._cached_postgres_at = now
+        return result
 
     def check_redis(self) -> dict:
-        """Check Redis connectivity."""
+        """Check Redis connectivity with TTL cache."""
+        now = time.time()
+        if self._cached_redis and (now - self._cached_redis_at) < _HEALTH_CACHE_TTL:
+            return self._cached_redis
+
         try:
             client = redis.Redis(
                 host=settings.redis_host,
@@ -61,10 +84,14 @@ class HealthChecker:
             client.ping()
             latency = (time.time() - start) * 1000
             client.close()
-            return {"status": "healthy", "latency_ms": round(latency, 2)}
+            result = {"status": "healthy", "latency_ms": round(latency, 2)}
         except Exception as e:
             logger.error("redis_health_check_failed", error=str(e))
-            return {"status": "unhealthy", "error": str(e)}
+            result = {"status": "unhealthy", "error": str(e)}
+
+        self._cached_redis = result
+        self._cached_redis_at = now
+        return result
 
     def liveness(self) -> dict:
         """

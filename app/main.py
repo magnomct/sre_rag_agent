@@ -17,6 +17,11 @@ from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from fastapi.middleware.gzip import GZipMiddleware
+from starlette.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from config import settings
 from metrics import (
@@ -156,8 +161,63 @@ app = FastAPI(
     redoc_url=settings.redoc_url,
 )
 
+# ============================================================
+# Rate Limiting
+# ============================================================
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["200/minute"],
+)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# ============================================================
+# CORS Middleware
+# ============================================================
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"] if not settings.is_production else [
+        "https://sre-rag.example.com",
+    ],
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["*"],
+    allow_credentials=True,
+)
+
+# ============================================================
+# GZip Compression Middleware
+# ============================================================
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
 # Mount static files
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+
+# ============================================================
+# Middleware: HTTP Security Headers
+# ============================================================
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    """Inject defensive HTTP security headers into every response."""
+    response = await call_next(request)
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    if settings.is_production:
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains"
+        )
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "img-src 'self' data: https:; "
+        "connect-src 'self'"
+    )
+    return response
 
 
 # ============================================================
@@ -286,6 +346,7 @@ async def root(request: Request):
 
 
 @app.post("/api/v1/query", tags=["RAG"])
+@limiter.limit("30/minute")
 async def rag_query(request: Request):
     """
     Process a RAG query.
