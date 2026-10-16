@@ -79,6 +79,9 @@ test: ## Run unit tests
 eval: ## Run SRE-Eval benchmark evaluation
 	PYTHONPATH=.:app ./app/.venv/bin/python tests/eval/evaluator.py
 
+pdf: ## Regenerate tests.pdf execution guide
+	./app/.venv/bin/python3 scripts/generate_tests_pdf.py
+
 helm-template: ## Dry-run Helm template
 	helm template sre-rag helm/sre-rag/ --debug
 
