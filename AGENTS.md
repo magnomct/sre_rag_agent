@@ -30,3 +30,16 @@
 ## 7. Health Checks e Connection Pools (v3.4)
 - **Cache TTL obrigatório**: Qualquer novo método de verificação de dependência (`check_*`) em `app/healthcheck.py` deve implementar cache TTL de no mínimo 5s antes de abrir conexões externas. Isso previne connection storms causados pelas probes do kubelet sob carga.
 - **Latência real**: Nunca retorne valores hardcoded como `"latency_ms": 0`. Meça sempre o round-trip real com `time.time()` antes e após a operação de saúde.
+
+## 8. Agente Autônomo de Auditoria, Segurança & Performance (v3.5)
+- **Execução Contínua**: O agente autônomo `scripts/test_agent.py` deve ser executado para auditar a conformidade de segurança e estabilidade de performance após qualquer alteração em endpoints, middlewares, banco de dados ou configurações:
+  ```bash
+  PYTHONPATH=app ./app/.venv/bin/python3 scripts/test_agent.py
+  # ou via Makefile:
+  make test-audit
+  ```
+- **Documentação Viva e Rastreabilidade**: O agente documenta automaticamente cada teste adicionado no relatório [`docs/SECURITY_PERF_TEST_REPORT.md`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/docs/SECURITY_PERF_TEST_REPORT.md).
+- **Adição de Novos Testes**:
+  - Para testes de segurança: criar métodos `audit_<feature>()` no `SRETestAgent` registrando um `AuditResult` com categoria `"Security"`, threshold esperado e diagnóstico de mitigação.
+  - Para testes de performance: criar métodos `benchmark_<feature>()` no `SRETestAgent` registrando um `AuditResult` com categoria `"Performance"`, percentis (P50, P90, P95, P99) e latência em milissegundos.
+  - Nenhum endpoint novo deve entrar em produção sem cobertura correspondente no agente de testes.

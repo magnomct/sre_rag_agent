@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # SRE RAG Agent — Script de Verificação e Validação Automatizada da v3.5
-# Executa a verificação dos 12 critérios de aceite da versão 3.5.
+# Executa a verificação dos 13 critérios de aceite da versão 3.5.
 # ==============================================================================
 
 set -uo pipefail
@@ -71,12 +71,15 @@ check_step "11. Testes unitários (pytest baseline)"   "PYTHONPATH=app ./app/.ve
 # 12. Arquivo de Testes E2E Playwright
 check_step "12. Arquivo de Testes E2E Playwright"   "test -f tests/e2e/test_dashboard_e2e.py"
 
+# 13. Agente de Auditoria DevSecOps & Relatório
+check_step "13. Agente de Auditoria DevSecOps & Relatório"   "test -f scripts/test_agent.py && test -f docs/SECURITY_PERF_TEST_REPORT.md"
+
 echo -e "${BLUE}====================================================${NC}"
 echo -e "Resultado: ${GREEN}$PASSED passaram${NC}, ${RED}$FAILED pendentes${NC} (Total: $((PASSED + FAILED)))"
 echo -e "${BLUE}====================================================${NC}"
 
 if [ "$FAILED" -eq 0 ]; then
-    echo -e "${GREEN}🎉 Todos os 12 critérios de validação da v3.5 foram atendidos!${NC}"
+    echo -e "${GREEN}🎉 Todos os 13 critérios de validação da v3.5 foram atendidos!${NC}"
     exit 0
 else
     echo -e "${YELLOW}ℹ️  Existem $FAILED itens aguardando execução amanhã.${NC}"

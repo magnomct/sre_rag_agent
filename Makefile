@@ -3,7 +3,7 @@
 # =============================================================
 
 .PHONY: help build push deploy cluster-create cluster-delete port-forward \
-        lint test setup slo-status load-test clean
+        lint test test-audit setup slo-status load-test clean
 
 CLUSTER_NAME  := sre-rag
 NAMESPACE     := sre-rag
@@ -75,6 +75,9 @@ dev: ## Run API locally with uvicorn
 
 test: ## Run unit tests
 	PYTHONPATH=.:app ./app/.venv/bin/pytest tests/ -v
+
+test-audit: ## Run continuous security & performance audit agent
+	PYTHONPATH=app ./app/.venv/bin/python3 scripts/test_agent.py
 
 eval: ## Run SRE-Eval benchmark evaluation
 	PYTHONPATH=.:app ./app/.venv/bin/python tests/eval/evaluator.py
