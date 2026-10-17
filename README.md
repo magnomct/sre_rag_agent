@@ -1,4 +1,4 @@
-# 🚨 SRE RAG Agent — Incident Simulation Lab & Observability Platform v3.4
+# 🚨 SRE RAG Agent — Incident Simulation Lab & Observability Platform v3.5
 
 [ 🇧🇷 Ler em Português ](#-versão-em-português) &nbsp;|&nbsp; [ 🇺🇸 Read in English ](#-english-version)
 
@@ -9,7 +9,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Language-Portugu%C3%AAs-blue?style=for-the-badge" alt="Idioma Português" />
-    <img src="https://img.shields.io/badge/Version-v3.4-blue?style=for-the-badge" alt="Versão v3.4" />
+    <img src="https://img.shields.io/badge/Version-v3.5-blue?style=for-the-badge" alt="Versão v3.5" />
   <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12" />
   <img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Kubernetes-Kind-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" alt="Kubernetes" />
@@ -21,7 +21,14 @@
 
 ---
 
-## 🚀 Novidades da Versão v3.4 (Quick Wins & Hardening)
+## 🚀 Novidades da Versão v3.5 (Persistência Relacional, SSE & Frontend Modular)
+- **🏛️ Persistência Relacional com PostgreSQL & Alembic**: Migração do estado em memória (`history_db`, simulações ativas de incidentes e eventos do Chaos Monkey) para tabelas persistentes no PostgreSQL via `SQLAlchemy 2.0` assíncrono (`asyncpg`) e migrações declarativas controladas por `Alembic`, com fallback gracioso em memória caso o banco esteja inacessível.
+- **⚡ Server-Sent Events (SSE) em Tempo Real**: Substituição do polling HTTP periódico (`setInterval`) por streaming unidirecional em tempo real via endpoint `/api/v1/events/stream` com heartbeat periódico de 15s.
+- **🧩 Modularização do Frontend (ES Modules - ESM)**: Decomposição do monólito `dashboard.js` (2.300+ linhas) em 6 submódulos limpos (`api.js`, `sse.js`, `incidents.js`, `chaos.js`, `terminal.js`, `charts.js`) orquestrados pelo entry point `app.js` via `<script type="module">`.
+- **🛡️ Agente Autônomo de Auditoria e Testes**: Criação do `scripts/test_agent.py` (`make test-audit`), executando auditorias contínuas de segurança (CSP, HSTS, Rate Limiting, CORS, Anti-Leak) e benchmarks de performance com geração automatizada de relatórios em `docs/SECURITY_PERF_TEST_REPORT.md`.
+- **🧪 Suíte de Testes E2E com Playwright**: Implementação de testes automatizados ponta a ponta (`tests/e2e/test_dashboard_e2e.py`) validando renderização, streaming SSE, jornada completa de incidentes e switch do Chaos Monkey.
+
+## 🚀 Histórico da Versão v3.4
 - **🛡️ Pydantic V2 ConfigDict**: Migração completa para `SettingsConfigDict` eliminando todos os warnings de depreciação na inicialização das configurações.
 - **⚡ Health Check com Cache TTL & Latência Real**: Proteção contra connection storms causados por probes de liveness/readiness via cache TTL de 5s, com medição precisa de latência para PostgreSQL e Redis.
 - **🚀 Embeddings Assíncronos**: Desacoplamento da inferência de embeddings do SentenceTransformer via `asyncio.to_thread`, liberando o event loop do FastAPI sob alta concorrência.
@@ -438,7 +445,14 @@ Distribuído sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para 
 <a id="-english-version"></a>
 ## 🇺🇸 English Version
 
-## 🚀 What's New in v3.4 (Quick Wins & Hardening)
+## 🚀 What's New in v3.5 (Relational Persistence, SSE & Modular Frontend)
+- **🏛️ Relational Persistence with PostgreSQL & Alembic**: Full migration of volatile in-memory collections (`history_db`, incident simulations, chaos events) to relational PostgreSQL tables via `SQLAlchemy 2.0` async engine (`asyncpg`) and declarative migrations managed by `Alembic`, with resilient in-memory fallback.
+- **⚡ Real-Time Server-Sent Events (SSE)**: Complete elimination of polling loops (`setInterval`) in favor of low-latency unidirectional real-time streaming via `/api/v1/events/stream` with 15s keep-alive heartbeats.
+- **🧩 Modular Frontend Architecture (ES Modules - ESM)**: Decoupling of monolithic `dashboard.js` (2,300+ lines) into 6 isolated ES modules (`api.js`, `sse.js`, `incidents.js`, `chaos.js`, `terminal.js`, `charts.js`) coordinated by `app.js` using `<script type="module">`.
+- **🛡️ Autonomous Test & Security Audit Agent**: Introduction of `scripts/test_agent.py` (`make test-audit`), continuously benchmarking performance percentiles and auditing defense-in-depth security policies into `docs/SECURITY_PERF_TEST_REPORT.md`.
+- **🧪 End-to-End (E2E) Test Suite**: Addition of comprehensive integration and UI journey tests (`tests/e2e/test_dashboard_e2e.py`) validating web interface rendering, SSE handshakes, and incident lifecycles.
+
+## 🚀 Historical Highlights: v3.4
 - **🛡️ Pydantic V2 ConfigDict**: Full migration to `SettingsConfigDict`, completely eliminating Pydantic deprecation warnings upon configuration bootstrap.
 - **⚡ Health Check TTL Cache & Real Latency Measurement**: Protection against probe connection storms via 5s TTL caching, with accurate round-trip latency measurements for PostgreSQL and Redis.
 - **🚀 Non-Blocking Asynchronous Embeddings**: SentenceTransformer query embedding offloaded to thread pools via `asyncio.to_thread`, keeping FastAPI's async event loop unblocked under heavy concurrent traffic.
@@ -461,7 +475,7 @@ Distribuído sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para 
 
 <p align="center">
     <img src="https://img.shields.io/badge/Language-English-green?style=for-the-badge" alt="English Documentation" />
-  <img src="https://img.shields.io/badge/Version-v3.4-blue?style=for-the-badge" alt="Versão v3.4" />
+  <img src="https://img.shields.io/badge/Version-v3.5-blue?style=for-the-badge" alt="Versão v3.5" />
   <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12" />
   <img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Kubernetes-Kind-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" alt="Kubernetes" />

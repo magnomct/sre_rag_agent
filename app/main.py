@@ -23,6 +23,14 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+import asyncio
+import json
+from sse_starlette.sse import EventSourceResponse
+from events import broadcaster
+from database import get_db, init_db, close_db, AsyncSessionFactory
+from models import QueryHistoryRecord, IncidentSimulationRecord, ChaosSessionRecord, ChaosEventRecord
+from sqlalchemy import select, delete
+
 from config import settings
 from metrics import (
     APP_INFO,
@@ -62,6 +70,28 @@ class QueryHistoryCreate(BaseModel):
 # In-memory storage for CRUD demonstration
 history_db: list[QueryHistory] = []
 history_counter = 1
+
+async def persist_query_history(query: str, answer: str, latency_ms: float = 0.0, top_score: float = 0.0, from_cache: bool = False) -> int:
+    global history_counter
+    try:
+        async with AsyncSessionFactory() as session:
+            record = QueryHistoryRecord(
+                query=query,
+                answer=answer,
+                latency_ms=latency_ms,
+                top_score=top_score,
+                from_cache=from_cache,
+            )
+            session.add(record)
+            await session.commit()
+            await session.refresh(record)
+            return record.id
+    except Exception as exc:
+        logger.warning("query_history_db_fallback", error=str(exc))
+        item = QueryHistory(id=history_counter, query=query, answer=answer)
+        history_db.append(item)
+        history_counter += 1
+        return item.id
 
 # ============================================================
 # Chaos Engineering State (Proxy to ChaosManager)
@@ -140,12 +170,14 @@ async def lifespan(app: FastAPI):
         }
     )
     health_checker.mark_started()
+    await init_db()
     logger.info("application_started")
 
     yield
 
     # Shutdown
     logger.info("application_shutting_down")
+    await close_db()
 
 
 # ============================================================
@@ -240,6 +272,7 @@ async def metrics_middleware(request: Request, call_next):
         "/openapi.json",      # schema
         "/api/v1/incidents",  # controle da simulação — o SRE precisa agir!
         "/api/v1/chaos",      # controle do chaos para permitir desativação
+        "/api/v1/events",     # SSE real-time stream
     )
     is_exempt = (
         request.url.path in CHAOS_EXEMPT_EXACT
@@ -290,6 +323,36 @@ async def metrics_middleware(request: Request, call_next):
     response.headers["X-App-Version"] = settings.app_version
 
     return response
+
+
+# ============================================================
+# Server-Sent Events (SSE) Real-Time Stream
+# ============================================================
+@app.get("/api/v1/events/stream", tags=["Events"])
+async def sse_event_stream(request: Request):
+    """Stream real-time incident, chaos, and metric telemetry to the dashboard."""
+    async def event_generator():
+        queue = await broadcaster.subscribe()
+        try:
+            yield {
+                "event": "connected",
+                "data": json.dumps({"status": "active", "version": settings.app_version}),
+            }
+            while True:
+                if await request.is_disconnected():
+                    break
+                try:
+                    payload = await asyncio.wait_for(queue.get(), timeout=15.0)
+                    yield {
+                        "event": payload["event"],
+                        "data": json.dumps(payload["data"]),
+                    }
+                except asyncio.TimeoutError:
+                    yield {"comment": "ping"}
+        finally:
+            await broadcaster.unsubscribe(queue)
+
+    return EventSourceResponse(event_generator())
 
 
 # ============================================================
@@ -364,6 +427,25 @@ async def rag_query(request: Request):
         )
 
     result = await rag_engine.query(question)
+    try:
+        await persist_query_history(
+            query=question,
+            answer=result.get("answer", ""),
+            latency_ms=result.get("duration_seconds", 0.0) * 1000,
+            top_score=result.get("top_score", 0.0),
+            from_cache=result.get("from_cache", False),
+        )
+    except Exception as exc:
+        logger.warning("persist_query_history_failed", error=str(exc))
+
+    try:
+        await broadcaster.publish("rag_query", {
+            "question": question,
+            "top_score": result.get("top_score", 0.0),
+            "from_cache": result.get("from_cache", False),
+        })
+    except Exception:
+        pass
     return result
 
 
@@ -391,6 +473,10 @@ async def toggle_500_errors(enable: bool = True):
         status = chaos_manager.enable_500(source="operator_api")
     else:
         status = chaos_manager.disable_500(source="operator_api")
+    try:
+        await broadcaster.publish("chaos_update", status)
+    except Exception:
+        pass
     return status
 
 
@@ -564,6 +650,13 @@ def get_all_concepts():
 async def start_simulation(body: SimulateRequest):
     """Start an incident simulation for a given scenario."""
     result = simulation_engine.start(body.scenario_id)
+    try:
+        await broadcaster.publish("incident_update", {
+            "action": "started",
+            "scenario_id": body.scenario_id,
+        })
+    except Exception:
+        pass
     # Activate chaos if the scenario requires it
     scenario = SCENARIOS.get(body.scenario_id, {})
     if scenario.get("chaos_action") == "simulate_500":
@@ -588,6 +681,38 @@ async def solve_simulation(body: SolveRequest):
     result = simulation_engine.solve(body.scenario_id, body.solution_id)
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
+
+    try:
+        async with AsyncSessionFactory() as session:
+            rec = IncidentSimulationRecord(
+                scenario_id=result.get("scenario_id", body.scenario_id),
+                scenario_title=result.get("scenario_title", ""),
+                difficulty=result.get("difficulty", "medium"),
+                status="completed" if result.get("is_correct") else "failed",
+                start_time=result.get("start_time", 0.0),
+                end_time=result.get("end_time", 0.0),
+                mttd_seconds=result.get("mttd_seconds", 0.0),
+                mttr_seconds=result.get("mttr_seconds", 0.0),
+                score=result.get("score", 0),
+                hints_used=result.get("hints_used", 0),
+                commands_executed=result.get("commands_executed", 0),
+                operator_solution=body.solution_id,
+                is_correct=result.get("is_correct", False),
+            )
+            session.add(rec)
+            await session.commit()
+    except Exception as exc:
+        logger.warning("persist_simulation_db_fallback", error=str(exc))
+
+    try:
+        await broadcaster.publish("incident_update", {
+            "action": "resolved",
+            "scenario_id": body.scenario_id,
+            "is_correct": result.get("is_correct", False),
+            "score": result.get("score", 0),
+        })
+    except Exception:
+        pass
     return result
 
 @app.post("/api/v1/incidents/cancel", tags=["Incidents"])
@@ -612,8 +737,19 @@ async def clear_simulation_history():
 @app.get("/board", response_class=HTMLResponse, tags=["Web"])
 async def read_board(request: Request):
     """Renderiza a página de board com o histórico de consultas."""
+    history_items = []
+    try:
+        async with AsyncSessionFactory() as session:
+            res = await session.execute(select(QueryHistoryRecord).order_by(QueryHistoryRecord.id.desc()))
+            records = res.scalars().all()
+            if records:
+                history_items = [QueryHistory(id=r.id, query=r.query, answer=r.answer) for r in records]
+    except Exception as exc:
+        logger.warning("read_board_db_fallback", error=str(exc))
+    if not history_items:
+        history_items = history_db
     return templates.TemplateResponse(
-        request=request, name="board.html", context={"history": history_db}
+        request=request, name="board.html", context={"history": history_items}
     )
 
 # ============================================================
@@ -623,19 +759,44 @@ async def read_board(request: Request):
 async def create_history(item: QueryHistoryCreate):
     """Cria um novo registro no histórico."""
     global history_counter
-    new_item = QueryHistory(id=history_counter, query=item.query, answer=item.answer)
-    history_db.append(new_item)
-    history_counter += 1
-    return new_item
+    try:
+        async with AsyncSessionFactory() as session:
+            record = QueryHistoryRecord(query=item.query, answer=item.answer)
+            session.add(record)
+            await session.commit()
+            await session.refresh(record)
+            return QueryHistory(id=record.id, query=record.query, answer=record.answer)
+    except Exception as exc:
+        logger.warning("create_history_db_fallback", error=str(exc))
+        new_item = QueryHistory(id=history_counter, query=item.query, answer=item.answer)
+        history_db.append(new_item)
+        history_counter += 1
+        return new_item
 
 @app.get("/api/v1/history", response_model=list[QueryHistory], tags=["History CRUD"])
 async def get_all_history():
     """Retorna todos os registros do histórico."""
+    try:
+        async with AsyncSessionFactory() as session:
+            res = await session.execute(select(QueryHistoryRecord).order_by(QueryHistoryRecord.id.desc()))
+            records = res.scalars().all()
+            if records:
+                return [QueryHistory(id=r.id, query=r.query, answer=r.answer) for r in records]
+    except Exception as exc:
+        logger.warning("get_all_history_db_fallback", error=str(exc))
     return history_db
 
 @app.get("/api/v1/history/{item_id}", response_model=QueryHistory, tags=["History CRUD"])
 async def get_history(item_id: int):
     """Busca um registro específico pelo ID."""
+    try:
+        async with AsyncSessionFactory() as session:
+            res = await session.execute(select(QueryHistoryRecord).where(QueryHistoryRecord.id == item_id))
+            record = res.scalar_one_or_none()
+            if record:
+                return QueryHistory(id=record.id, query=record.query, answer=record.answer)
+    except Exception as exc:
+        logger.warning("get_history_db_fallback", error=str(exc))
     for item in history_db:
         if item.id == item_id:
             return item
@@ -645,8 +806,20 @@ async def get_history(item_id: int):
 async def delete_history(item_id: int):
     """Deleta um registro do histórico."""
     global history_db
+    deleted_db = False
+    try:
+        async with AsyncSessionFactory() as session:
+            res = await session.execute(select(QueryHistoryRecord).where(QueryHistoryRecord.id == item_id))
+            record = res.scalar_one_or_none()
+            if record:
+                await session.delete(record)
+                await session.commit()
+                deleted_db = True
+    except Exception as exc:
+        logger.warning("delete_history_db_fallback", error=str(exc))
+
     original_length = len(history_db)
     history_db = [item for item in history_db if item.id != item_id]
-    if len(history_db) == original_length:
+    if not deleted_db and len(history_db) == original_length:
         raise HTTPException(status_code=404, detail="Item not found")
     return {"status": "deleted"}
