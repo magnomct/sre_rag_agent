@@ -56,22 +56,29 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 async def init_db() -> bool:
     """
-    Verify database connectivity during startup.
+    Verify database connectivity during startup and ensure relational schema exists.
     Returns True if database is reachable, False otherwise.
     """
     try:
-        async with engine.connect() as conn:
-            from sqlalchemy import text
-            await conn.execute(text("SELECT 1"))
+        from models import Base
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
         logger.info("database_connection_initialized", host=settings.postgres_host, db=settings.postgres_db)
         return True
     except Exception as exc:
-        logger.warning(
-            "database_initialization_offline_fallback",
-            error=str(exc),
-            detail="Application will run with in-memory fallback until DB is reachable."
-        )
-        return False
+        try:
+            async with engine.connect() as conn:
+                from sqlalchemy import text
+                await conn.execute(text("SELECT 1"))
+            logger.info("database_connection_initialized", host=settings.postgres_host, db=settings.postgres_db)
+            return True
+        except Exception:
+            logger.warning(
+                "database_initialization_offline_fallback",
+                error=str(exc),
+                detail="Application will run with in-memory fallback until DB is reachable."
+            )
+            return False
 
 
 async def close_db() -> None:
