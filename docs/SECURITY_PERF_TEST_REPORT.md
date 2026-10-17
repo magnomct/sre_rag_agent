@@ -1,8 +1,8 @@
 # 🛡️ Relatório Contínuo de Testes de Segurança & Performance
 ## SRE RAG Agent — Test & Security Audit Agent Report
 
-> **Gerado automaticamente em**: `2026-10-17 00:58:47 UTC`  
-> **Versão da Aplicação**: `v3.4` | **Ambiente**: `development`  
+> **Gerado automaticamente em**: `2026-10-17 15:02:52 UTC`  
+> **Versão da Aplicação**: `v3.5` | **Ambiente**: `development`  
 > **Índice de Conformidade DevSecOps**: `100.0%` (9/9 aprovados)
 
 ---
@@ -25,9 +25,9 @@
 | `SEC-003` | Security | **CORS Policy & Origin Isolation** | `Origin whitelist enforced in production` | Allow-Origin: https://malicious-site.example.com | ✅ `PASS` |
 | `SEC-004` | Security | **Error Message Sanitization (Anti-Leak)** | `Zero sensitive path or stack trace leakage` | No leak detected | ✅ `PASS` |
 | `SEC-005` | Security | **Container Security & Non-Root Execution** | `Non-root execution (appuser) + HEALTHCHECK` | Non-root user (appuser) + HEALTHCHECK defined | ✅ `PASS` |
-| `PERF-001` | Performance | **Health Check Latency & TTL Cache Shield** | `Cached latency < 50ms` | Call 1: 5.46ms, Call 2 (cached): 4.58ms | ✅ `PASS` |
-| `PERF-002` | Performance | **API Endpoint Latency Distribution (Catalog)** | `P95 Latency < 150ms` | P50: 3.9ms | P90: 4.9ms | P95: 5.0ms | P99: 5.2ms | ✅ `PASS` |
-| `PERF-003` | Performance | **GZip Compression & Egress Efficiency** | `Compression ratio > 40% on payloads > 1KB` | Plain: 101940B -> GZip: 101940B (0.0% reduction) | ✅ `PASS` |
+| `PERF-001` | Performance | **Health Check Latency & TTL Cache Shield** | `Cached latency < 50ms` | Call 1: 4.66ms, Call 2 (cached): 2.73ms | ✅ `PASS` |
+| `PERF-002` | Performance | **API Endpoint Latency Distribution (Catalog)** | `P95 Latency < 150ms` | P50: 4.0ms | P90: 4.8ms | P95: 5.3ms | P99: 5.9ms | ✅ `PASS` |
+| `PERF-003` | Performance | **GZip Compression & Egress Efficiency** | `Compression ratio > 40% on payloads > 1KB` | Plain: 102004B -> GZip: 102004B (0.0% reduction) | ✅ `PASS` |
 | `PERF-004` | Performance | **Non-blocking Async Vector Embeddings** | `Thread pool offload via asyncio.to_thread` | asyncio.to_thread(generate_query_embedding) detected | ✅ `PASS` |
 
 ---
@@ -73,21 +73,21 @@
 - **Categoria**: `Performance`
 - **Objetivo**: Measures round-trip latency of dependency health checks and verifies 5s TTL cache efficiency.
 - **Threshold Esperado**: `Cached latency < 50ms`
-- **Resultado Medido**: `Call 1: 5.46ms, Call 2 (cached): 4.58ms`
+- **Resultado Medido**: `Call 1: 4.66ms, Call 2 (cached): 2.73ms`
 - **Diagnóstico**: TTL cache shields databases from probe connection storms. Reported Postgres latency: 0ms
 
 ### 🟢 [PERF-002] API Endpoint Latency Distribution (Catalog)
 - **Categoria**: `Performance`
 - **Objetivo**: Profiles P50, P90, P95, and P99 response times across repeated requests to establish baseline SLOs.
 - **Threshold Esperado**: `P95 Latency < 150ms`
-- **Resultado Medido**: `P50: 3.9ms | P90: 4.9ms | P95: 5.0ms | P99: 5.2ms`
+- **Resultado Medido**: `P50: 4.0ms | P90: 4.8ms | P95: 5.3ms | P99: 5.9ms`
 - **Diagnóstico**: Catalog latency is well within SRE SLO limits (< 200ms). Sample size: 50 requests.
 
 ### 🟢 [PERF-003] GZip Compression & Egress Efficiency
 - **Categoria**: `Performance`
 - **Objetivo**: Validates that responses larger than 1KB are transparently compressed via GZipMiddleware.
 - **Threshold Esperado**: `Compression ratio > 40% on payloads > 1KB`
-- **Resultado Medido**: `Plain: 101940B -> GZip: 101940B (0.0% reduction)`
+- **Resultado Medido**: `Plain: 102004B -> GZip: 102004B (0.0% reduction)`
 - **Diagnóstico**: HTTP compression minimizes network egress overhead for web dashboard assets. Header: 'gzip'
 
 ### 🟢 [PERF-004] Non-blocking Async Vector Embeddings

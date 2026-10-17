@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # ==============================================================================
-# SRE RAG Agent v3.4 — Gerador Oficial do tests.pdf
+# SRE RAG Agent v3.5 — Gerador Oficial do tests.pdf
 # Produz o Guia de Execução Local em PDF com ReportLab (3 páginas balanceadas)
 # ==============================================================================
 
@@ -48,7 +48,7 @@ class NumberedCanvas(canvas.Canvas):
 
         # Header (topo: y=755 linha, y=762 texto)
         self.line(40, 755, 572, 755)
-        self.drawString(40, 762, "SRE RAG Agent v3.4 — Guia de Execução Local (Step by Step)")
+        self.drawString(40, 762, "SRE RAG Agent v3.5 — Guia de Execução Local (Step by Step)")
 
         # Footer (rodapé: y=42 linha, y=30 texto)
         self.line(40, 42, 572, 42)
@@ -187,11 +187,11 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
     story = []
 
     # =========================================================================
-    # PÁGINA 1 — Header do Documento + Novidades v3.4 + Opção 1 (Dev Local)
+    # PÁGINA 1 — Header do Documento + Novidades v3.5 + Opção 1 (Dev Local)
     # =========================================================================
 
     story.append(Spacer(1, 4))
-    story.append(Paragraph("■ SRE RAG Agent v3.4 — Guia de Execução Local", doc_title_style))
+    story.append(Paragraph("■ SRE RAG Agent v3.5 — Guia de Execução Local", doc_title_style))
     story.append(Spacer(1, 2))
     story.append(
         Paragraph("Passo a Passo (Step by Step) para Inicialização, Operação e Validação do Laboratório", doc_subtitle_style)
@@ -200,15 +200,15 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
 
     intro_text = (
         "Este documento reúne as 3 formas homologadas de subir e operar o ambiente do "
-        "<b>SRE Incident Simulation Lab v3.4</b> em ambiente local (WSL2 / Ubuntu ou Linux). "
+        "<b>SRE Incident Simulation Lab v3.5</b> em ambiente local (WSL2 / Ubuntu ou Linux). "
         "Escolha a opção mais adequada ao seu objetivo de estudo ou teste."
     )
     story.append(Paragraph(intro_text, body_style))
     story.append(Spacer(1, 6))
 
-    # Box de Destaques da v3.4 (Novidades & Hardening)
+    # Box de Destaques da v3.5 (Novidades & Hardening)
     v34_highlights_html = (
-        "<b>🛡️ Novidades &amp; Hardening da v3.4:</b> "
+        "<b>🛡️ Novidades &amp; Hardening da v3.5:</b> "
         "• <b>Pydantic V2 ConfigDict:</b> Zero DeprecationWarnings no bootstrap de configs.<br/>"
         "• <b>Health Check TTL Cache (5s):</b> Prevenção contra connection storms e medição de latência real de DB/Redis.<br/>"
         "• <b>Async Embeddings:</b> <i>asyncio.to_thread</i> na inferência vetorial, liberando o event loop do FastAPI.<br/>"
@@ -311,7 +311,7 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
         [
             Paragraph("Health Check da Aplicação", table_header_style),
             Paragraph("http://localhost:8080/healthz", table_url_style),
-            Paragraph("Health check com cache TTL 5s e latência real do banco (v3.4)", table_cell_style),
+            Paragraph("Health check com cache TTL 5s e latência real do banco (v3.5)", table_cell_style),
         ],
         [
             Paragraph("Métricas Prometheus (RED)", table_header_style),
@@ -415,7 +415,7 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
     story.append(Spacer(1, 4))
     story.append(
         Paragraph(
-            "Simulação completa de cluster K8s local com orquestração Helm (Chart v0.2.0, appVersion 3.4), "
+            "Simulação completa de cluster K8s local com orquestração Helm (Chart v0.2.0, appVersion 3.5), "
             "Prometheus Operator, Alertmanager e dashboards Grafana pré-configurados.",
             sec_desc_style,
         )
@@ -427,7 +427,7 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
     story.append(create_code_block(["cd /home/magno/sre_rag_agent", "make setup"]))
     story.append(Spacer(1, 4))
 
-    story.append(Paragraph("Passo 2: Realizar o deploy do SRE RAG Agent via Helm (v3.4):", step_title_style))
+    story.append(Paragraph("Passo 2: Realizar o deploy do SRE RAG Agent via Helm (v3.5):", step_title_style))
     story.append(Spacer(1, 2))
     story.append(create_code_block(["make deploy"]))
     story.append(Spacer(1, 4))
@@ -469,29 +469,29 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
     story.append(create_code_block(["make clean"]))
 
     # =========================================================================
-    # PÁGINA 3 — Validação, Testes Automatizados & Critérios de Aceite v3.4
+    # PÁGINA 3 — Validação, Testes Automatizados & Critérios de Aceite v3.5
     # =========================================================================
     story.append(PageBreak())
     story.append(Spacer(1, 4))
 
-    story.append(create_section_header("Validação Rápida da Suíte de Testes & Qualidade (v3.4)", "QUALIDADE & ACEITE", "#1a7f37"))
+    story.append(create_section_header("Validação Rápida da Suíte de Testes & Qualidade (v3.5)", "QUALIDADE & ACEITE", "#1a7f37"))
     story.append(Spacer(1, 4))
     story.append(
         Paragraph(
             "Rotina completa de validação contínua para certificar que todos os 16 cenários de produção, o motor RAG semântico, "
-            "os runbooks estruturados em 5 fases e as novas proteções técnicas da v3.4 estão 100% íntegros e operacionais.",
+            "os runbooks estruturados em 5 fases e as novas proteções técnicas da v3.5 estão 100% íntegros e operacionais.",
             sec_desc_style,
         )
     )
     story.append(Spacer(1, 6))
 
-    # Passo 1: Script de Validação Automatizada da v3.4
-    story.append(Paragraph("Passo 1: Script de Validação Automatizada da v3.4 (12 Critérios de Aceite):", step_title_style))
+    # Passo 1: Script de Validação Automatizada da v3.5
+    story.append(Paragraph("Passo 1: Script de Validação Automatizada da v3.5 (12 Critérios de Aceite):", step_title_style))
     story.append(Spacer(1, 2))
     story.append(
         create_code_block(
             [
-                "bash scripts/verify_v3.4.sh",
+                "bash scripts/verify_v3.5.sh",
                 "# Executa a verificação dos 12 critérios de aceite: sintaxe, Pydantic V2 ConfigDict,",
                 "# TTL cache, async embeddings, gzip, security headers, rate limit e testes unitários.",
             ]

@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     # Application
     app_name: str = Field(default="sre-rag-api", description="Application name")
-    app_version: str = Field(default="3.4", description="Application version")
+    app_version: str = Field(default="3.5", description="Application version")
     debug: bool = Field(default=False, description="Debug mode")
     environment: str = Field(
         default="development",
@@ -45,6 +45,8 @@ class Settings(BaseSettings):
         default="",
         description="PostgreSQL password — MUST be set via POSTGRES_PASSWORD env var in production",
     )
+    postgres_pool_size: int = Field(default=10, description="PostgreSQL async connection pool size")
+    postgres_max_overflow: int = Field(default=20, description="PostgreSQL async connection max overflow")
 
     # Redis
     redis_host: str = Field(default="redis", description="Redis host")
@@ -67,6 +69,11 @@ class Settings(BaseSettings):
             f"postgresql://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
+
+    @property
+    def async_postgres_url(self) -> str:
+        auth = f"{self.postgres_user}:{self.postgres_password}@" if self.postgres_password else ""
+        return f"postgresql+asyncpg://{auth}{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
 
     @property
     def is_production(self) -> bool:
