@@ -1,6 +1,7 @@
 """
-SRE RAG Agent — RAG Engine Module
-Core retrieval-augmented generation logic with caching, live vector retrieval and metrics.
+SRE RAG Agent — RAG Engine Module (v4.0)
+Core retrieval-augmented generation logic with caching, live hybrid retrieval (pgvector + BM25 + FlashRank),
+and resilient fallback.
 """
 
 import asyncio
@@ -20,14 +21,15 @@ from metrics import (
 )
 from rag.embeddings import generate_query_embedding
 from rag.indexer import sre_indexer
+from rag.vector_store import hybrid_vector_store
 
 logger = structlog.get_logger()
 
 
 class RAGEngine:
     """
-    RAG Engine — retrieves relevant SRE documents from the vector index and generates answers.
-    Uses Redis for caching and SRE Knowledge Indexer for semantic vector search.
+    RAG Engine — retrieves relevant SRE documents from the hybrid vector index and generates answers.
+    Uses Redis for caching and HybridVectorStore for 3-stage semantic + lexical search.
     """
 
     def __init__(self):
@@ -81,18 +83,48 @@ class RAGEngine:
         except Exception as e:
             logger.debug("cache_write_skipped", reason=str(e))
 
-    def _retrieve_documents(self, query_embedding: list[float]) -> list[dict]:
+    def _retrieve_documents(self, query_embedding: list[float], question: str = "") -> list[dict]:
         """
-        Retrieve relevant SRE documents using cosine similarity over the corpus index.
+        Retrieve relevant SRE documents using 3-stage Hybrid Search:
+        Stage 1: Dense Vector (pgvector) + Sparse Lexical (BM25)
+        Stage 2: Reciprocal Rank Fusion (RRF, k=60)
+        Stage 3: Cross-Encoder Semantic Re-ranking via FlashRank
+        Falls back to in-memory cosine similarity if needed.
         """
-        # Vector search via SRE Knowledge Indexer (runbooks, postmortems, architecture)
+        try:
+            if question:
+                raw_hybrid = hybrid_vector_store.hybrid_search(
+                    query=question,
+                    query_embedding=query_embedding,
+                    top_k=settings.top_k,
+                    top_n=settings.top_k,
+                )
+                if raw_hybrid:
+                    formatted_docs = []
+                    for item in raw_hybrid:
+                        chunk = item["chunk"]
+                        formatted_docs.append({
+                            "chunk": chunk,
+                            "id": chunk.id,
+                            "title": chunk.title,
+                            "source": chunk.source,
+                            "category": chunk.category,
+                            "section": chunk.section,
+                            "content": chunk.content,
+                            "score": round(item.get("cross_score", item.get("rrf_score", item.get("score", 0.0))), 4),
+                            "metadata": chunk.metadata,
+                        })
+                    return formatted_docs
+        except Exception as e:
+            logger.warning("hybrid_search_fallback_to_indexer", error=str(e))
+
+        # Vector search fallback via SRE Knowledge Indexer
         docs = sre_indexer.search(
             query_embedding,
             top_k=settings.top_k,
             min_score=0.15,
         )
 
-        # Fallback if no docs match the minimum score threshold
         if not docs:
             logger.info("vector_search_low_score_fallback")
             docs = sre_indexer.search(query_embedding, top_k=settings.top_k, min_score=0.05)
@@ -122,11 +154,11 @@ class RAGEngine:
             # 2. Generate query embedding (offloaded to thread pool to avoid blocking event loop)
             query_embedding = await asyncio.to_thread(generate_query_embedding, question)
 
-            # 3. Retrieve relevant documents
+            # 3. Retrieve relevant documents via 3-stage Hybrid Search
             with DB_QUERY_DURATION.labels(
-                database="vector_store", operation="vector_search"
+                database="vector_store", operation="hybrid_search"
             ).time():
-                documents = self._retrieve_documents(query_embedding)
+                documents = self._retrieve_documents(query_embedding, question=question)
 
             RAG_DOCUMENTS_RETRIEVED.observe(len(documents))
 
@@ -142,6 +174,7 @@ class RAGEngine:
                     "documents_retrieved": len(documents),
                     "model": settings.embedding_model,
                     "top_score": documents[0]["score"] if documents else 0.0,
+                    "search_mode": "hybrid_rrf_flashrank",
                     "processing_time_seconds": round(time.time() - start_time, 4),
                 },
                 "from_cache": False,
@@ -187,12 +220,11 @@ class RAGEngine:
                 "nome de alertas (ex: SLOAvailabilityBurnRateCritical, KubePodCrashLooping) ou componente (Redis, Postgres, DNS)."
             )
 
-        top_doc = documents[0]
         sources_summary = ", ".join([f"`{doc['title']}` ({doc['source']})" for doc in documents[:3]])
 
         # Build clean formatted SRE recommendation
         answer_parts = [
-            f"### 🚨 Diagnóstico & Recomendação SRE",
+            f"### 🚨 Diagnóstico & Recomendação SRE (Busca Híbrida v4.0)",
             f"**Pergunta Analisada:** {question}",
             f"**Fontes Relevantes Identificadas:** {sources_summary}\n",
             "#### 📋 Contexto & Procedimento Operacional (Runbook):",
@@ -201,7 +233,7 @@ class RAGEngine:
         for i, doc in enumerate(documents[:2], 1):
             category_icon = "📖 Runbook" if doc.get("category") == "runbook" else "📝 Postmortem"
             answer_parts.append(
-                f"**[{i}] {category_icon}: {doc['title']}** (Relevância: `{int(doc.get('score', 0) * 100)}%`)\n"
+                f"**[{i}] {category_icon}: {doc['title']}** (Score: `{doc.get('score', 0)}`)\n"
                 f"{doc['content']}\n"
             )
 
