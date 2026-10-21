@@ -142,12 +142,10 @@ app/tests/fixtures/real_*
 # ── Local Training / SRE Guides ───────────────────────────────
 # Arquivos de estudo e treinamento pessoal — ficam apenas locais.
 *_GUIDE.md
-SRE_PROFESSOR_GUIDE.md
+!SRE_PROFESSOR_GUIDE.md
 TREINO_*.md
 
 # Local documentation (not pushed)
-desafios.md
-desafios_en.md
 
 # Gemini (not pushed)
 .gemini--ignore
