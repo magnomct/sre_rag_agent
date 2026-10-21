@@ -120,54 +120,73 @@ Este projeto evoluiu de um protótipo para um **Laboratório de Engenharia SRE d
 
 ---
 
-## 🏗️ Arquitetura do Sistema
+## 🏗️ Arquitetura do Sistema (v4.0)
 
-O diagrama abaixo ilustra o ecossistema completo de microsserviços, injeção de falhas, armazenamento de vetores e monitoramento:
+O diagrama abaixo ilustra o ecossistema completo da **versão 4.0**, integrando proxy reverso, redes Docker isoladas, agente SRE com ciclo OODA, motor de busca híbrida com pgvector, orquestrador de caos no kernel e observabilidade tridimensional:
 
 ```mermaid
 flowchart TB
     subgraph Client ["Clientes & Operadores SRE"]
-        Browser["SRE Dashboard (Navegador)"]
-        Operator["Operador SRE (curl / CLI)"]
+        Browser["SRE Dashboard & Quiz (Navegador)"]
+        WarRoom["War Room & Live SSE Stream"]
+        Operator["Operador SRE (curl / CLI / Alertmanager)"]
     end
 
-    subgraph K8s ["Cluster Kubernetes (Kind / Cloud)"]
-        subgraph IngressLayer ["Ingress & Roteamento"]
-            Ingress["Ingress Controller / NodePort (:8080)"]
-        end
-
-        subgraph CoreApp ["Pod da Aplicação SRE RAG"]
-            FastAPI["FastAPI Core Engine"]
-            ChaosMgr["Chaos Manager (Injetor de Falhas)"]
-            RAGEngine["Vector RAG Engine (all-MiniLM-L6-v2)"]
-            SimEngine["Incident Simulation Engine"]
-        end
-
-        subgraph DataStores ["Camada de Dados Stateful"]
-            PG[("PostgreSQL StatefulSet")]
-            Redis[("Redis Cache StatefulSet")]
-            VecStore[("Hierarchical Vector Store (Disk Cache)")]
-        end
+    subgraph Edge ["Borda & Proxy Reverso (proxy_net)"]
+        Nginx["Nginx Reverse Proxy (:80)<br/>GZip ativo + Cache Estático"]
     end
 
-    subgraph Observability ["Observabilidade & Alertas"]
-        Prom["Prometheus (Scrape :8080/metrics)"]
-        Grafana["Grafana Dashboards (:3000)"]
-        Alerts["Alertmanager (Alertas & Notificações)"]
+    subgraph CoreApp ["Pod SRE RAG v4.0 (Pod Security Restricted)"]
+        FastAPI["FastAPI Core Engine (:8080)"]
+        AgentOODA["Agente SRE Autônomo<br/>Ciclo OODA & Tool Calling"]
+        HybridRAG["Hybrid Vector Store<br/>pgvector HNSW + BM25 + FlashRank"]
+        ChaosReal["Real Chaos Orchestrator<br/>Kernel cgroups, CFS, tc netem + Dead Man 60s"]
+        ChaosApp["Chaos Monkey 2.0<br/>Middleware HTTP 500s & RED"]
+        SLOEngine["SLO & Error Budget Monitor<br/>Disponibilidade 30d & Burn Rate"]
+        OTelSDK["OpenTelemetry SDK<br/>FastAPI, Asyncpg, Redis + Structlog"]
     end
 
-    Browser --> Ingress
-    Operator --> Ingress
-    Ingress --> FastAPI
+    subgraph DataStores ["Persistência & Cache (backend_net / Internal)"]
+        PG[("PostgreSQL 15 + pgvector<br/>Tabelas Relacionais & HNSW Index")]
+        Redis[("Redis 7<br/>Cache de Consultas & Incident State")]
+    end
 
-    FastAPI --> ChaosMgr
-    FastAPI --> SimEngine
-    FastAPI --> RAGEngine
+    subgraph Observability ["Observabilidade Tridimensional"]
+        Prom["Prometheus Server (:9090)<br/>Scrape :8080/metrics & Recording Rules"]
+        Grafana["Grafana Dashboards (:3000)<br/>Sinais Dourados & Error Budget"]
+        Alerts["Alertmanager (:9093)<br/>Roteamento por Severidade & Inibições"]
+        Jaeger["Jaeger Tracing Collector (:16686 / :4317)<br/>Spans Distribuídos OTLP/gRPC"]
+    end
 
-    RAGEngine --> VecStore
-    RAGEngine -.-> Redis
-    FastAPI --> PG
+    subgraph ChaosTargets ["Alvos de Caos de Baixo Nível (Host / Kernel)"]
+        Cgroups["cgroups v2: memory.max / high<br/>Pressão de Memória / OOM Killer"]
+        CFS["CFS Scheduler: cpu.cfs_quota_us<br/>CPU Throttling & Degradação P99"]
+        TCNet["tc qdisc netem delay 200ms<br/>Latência de Rede & Jitter"]
+    end
 
+    Browser --> Nginx
+    WarRoom --> Nginx
+    Operator --> Nginx
+    Nginx -->|":8080"| FastAPI
+
+    FastAPI --> AgentOODA
+    FastAPI --> HybridRAG
+    FastAPI --> ChaosReal
+    FastAPI --> ChaosApp
+    FastAPI --> SLOEngine
+    FastAPI --> OTelSDK
+
+    AgentOODA -->|"Tool Calling: query_prometheus"| Prom
+    AgentOODA -->|"Tool Calling: search_runbooks"| HybridRAG
+    HybridRAG -->|"Busca Densa HNSW"| PG
+    FastAPI -->|"Sessão Asyncpg & Alembic"| PG
+    FastAPI -->|"Cache & PubSub"| Redis
+
+    ChaosReal -.-> Cgroups
+    ChaosReal -.-> CFS
+    ChaosReal -.-> TCNet
+
+    OTelSDK -->|"OTLP / gRPC :4317"| Jaeger
     FastAPI -->|"/metrics"| Prom
     Prom --> Grafana
     Prom --> Alerts
@@ -175,107 +194,138 @@ flowchart TB
 
 ---
 
-## ⏱️ Fluxo de Resposta a Incidentes (MTTD & MTTR)
+## ⏱️ Fluxo de Resposta a Incidentes: Interativo vs. Autônomo OODA (v4.0)
 
-O ciclo de vida de uma simulação de incidente no laboratório segue o padrão recomendado pelo Google SRE:
+O laboratório suporta dois fluxos complementares de resposta a incidentes:
+
+### 1. Fluxo Autônomo com o Agente SRE (Ciclo OODA)
+O agente investiga ativamente o cluster via *Tool Calling*, isola a causa raiz e sugere ou executa a mitigação com streaming ao vivo via SSE:
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor SRE as "Engenheiro SRE"
-    participant Dash as "Dashboard UI (/dashboard)"
-    participant Sim as "Simulation Engine"
-    participant Chaos as "Chaos Monkey"
-    participant RAG as "Vector RAG"
-    participant Prom as "Prometheus / Métricas"
+    actor SRE as "Operador SRE"
+    participant Dash as "War Room (UI SSE)"
+    participant Agent as "Agente SRE (OODA Loop)"
+    participant Prom as "Prometheus API"
+    participant K8s as "Kubernetes Events"
+    participant RAG as "Hybrid Vector Store"
+    participant Action as "Mitigation Exec"
 
-    SRE->>Dash: "1. Seleciona Cenário (ex: OOM-Kill, SEV-1)"
-    Dash->>Sim: "POST /api/v1/incidents/simulate"
-    Sim->>Chaos: "Ativa Falha (se cenário exigir)"
-    Sim->>Prom: "Inicia contagem de MTTD & MTTR"
-    Sim-->>Dash: "Retorna Sintomas, Métricas e Soluções Embaralhadas"
+    SRE->>Dash: "1. Aciona Diagnóstico (ou via Webhook de Alerta)"
+    Dash->>Agent: "POST /api/v1/agent/diagnose"
+    
+    rect rgb(240, 248, 255)
+    Note over Agent,Prom: "Fase 1: OBSERVE (Coleta de Sinais Vitais)"
+    Agent->>Prom: "Tool: query_prometheus(sinais_vitais)"
+    Prom-->>Agent: "P99 > 2.5s, Erros 5xx > 18%, Memória 98%"
+    Agent->>K8s: "Tool: get_k8s_events(pod_logs)"
+    K8s-->>Agent: "Event: OOMKilled, exit code 137"
+    Agent-->>Dash: "SSE: [OBSERVE] Métricas e eventos coletados em tempo real"
+    end
 
-    Note over SRE,Dash: "Fase de Investigação: SRE analisa sintomas e alertas"
+    rect rgb(245, 255, 250)
+    Note over Agent,RAG: "Fase 2: ORIENT (Contextualização com Runbooks)"
+    Agent->>RAG: "Tool: search_runbooks('OOMKilled 137')"
+    RAG-->>Agent: "Runbook: Memory Pressure & Cgroup Limits (Score 0.94)"
+    Agent-->>Dash: "SSE: [ORIENT] Runbook oficial identificado"
+    end
 
-    SRE->>Dash: "2. Consulta Base de Conhecimento (RAG)"
-    Dash->>RAG: "POST /api/v1/query (Pergunta de Investigação)"
-    RAG-->>Dash: "Retorna Runbook Relevante + Procedimentos"
+    rect rgb(255, 250, 240)
+    Note over Agent: "Fase 3: DECIDE (Isolamento da Causa Raiz)"
+    Agent->>Agent: "Causa Raiz: Limite de cgroup memory insuficiente para pico de carga"
+    Agent-->>Dash: "SSE: [DECIDE] Plano de remediação formulado"
+    end
 
-    SRE->>Dash: "3. Aplica Solução de Mitigação"
-    Dash->>Sim: "POST /api/v1/incidents/solve"
-    Sim->>Chaos: "Desativa Injeção de Falhas"
-    Sim->>Prom: "Calcula MTTR Final e Assertividade"
-    Sim-->>Dash: "Resultado (Correto/Incorreto) + Postmortem"
-    Dash-->>SRE: "Atualiza KPIs, Gráficos e Histórico"
+    rect rgb(255, 245, 245)
+    Note over Agent,Action: "Fase 4: ACT (Mitigação & Recuperação)"
+    alt auto_mitigate == True
+        Agent->>Action: "Tool: execute_mitigation(scale/restart)"
+        Action-->>Agent: "Pods reconfigurados com novo limite de memória"
+        Agent-->>Dash: "SSE: [ACT] Mitigação executada com sucesso"
+    else auto_mitigate == False (Human-in-the-Loop)
+        Agent-->>Dash: "SSE: [ACT] Recomendação pronta aguardando aprovação do SRE"
+    end
+    end
 ```
+
+### 2. Fluxo Interativo de Treinamento no Quiz & War Room
+Para treinamento humano, o operador diagnostica e resolve os 16 cenários de produção medindo seu MTTD e MTTR pessoal contra os runbooks estruturados em 5 fases.
 
 ---
 
-## 🐒 Chaos Monkey & Trilha de Auditoria
+## 🐒 Engenharia do Caos em Duas Camadas: Aplicação & Kernel Real (v4.0)
 
-O Chaos Monkey foi projetado para testes de estresse seguros sem indisponibilizar a infraestrutura de controle:
-
-```mermaid
-flowchart LR
-    Req["Requisição HTTP de Entrada"] --> Middleware{"Metrics Middleware & Chaos Interceptor"}
-
-    Middleware -->|"Rota Isenta (/dashboard, /healthz, /metrics, /chaos)"| Normal["Executa Handler Normal (HTTP 200)"]
-    
-    Middleware -->|"Rota de Workload (/api/v1/query) & Chaos Ativo"| Injector["Chaos Monkey Fault Injector"]
-    
-    Injector --> Log["Emite Log Estruturado (structlog: ERROR)"]
-    Injector --> Metric["Incrementa Prometheus (sre_rag_chaos_injections_total)"]
-    Injector --> Audit["Grava Evento na Trilha de Auditoria & Sessão"]
-    Injector --> Fail["Retorna HTTP 500 (Falha Injetada)"]
-
-    Audit --> Terminal["Terminal SRE no Dashboard (Live Stream)"]
-```
-
-### Endpoints do Chaos Monkey
-
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| `GET` | `/api/v1/chaos/status` | Retorna o status atual, duração da sessão e telemetria |
-| `POST` | `/api/v1/chaos/500?enable=true\|false` | Ativa ou encerra a injeção de falhas com auditoria |
-| `GET` | `/api/v1/chaos/history` | Histórico completo de sessões passadas com duração e falhas |
-| `GET` | `/api/v1/chaos/events?limit=50` | Trilha cronológica de eventos com IP, endpoint e timestamp |
-| `POST` | `/api/v1/chaos/history/clear` | Limpa o histórico de sessões e eventos de auditoria |
-
----
-
-## 🧠 Motor de Busca Vetorial RAG
-
-O pipeline de recuperação vetorial processa runbooks e postmortems em chunks hierárquicos e calcula similaridade de cossenos:
+A plataforma opera com duas camadas complementares de injeção de falhas:
 
 ```mermaid
 flowchart TD
-    subgraph Indexacao ["Indexação de Conhecimento (Offline / Startup)"]
-        Runbooks["8 Runbooks SRE (docs/runbooks/)"]
-        Postmortems["3 Postmortems Históricos (docs/postmortems/)"]
-        Parser["Hierarchical Markdown Section Parser"]
-        Embedder["Sentence-Transformers (all-MiniLM-L6-v2)"]
-        Cache[("index_store.json (141 Chunks Embeddings)")]
-        
-        Runbooks --> Parser
-        Postmortems --> Parser
-        Parser --> Embedder
-        Embedder --> Cache
+    subgraph Layer1 ["Camada 1: Chaos Monkey de Aplicação (HTTP 500s)"]
+        Req["Requisição de Workload"] --> Mid{"Chaos Middleware"}
+        Mid -->|"Normal"| AppHandler["API Handler (HTTP 200)"]
+        Mid -->|"Chaos Ativo"| MockErr["Injeta HTTP 500 + Métricas RED + Log Structlog"]
     end
 
-    subgraph Consulta ["Inferência de Consulta em Runtime"]
-        Query["Pergunta do Operador (ex: 'Como mitigar OOMKill?')"]
-        QEmbed["Query Embedder (Vetor de 384 Dimensões)"]
-        Similarity["Similaridade por Cosseno & Filtro (Threshold > 0.35)"]
-        Ranker["Top-K Ranking & Agrupamento de Contexto"]
-        Engine["RAG Recommendation & Runbook Linker"]
-        Response["Resposta Estruturada + Runbook Recomendado"]
+    subgraph Layer2 ["Camada 2: Chaos Real de Baixo Nível (Kernel & Cgroups v4.0)"]
+        Orch["Real Chaos Orchestrator (app/chaos_real.py)"]
+        Orch -->|"POST /api/v1/chaos/real/cgroup-oom"| CgroupMem["Pressão cgroups v2 memory.max / OOM"]
+        Orch -->|"POST /api/v1/chaos/real/cpu-throttle"| CgroupCPU["CFS Scheduler cpu.cfs_quota_us"]
+        Orch -->|"POST /api/v1/chaos/real/latency"| TCNet["tc qdisc netem delay 200ms"]
+        
+        Orch --> Timer{"Dead Man's Switch (60s)"}
+        Timer -->|"Sem renovação"| AutoRevert["Reversão Automática Determinística"]
+        Orch -->|"POST /api/v1/chaos/real/revert"| ManualRevert["Reversão Manual Imediata"]
+    end
+```
 
-        Query --> QEmbed
-        Cache --> Similarity
-        QEmbed --> Similarity
-        Similarity --> Ranker
-        Ranker --> Engine
-        Engine --> Response
+### Endpoints do Chaos Engineering
+
+| Camada | Método | Endpoint | Descrição |
+|--------|--------|----------|-----------|
+| **Aplicação** | `POST` | `/api/v1/chaos/500?enable=true|false` | Ativa ou encerra a injeção controlada de HTTP 500s |
+| **Aplicação** | `GET` | `/api/v1/chaos/status` | Retorna o status da simulação de 500s e telemetria |
+| **Kernel Real** | `POST` | `/api/v1/chaos/real/cgroup-oom` | Injeta limite estrito de memória cgroup v2 forçando OOM Killer |
+| **Kernel Real** | `POST` | `/api/v1/chaos/real/cpu-throttle` | Injeta contenção de CPU via agendador CFS do Linux |
+| **Kernel Real** | `POST` | `/api/v1/chaos/real/latency` | Injeta atraso e jitter de rede via `tc netem` |
+| **Kernel Real** | `GET` | `/api/v1/chaos/real/active` | Lista experimentos reais ativos e tempo restante do Dead Man's Switch |
+| **Kernel Real** | `POST` | `/api/v1/chaos/real/revert` | Reversão manual emergencial de todos os experimentos |
+
+---
+
+## 🧠 Motor de Busca Híbrida 3-Stage (pgvector + BM25 + FlashRank v4.0)
+
+O pipeline de recuperação vetorial da v4.0 supera as limitações da busca semântica pura ao unir vetores densos com busca esparsa léxica e re-ranking neural:
+
+```mermaid
+flowchart TD
+    subgraph Ingestao ["Base de Conhecimento Operacional"]
+        Runbooks["16 Runbooks SRE em 5 Fases (docs/runbooks/)"]
+        Postmortems["3 Postmortems Históricos (docs/postmortems/)"]
+        Concepts["Hub de Conceitos de Baixo Nível (cgroups, CFS, epoll)"]
+        Chunker["Hierarchical Document Chunker"]
+        Runbooks --> Chunker
+        Postmortems --> Chunker
+        Concepts --> Chunker
+    end
+
+    subgraph DualRetrieval ["Estágio 1 & 2: Recuperação Híbrida Dupla"]
+        Query["Query Operacional (ex: 'ExitCode 137 SIGKILL OOM')"]
+        Dense["Estágio 1: pgvector HNSW Cosine Search<br/>Captura Similaridade Semântica Conceitual"]
+        Sparse["Estágio 2: BM25Okapi Lexical Match<br/>Pontuação Máxima para Códigos e Nomes Literais"]
+        Query -->|Vetor 384d| Dense
+        Query -->|Tokens Exatos| Sparse
+        Chunker --> Dense
+        Chunker --> Sparse
+    end
+
+    subgraph FusionRerank ["Estágio 3: Fusão RRF & Re-ranking Neural"]
+        RRF["Reciprocal Rank Fusion (k=60)<br/>RRF(d) = Σ 1/(60 + rank_m(d))"]
+        FlashRank["FlashRank Cross-Encoder Re-ranker<br/>Modelo Neural Ultra-Leve (&lt;15ms overhead)"]
+        TopResult["Top-3 Runbooks Relevantes + Ações Acionáveis"]
+        Dense --> RRF
+        Sparse --> RRF
+        RRF --> FlashRank
+        FlashRank --> TopResult
     end
 ```
 
@@ -305,23 +355,35 @@ O relatório consolidado é gerado em [`docs/eval-report.md`](docs/eval-report.m
 
 ```
 sre_rag_agent/
-├── app/                         # Aplicação Python & FastAPI
-│   ├── chaos.py                 # Gestão de Chaos Engineering, sessões e auditoria
-│   ├── config.py                # Configurações de ambiente (Dev / Test / Prod)
-│   ├── incidents.py             # Cenários de incidentes e motor de simulação
-│   ├── main.py                  # API principal, middleware RED e rotas
-│   ├── metrics.py               # Métricas Prometheus (RED, USE e Chaos)
-│   ├── healthcheck.py           # Probes K8s (liveness, readiness, startup)
-│   ├── rag/                     # Módulo RAG
-│   │   ├── engine.py            # Motor de busca vetorial e inferência
-│   │   ├── indexer.py           # Indexador de markdown e embeddings
-│   │   └── index_store.json     # Cache persistido de 141 chunks vetoriais
-│   ├── static/                  # CSS e JavaScript do Dashboard
-│   └── templates/               # Templates Jinja2 (dashboard.html, board.html)
-├── docs/                        # Documentação Técnica
-│   ├── runbooks/                # 8 Runbooks completos de incidentes
-│   ├── postmortems/             # 3 Postmortems reais com 5 Porquês
-│   └── eval-report.md           # Relatório da avaliação automatizada
+├── app/                         # Aplicação Python & FastAPI Core (v4.0)
+│   ├── agent/                   # Agente SRE Autônomo com Ciclo OODA (v4.0)
+│   │   ├── sre_agent.py         # Orquestrador OODA (Observe, Orient, Decide, Act)
+│   │   └── tools.py             # Tool Calling (Prometheus, K8s events, runbooks)
+│   ├── chaos.py                 # Chaos Monkey 2.0 (Application-level HTTP 500s)
+│   ├── chaos_real.py            # Chaos Real no Kernel (cgroups, CFS, tc netem + Dead Man 60s)
+│   ├── config.py                # Configurações Pydantic V2 SettingsConfigDict
+│   ├── incidents.py             # 16 Cenários de Produção em 4 Níveis de Dificuldade
+│   ├── main.py                  # Servidor API FastAPI, middlewares e rotas v4.0
+│   ├── metrics.py               # Métricas do Prometheus (RED, USE e Chaos)
+│   ├── healthcheck.py           # Probes K8s com cache TTL de 5s e latência real de DB
+│   ├── rag/                     # Motor de Busca Híbrida 3-Stage (v4.0)
+│   │   ├── embeddings.py        # Embeddings assíncronos (asyncio.to_thread)
+│   │   ├── engine.py            # Orquestrador RAG com fallback gracioso
+│   │   ├── indexer.py           # Indexador hierárquico de runbooks e postmortems
+│   │   ├── vector_store.py      # pgvector HNSW + BM25Okapi + RRF (k=60) + FlashRank
+│   │   └── models.py            # Modelos Pydantic para documentos e chunks
+│   ├── static/                  # Frontend Modular ES Modules (ESM)
+│   │   ├── css/                 # Folhas de estilo confinadas (dashboard.css)
+│   │   └── js/                  # Módulos ESM (app.js, agent.js, api.js, sse.js, etc.)
+│   ├── telemetry.py             # OpenTelemetry SDK + Tracing Jaeger + Structlog context
+│   └── templates/               # Templates HTML Jinja2 (dashboard.html com War Room OODA)
+├── docs/                        # Documentação Técnica e Arquitetural
+│   ├── runbooks/                # 16 Runbooks completos em 5 fases operacionais
+│   ├── postmortems/             # 3 Postmortems reais com análise de 5 Porquês
+│   ├── architecture.md          # Arquitetura detalhada v4.0 e matriz de endpoints
+│   ├── incident-response.md     # Guia de resposta interativa e autônoma OODA
+│   ├── slo.md                   # Definição de SLOs, Error Budgets e Multi-window Burn Rates
+│   └── eval-report.md           # Relatório da avaliação automatizada de IA (SRE-Eval)
 ├── helm/                        # Helm Charts para Kubernetes
 │   └── sre-rag/                 # Chart com HPA, PDB, NetworkPolicies, ServiceMonitor
 ├── monitoring/                  # Observabilidade
@@ -564,54 +626,73 @@ This project was built and evolved into a **Google SRE-standard Practice and Tra
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ System Architecture (v4.0)
 
-The following diagram illustrates the complete microservices architecture, fault injection, vector storage, and observability stack:
+The diagram below illustrates the complete **v4.0** ecosystem, integrating reverse proxy routing, isolated Docker networks, autonomous SRE agent with OODA loop, 3-stage hybrid search with pgvector, real kernel chaos, and distributed tracing:
 
 ```mermaid
 flowchart TB
     subgraph Client ["Clients & SRE Operators"]
-        Browser["SRE Dashboard (Web Browser)"]
-        Operator["SRE Operator (curl / CLI)"]
+        Browser["SRE Dashboard & Quiz (Web Browser)"]
+        WarRoom["War Room & Live SSE Stream"]
+        Operator["SRE Operator (curl / CLI / Alertmanager)"]
     end
 
-    subgraph K8s ["Kubernetes Cluster (Kind / Cloud)"]
-        subgraph IngressLayer ["Ingress & Routing"]
-            Ingress["Ingress Controller / NodePort (:8080)"]
-        end
-
-        subgraph CoreApp ["SRE RAG Application Pod"]
-            FastAPI["FastAPI Core Engine"]
-            ChaosMgr["Chaos Manager (Fault Injector)"]
-            RAGEngine["Vector RAG Engine (all-MiniLM-L6-v2)"]
-            SimEngine["Incident Simulation Engine"]
-        end
-
-        subgraph DataStores ["Stateful Data Tier"]
-            PG[("PostgreSQL StatefulSet")]
-            Redis[("Redis Cache StatefulSet")]
-            VecStore[("Hierarchical Vector Store (Disk Cache)")]
-        end
+    subgraph Edge ["Edge & Reverse Proxy (proxy_net)"]
+        Nginx["Nginx Reverse Proxy (:80)<br/>Active GZip + Static Caching"]
     end
 
-    subgraph Observability ["Observability & Alerting"]
-        Prom["Prometheus (Scraping :8080/metrics)"]
-        Grafana["Grafana Dashboards (:3000)"]
-        Alerts["Alertmanager (SLO & Pager Alerts)"]
+    subgraph CoreApp ["SRE RAG Application Pod (Pod Security Restricted)"]
+        FastAPI["FastAPI Core Engine (:8080)"]
+        AgentOODA["Autonomous SRE Agent<br/>OODA Loop & Tool Calling"]
+        HybridRAG["Hybrid Vector Store<br/>pgvector HNSW + BM25 + FlashRank"]
+        ChaosReal["Real Chaos Orchestrator<br/>Kernel cgroups, CFS, tc netem + Dead Man 60s"]
+        ChaosApp["Chaos Monkey 2.0<br/>HTTP 500s Middleware & RED Metrics"]
+        SLOEngine["SLO & Error Budget Monitor<br/>30d Availability & Burn Rate"]
+        OTelSDK["OpenTelemetry SDK<br/>FastAPI, Asyncpg, Redis + Structlog"]
     end
 
-    Browser --> Ingress
-    Operator --> Ingress
-    Ingress --> FastAPI
+    subgraph DataStores ["Data Tier & Persistence (backend_net / Internal)"]
+        PG[("PostgreSQL 15 + pgvector<br/>Relational Tables & HNSW Index")]
+        Redis[("Redis 7<br/>Query Cache & Incident Session State")]
+    end
 
-    FastAPI --> ChaosMgr
-    FastAPI --> SimEngine
-    FastAPI --> RAGEngine
+    subgraph Observability ["Three-Dimensional Observability"]
+        Prom["Prometheus Server (:9090)<br/>Scrape :8080/metrics & Recording Rules"]
+        Grafana["Grafana Dashboards (:3000)<br/>Golden Signals & Error Budget"]
+        Alerts["Alertmanager (:9093)<br/>Severity Routing & Inhibitions"]
+        Jaeger["Jaeger Tracing Collector (:16686 / :4317)<br/>Distributed Spans via OTLP/gRPC"]
+    end
 
-    RAGEngine --> VecStore
-    RAGEngine -.-> Redis
-    FastAPI --> PG
+    subgraph ChaosTargets ["Low-Level Chaos Targets (Host / Kernel)"]
+        Cgroups["cgroups v2: memory.max / high<br/>Memory Pressure & OOM Killer"]
+        CFS["CFS Scheduler: cpu.cfs_quota_us<br/>CPU Throttling & P99 Latency"]
+        TCNet["tc qdisc netem delay 200ms<br/>Network Latency & Jitter"]
+    end
 
+    Browser --> Nginx
+    WarRoom --> Nginx
+    Operator --> Nginx
+    Nginx -->|":8080"| FastAPI
+
+    FastAPI --> AgentOODA
+    FastAPI --> HybridRAG
+    FastAPI --> ChaosReal
+    FastAPI --> ChaosApp
+    FastAPI --> SLOEngine
+    FastAPI --> OTelSDK
+
+    AgentOODA -->|"Tool Calling: query_prometheus"| Prom
+    AgentOODA -->|"Tool Calling: search_runbooks"| HybridRAG
+    HybridRAG -->|"Dense HNSW Cosine Search"| PG
+    FastAPI -->|"Asyncpg Session & Alembic"| PG
+    FastAPI -->|"Cache & PubSub"| Redis
+
+    ChaosReal -.-> Cgroups
+    ChaosReal -.-> CFS
+    ChaosReal -.-> TCNet
+
+    OTelSDK -->|"OTLP / gRPC :4317"| Jaeger
     FastAPI -->|"/metrics"| Prom
     Prom --> Grafana
     Prom --> Alerts
@@ -619,107 +700,138 @@ flowchart TB
 
 ---
 
-## ⏱️ Incident Response Lifecycle (MTTD & MTTR)
+## ⏱️ Incident Response Lifecycle: Interactive vs. Autonomous OODA (v4.0)
 
-The incident simulation lifecycle in the lab follows the standard Google SRE incident mitigation workflow:
+The platform supports two complementary operational response workflows:
+
+### 1. Autonomous SRE Agent Workflow (OODA Loop)
+The agent autonomously investigates telemetry via *Tool Calling*, isolates root causes, and recommends or executes verified mitigations with real-time SSE streaming:
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor SRE as "SRE Engineer"
-    participant Dash as "Dashboard UI (/dashboard)"
-    participant Sim as "Simulation Engine"
-    participant Chaos as "Chaos Monkey"
-    participant RAG as "Vector RAG"
-    participant Prom as "Prometheus / Metrics"
+    actor SRE as "SRE Operator"
+    participant Dash as "War Room (SSE Stream)"
+    participant Agent as "Autonomous SRE Agent"
+    participant Prom as "Prometheus API"
+    participant K8s as "Kubernetes Events"
+    participant RAG as "Hybrid Vector Store"
+    participant Action as "Mitigation Exec"
 
-    SRE->>Dash: "1. Selects Incident Scenario (e.g., OOM-Kill, SEV-1)"
-    Dash->>Sim: "POST /api/v1/incidents/simulate"
-    Sim->>Chaos: "Triggers Fault (if required by scenario)"
-    Sim->>Prom: "Starts MTTD & MTTR timers"
-    Sim-->>Dash: "Returns Symptoms, Metrics & Shuffled Options"
+    SRE->>Dash: "1. Trigger Diagnosis (or via Alert Webhook)"
+    Dash->>Agent: "POST /api/v1/agent/diagnose"
+    
+    rect rgb(240, 248, 255)
+    Note over Agent,Prom: "Stage 1: OBSERVE (Telemetry Harvesting)"
+    Agent->>Prom: "Tool: query_prometheus(vital_signs)"
+    Prom-->>Agent: "P99 > 2.5s, 5xx Rate > 18%, Memory 98%"
+    Agent->>K8s: "Tool: get_k8s_events(pod_logs)"
+    K8s-->>Agent: "Event: OOMKilled, exit code 137"
+    Agent-->>Dash: "SSE: [OBSERVE] Live telemetry and event stream"
+    end
 
-    Note over SRE,Dash: "Investigation Phase: SRE inspects logs, metrics & alerts"
+    rect rgb(245, 255, 250)
+    Note over Agent,RAG: "Stage 2: ORIENT (Runbook Contextualization)"
+    Agent->>RAG: "Tool: search_runbooks('OOMKilled 137')"
+    RAG-->>Agent: "Runbook: Memory Pressure & Cgroup Limits (Score 0.94)"
+    Agent-->>Dash: "SSE: [ORIENT] Authoritative runbook mapped"
+    end
 
-    SRE->>Dash: "2. Queries Knowledge Base (RAG)"
-    Dash->>RAG: "POST /api/v1/query (Investigation Question)"
-    RAG-->>Dash: "Returns Relevant Runbook + Mitigation Steps"
+    rect rgb(255, 250, 240)
+    Note over Agent: "Stage 3: DECIDE (Root Cause Isolation)"
+    Agent->>Agent: "Root Cause: Insufficient cgroup memory limit for peak traffic"
+    Agent-->>Dash: "SSE: [DECIDE] Mitigation plan selected"
+    end
 
-    SRE->>Dash: "3. Applies Mitigation Solution"
-    Dash->>Sim: "POST /api/v1/incidents/solve"
-    Sim->>Chaos: "Deactivates Fault Injection"
-    Sim->>Prom: "Calculates Final MTTR & Accuracy Score"
-    Sim-->>Dash: "Result (Correct/Incorrect) + Postmortem"
-    Dash-->>SRE: "Updates KPIs, Charts & History Table"
+    rect rgb(255, 245, 245)
+    Note over Agent,Action: "Stage 4: ACT (Mitigation & Recovery)"
+    alt auto_mitigate == True
+        Agent->>Action: "Tool: execute_mitigation(scale/restart)"
+        Action-->>Agent: "Pods restarted with expanded memory limits"
+        Agent-->>Dash: "SSE: [ACT] Mitigation executed successfully"
+    else auto_mitigate == False (Human-in-the-Loop)
+        Agent-->>Dash: "SSE: [ACT] Recommendation ready for operator approval"
+    end
+    end
 ```
+
+### 2. Interactive Operator Training Workflow
+For human learning, operators diagnose and solve the 16 production scenarios, tracking their personal MTTD and MTTR against 5-phase structured runbooks.
 
 ---
 
-## 🐒 Chaos Monkey & Audit Trail
+## 🐒 Dual-Layer Chaos Engineering: Application & Real Kernel (v4.0)
 
-Chaos Monkey is designed for safe resilience validation without breaking the control plane:
-
-```mermaid
-flowchart LR
-    Req["Incoming HTTP Request"] --> Middleware{"Metrics Middleware & Chaos Interceptor"}
-
-    Middleware -->|"Route is Exempt (/dashboard, /healthz, /metrics, /chaos)"| Normal["Execute Normal Handler (HTTP 200)"]
-    
-    Middleware -->|"Route is Workload (/api/v1/query) & Chaos Active"| Injector["Chaos Monkey Fault Injector"]
-    
-    Injector --> Log["Emit Structured Log (structlog: ERROR)"]
-    Injector --> Metric["Increment Prometheus (sre_rag_chaos_injections_total)"]
-    Injector --> Audit["Record Event in Audit Trail & Session History"]
-    Injector --> Fail["Return HTTP 500 (Chaos Injected)"]
-
-    Audit --> Terminal["Live SRE Audit Terminal (UI Stream)"]
-```
-
-### Chaos Monkey API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/v1/chaos/status` | Returns current state, active session duration, and telemetry |
-| `POST` | `/api/v1/chaos/500?enable=true\|false` | Starts or concludes error injection with audit logging |
-| `GET` | `/api/v1/chaos/history` | Complete historical archive of past sessions and impacted endpoints |
-| `GET` | `/api/v1/chaos/events?limit=50` | Chronological audit trail of events with client IP and timestamps |
-| `POST` | `/api/v1/chaos/history/clear` | Clears sessions history and audit events log |
-
----
-
-## 🧠 Vector RAG Retrieval Engine
-
-The knowledge retrieval pipeline processes operational documentation into hierarchical chunks and performs cosine similarity search:
+The platform operates across two complementary fault injection layers:
 
 ```mermaid
 flowchart TD
-    subgraph Ingestion ["Knowledge Indexing (Offline / Startup)"]
-        Runbooks["8 SRE Runbooks (docs/runbooks/)"]
-        Postmortems["3 Historical Postmortems (docs/postmortems/)"]
-        Parser["Hierarchical Markdown Section Parser"]
-        Embedder["Sentence-Transformers (all-MiniLM-L6-v2)"]
-        Cache[("index_store.json (141 Chunks Embeddings)")]
-        
-        Runbooks --> Parser
-        Postmortems --> Parser
-        Parser --> Embedder
-        Embedder --> Cache
+    subgraph Layer1 ["Layer 1: Application-Level Chaos Monkey (HTTP 500s)"]
+        Req["Workload Request"] --> Mid{"Chaos Middleware"}
+        Mid -->|"Normal"| AppHandler["API Handler (HTTP 200)"]
+        Mid -->|"Chaos Active"| MockErr["Inject HTTP 500 + RED Metrics + Structlog"]
     end
 
-    subgraph QueryFlow ["Runtime Query Inference"]
-        Query["Operator Question (e.g., 'How to resolve OOMKill?')"]
-        QEmbed["Query Embedder (384-dimensional Vector)"]
-        Similarity["Cosine Similarity & Filtering (Score > 0.35)"]
-        Ranker["Top-K Ranking & Context Assembler"]
-        Engine["RAG Recommendation & Runbook Linker"]
-        Response["Structured SRE Response + Runbook Reference"]
+    subgraph Layer2 ["Layer 2: Low-Level Real Chaos (Kernel & Cgroups v4.0)"]
+        Orch["Real Chaos Orchestrator (app/chaos_real.py)"]
+        Orch -->|"POST /api/v1/chaos/real/cgroup-oom"| CgroupMem["cgroups v2 memory.max / OOM Killer"]
+        Orch -->|"POST /api/v1/chaos/real/cpu-throttle"| CgroupCPU["CFS Scheduler cpu.cfs_quota_us Throttling"]
+        Orch -->|"POST /api/v1/chaos/real/latency"| TCNet["tc qdisc netem delay 200ms"]
+        
+        Orch --> Timer{"Dead Man's Switch (60s)"}
+        Timer -->|"No renewal"| AutoRevert["Deterministic Safety Rollback"]
+        Orch -->|"POST /api/v1/chaos/real/revert"| ManualRevert["Immediate Manual Revert"]
+    end
+```
 
-        Query --> QEmbed
-        Cache --> Similarity
-        QEmbed --> Similarity
-        Similarity --> Ranker
-        Ranker --> Engine
-        Engine --> Response
+### Chaos Engineering API Endpoints
+
+| Layer | Method | Endpoint | Description |
+|-------|--------|----------|-------------|
+| **Application** | `POST` | `/api/v1/chaos/500?enable=true|false` | Toggles controlled HTTP 500 fault injection |
+| **Application** | `GET` | `/api/v1/chaos/status` | Returns application chaos status and telemetry |
+| **Real Kernel** | `POST` | `/api/v1/chaos/real/cgroup-oom` | Injects strict cgroup v2 memory limit forcing OOM Killer |
+| **Real Kernel** | `POST` | `/api/v1/chaos/real/cpu-throttle` | Injects CFS CPU scheduler constraints |
+| **Real Kernel** | `POST` | `/api/v1/chaos/real/latency` | Injects packet delay and jitter via `tc netem` |
+| **Real Kernel** | `GET` | `/api/v1/chaos/real/active` | Lists active experiments and remaining Dead Man's Switch time |
+| **Real Kernel** | `POST` | `/api/v1/chaos/real/revert` | Immediate emergency revert of all active chaos faults |
+
+---
+
+## 🧠 3-Stage Hybrid Retrieval Engine (pgvector + BM25 + FlashRank v4.0)
+
+The v4.0 retrieval pipeline transcends pure semantic search limitations by uniting dense embeddings with sparse lexical scoring and cross-encoder re-ranking:
+
+```mermaid
+flowchart TD
+    subgraph Ingestion ["Operational Knowledge Base"]
+        Runbooks["16 5-Phase SRE Runbooks (docs/runbooks/)"]
+        Postmortems["3 Historical Postmortems (docs/postmortems/)"]
+        Concepts["Low-Level SRE Concepts Hub (cgroups, CFS, epoll)"]
+        Chunker["Hierarchical Document Chunker"]
+        Runbooks --> Chunker
+        Postmortems --> Chunker
+        Concepts --> Chunker
+    end
+
+    subgraph DualRetrieval ["Stage 1 & 2: Dual Hybrid Retrieval"]
+        Query["Operational Query (e.g., 'ExitCode 137 SIGKILL OOM')"]
+        Dense["Stage 1: pgvector HNSW Cosine Search<br/>Captures Broad Conceptual Semantic Similarity"]
+        Sparse["Stage 2: BM25Okapi Lexical Match<br/>Maximum Score for Exact Diagnostic Codes & Tokens"]
+        Query -->|384d Vector| Dense
+        Query -->|Exact Tokens| Sparse
+        Chunker --> Dense
+        Chunker --> Sparse
+    end
+
+    subgraph FusionRerank ["Stage 3: RRF Fusion & Neural Re-ranking"]
+        RRF["Reciprocal Rank Fusion (k=60)<br/>RRF(d) = Σ 1/(60 + rank_m(d))"]
+        FlashRank["FlashRank Cross-Encoder Re-ranker<br/>Ultra-Lightweight Neural Scoring (&lt;15ms overhead)"]
+        TopResult["Top-3 Authoritative Runbooks + Actionable Steps"]
+        Dense --> RRF
+        Sparse --> RRF
+        RRF --> FlashRank
+        FlashRank --> TopResult
     end
 ```
 
@@ -749,23 +861,35 @@ A consolidated report is written to [`docs/eval-report.md`](docs/eval-report.md)
 
 ```
 sre_rag_agent/
-├── app/                         # Python Application & FastAPI Core
-│   ├── chaos.py                 # Chaos Engineering manager, sessions & audit trail
-│   ├── config.py                # Environment configurations (Dev / Test / Prod)
-│   ├── incidents.py             # Incident scenarios and simulation engine
-│   ├── main.py                  # Main API server, RED middleware and routes
+├── app/                         # Python Application & FastAPI Core (v4.0)
+│   ├── agent/                   # Autonomous SRE Agent with OODA Loop (v4.0)
+│   │   ├── sre_agent.py         # OODA Orchestrator (Observe, Orient, Decide, Act)
+│   │   └── tools.py             # Tool Calling (Prometheus, K8s events, runbooks)
+│   ├── chaos.py                 # Chaos Monkey 2.0 (Application-level HTTP 500s)
+│   ├── chaos_real.py            # Real Kernel Chaos (cgroups, CFS, tc netem + Dead Man 60s)
+│   ├── config.py                # Pydantic V2 SettingsConfigDict configurations
+│   ├── incidents.py             # 16 Production Scenarios across 4 Tiers
+│   ├── main.py                  # Main API FastAPI server, middlewares & v4.0 routes
 │   ├── metrics.py               # Prometheus metrics (RED, USE, and Chaos)
-│   ├── healthcheck.py           # K8s probes (liveness, readiness, startup)
-│   ├── rag/                     # RAG Engine Module
-│   │   ├── engine.py            # Vector similarity search & inference
-│   │   ├── indexer.py           # Markdown section indexer and embeddings
-│   │   └── index_store.json     # Persisted disk cache of 141 vector chunks
-│   ├── static/                  # Dashboard CSS and JavaScript assets
-│   └── templates/               # Jinja2 HTML templates (dashboard.html, board.html)
-├── docs/                        # Technical Documentation
-│   ├── runbooks/                # 8 comprehensive incident runbooks
-│   ├── postmortems/             # 3 real-world postmortems with 5 Whys
-│   └── eval-report.md           # Automated RAG evaluation report
+│   ├── healthcheck.py           # K8s probes with 5s TTL cache & real database latency
+│   ├── rag/                     # 3-Stage Hybrid Retrieval Engine (v4.0)
+│   │   ├── embeddings.py        # Asynchronous embeddings (asyncio.to_thread)
+│   │   ├── engine.py            # RAG orchestrator with graceful in-memory fallback
+│   │   ├── indexer.py           # Hierarchical indexer for runbooks & postmortems
+│   │   ├── vector_store.py      # pgvector HNSW + BM25Okapi + RRF (k=60) + FlashRank
+│   │   └── models.py            # Pydantic schemas for documents and chunks
+│   ├── static/                  # Modular Frontend (ES Modules - ESM)
+│   │   ├── css/                 # Flexbox confined stylesheet (dashboard.css)
+│   │   └── js/                  # ESM modules (app.js, agent.js, api.js, sse.js, etc.)
+│   ├── telemetry.py             # OpenTelemetry SDK + Jaeger Tracing + Structlog context
+│   └── templates/               # Jinja2 HTML templates (dashboard.html with War Room OODA)
+├── docs/                        # Technical & Architectural Documentation
+│   ├── runbooks/                # 16 comprehensive 5-phase incident runbooks
+│   ├── postmortems/             # 3 real-world postmortems with 5 Whys analysis
+│   ├── architecture.md          # In-depth v4.0 architecture & endpoints matrix
+│   ├── incident-response.md     # Interactive and autonomous OODA response guide
+│   ├── slo.md                   # SLOs, Error Budgets and Multi-window Burn Rates specification
+│   └── eval-report.md           # Automated AI evaluation report (SRE-Eval)
 ├── helm/                        # Kubernetes Helm Charts
 │   └── sre-rag/                 # Production chart with HPA, PDB, NetworkPolicies
 ├── monitoring/                  # Observability
