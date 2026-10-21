@@ -27,19 +27,20 @@ services:
       - POSTGRES_HOST=postgres
       - POSTGRES_PASSWORD=sre_password
       - REDIS_HOST=redis
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
     networks:
       - proxy_net
       - backend_net
     depends_on:
       - postgres
       - redis
-    # Note: No ports mapped to the host! Access must go through the proxy.
+      - jaeger
 
   # ----------------------------------------------------
-  # Databases (Isolated on internal network)
+  # Databases & Vector Engine (Isolated on internal network)
   # ----------------------------------------------------
   postgres:
-    image: postgres:15-alpine
+    image: pgvector/pgvector:pg15
     container_name: sre_rag_postgres
     environment:
       - POSTGRES_DB=sre_rag
@@ -47,14 +48,26 @@ services:
       - POSTGRES_PASSWORD=sre_password
     networks:
       - backend_net
-    # Note: No ports mapped. Isolated from the host and internet.
 
   redis:
     image: redis:7-alpine
     container_name: sre_rag_redis
     networks:
       - backend_net
-    # Note: No ports mapped. Isolated from the host and internet.
+
+  # ----------------------------------------------------
+  # Distributed Tracing (Jaeger OpenTelemetry OTLP)
+  # ----------------------------------------------------
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: sre_rag_jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - backend_net
+      - proxy_net
+    ports:
+      - "16686:16686"
 
 networks:
   proxy_net:
@@ -63,4 +76,4 @@ networks:
   backend_net:
     driver: bridge
     name: sre_rag_backend_net
-    internal: true # This makes the network completely isolated from outside
+    internal: true
