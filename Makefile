@@ -9,7 +9,7 @@ CLUSTER_NAME  := sre-rag
 NAMESPACE     := sre-rag
 IMAGE         := sre-rag-api
 TAG           := $(shell git rev-parse --short HEAD 2>/dev/null || echo "local")
-REGISTRY      := ghcr.io/your-org
+REGISTRY      := carlosmagnogcs
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
