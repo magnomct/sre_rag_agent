@@ -73,11 +73,11 @@ check_step "9. Módulo Frontend do Agente (app/static/js/modules/agent.js)" \
 
 # 10. Pod Security Standards Restricted
 check_step "10. PSS Restricted no Deployment Helm" \
-  "grep -q 'readOnlyRootFilesystem: true' helm/sre-rag/templates/deployment.yaml"
+  "grep -q 'readOnlyRootFilesystem: true' helm/sre-rag/templates/api-deployment.yaml"
 
 # 11. NetworkPolicy no Helm
 check_step "11. NetworkPolicy Zero-Trust no Helm" \
-  "[ -f helm/sre-rag/templates/networkpolicy.yaml ]"
+  "[ -f helm/sre-rag/templates/network-policies.yaml ]"
 
 # 12. Helm Chart appVersion == 4.0
 check_step "12. Helm Chart appVersion == 4.0" \

@@ -1,4 +1,4 @@
-# 🚨 SRE RAG Agent — Incident Simulation Lab & Observability Platform v3.5
+# 🚨 SRE RAG Agent — Incident Simulation Lab & Observability Platform v4.0
 
 [ 🇧🇷 Ler em Português ](#-versão-em-português) &nbsp;|&nbsp; [ 🇺🇸 Read in English ](#-english-version)
 
@@ -9,7 +9,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Language-Portugu%C3%AAs-blue?style=for-the-badge" alt="Idioma Português" />
-    <img src="https://img.shields.io/badge/Version-v3.5-blue?style=for-the-badge" alt="Versão v3.5" />
+    <img src="https://img.shields.io/badge/Version-v4.0-blue?style=for-the-badge" alt="Versão v4.0" />
   <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12" />
   <img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Kubernetes-Kind-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" alt="Kubernetes" />
@@ -21,7 +21,15 @@
 
 ---
 
-## 🚀 Novidades da Versão v3.5 (Persistência Relacional, SSE & Frontend Modular)
+## 🚀 Novidades da Versão v4.0 (Agente SRE OODA, Busca Híbrida pgvector, Chaos Real & OpenTelemetry)
+- **🤖 Agente SRE Autônomo com Ciclo OODA**: Agente inteligente com raciocínio closed-loop nos 4 estágios (*Observe, Orient, Decide, Act*), com Tool Calling nativo (`query_prometheus`, `get_k8s_events`, `search_runbooks`, `execute_mitigation`) e streaming de telemetria ao vivo via Server-Sent Events (SSE).
+- **🔍 Motor de Busca Híbrida 3-Stage**: Combinação de embeddings densos com pgvector (índice HNSW), busca léxica esparsa BM25Okapi, fusão por Reciprocal Rank Fusion (RRF, $k=60$) e re-ranking semântico neural com FlashRank cross-encoder, elevando a precisão na recuperação de runbooks técnicos e códigos de erro de baixo nível.
+- **⚡ Chaos Engineering Real no Kernel & Kubernetes**: Injeção real de pressão de cgroup memory limit, CFS CPU throttling e emulação de latência de rede com `tc netem`, orquestrado com **Dead Man's Switch automático de 60 segundos** para garantir recuperação determinística sem intervenção humana.
+- **🔭 Observabilidade Tridimensional com OpenTelemetry & Jaeger**: Rastreamento distribuído ponta a ponta com instrumentação do FastAPI, Asyncpg e Redis via SDK OpenTelemetry, exportação OTLP/gRPC para Jaeger e correlação automática de `trace_id` e `span_id` no structlog.
+- **📊 Monitoramento Dinâmico de SLO & Error Budget**: Cálculo em tempo real de disponibilidade, consumo e burn rate de Error Budget no endpoint `/api/v1/slo/error-budget` com alertas preditivos.
+- **🛡️ DevSecOps Corporativo & Pod Security Standards (PSS Restricted)**: Hardening com `readOnlyRootFilesystem: true`, `allowPrivilegeEscalation: false`, drop de todas as capabilities do Linux, isolamento Zero-Trust com NetworkPolicies estritas e validação automatizada de vulnerabilidades com Trivy.
+
+## 🚀 Histórico da Versão v3.5 (Persistência Relacional, SSE & Frontend Modular)
 - **🏛️ Persistência Relacional com PostgreSQL & Alembic**: Migração do estado em memória (`history_db`, simulações ativas de incidentes e eventos do Chaos Monkey) para tabelas persistentes no PostgreSQL via `SQLAlchemy 2.0` assíncrono (`asyncpg`) e migrações declarativas controladas por `Alembic`, com fallback gracioso em memória caso o banco esteja inacessível.
 - **⚡ Server-Sent Events (SSE) em Tempo Real**: Substituição do polling HTTP periódico (`setInterval`) por streaming unidirecional em tempo real via endpoint `/api/v1/events/stream` com heartbeat periódico de 15s.
 - **🧩 Modularização do Frontend (ES Modules - ESM)**: Decomposição do monólito `dashboard.js` (2.300+ linhas) em 6 submódulos limpos (`api.js`, `sse.js`, `incidents.js`, `chaos.js`, `terminal.js`, `charts.js`) orquestrados pelo entry point `app.js` via `<script type="module">`.
@@ -445,7 +453,15 @@ Distribuído sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para 
 <a id="-english-version"></a>
 ## 🇺🇸 English Version
 
-## 🚀 What's New in v3.5 (Relational Persistence, SSE & Modular Frontend)
+## 🚀 What's New in v4.0 (Autonomous SRE OODA Agent, pgvector Hybrid Search, Real Chaos & OpenTelemetry)
+- **🤖 Autonomous SRE Agent with OODA Loop**: Intelligent closed-loop incident responder cycling through 4 stages (*Observe, Orient, Decide, Act*), equipped with native Tool Calling (`query_prometheus`, `get_k8s_events`, `search_runbooks`, `execute_mitigation`) and live SSE reasoning streams.
+- **🔍 3-Stage Hybrid Search Engine**: Synergy of pgvector dense cosine search (HNSW index), BM25Okapi sparse lexical scoring, Reciprocal Rank Fusion (RRF, $k=60$), and FlashRank neural cross-encoder re-ranking for pinpoint accuracy on Kubernetes runbooks and error codes.
+- **⚡ Real-World Chaos Engineering at Kernel & Kubernetes Level**: Deterministic fault injection via Linux cgroups memory pressure, CFS CPU throttling, and `tc netem` packet latency, governed by an automatic **60-second Dead Man's Switch** safety harness.
+- **🔭 3D Observability with OpenTelemetry & Jaeger**: Distributed tracing spanning FastAPI, Asyncpg, and Redis using OpenTelemetry SDK, OTLP/gRPC export to Jaeger, and contextual injection of `trace_id` and `span_id` into structured JSON logs.
+- **📊 Dynamic SLO & Error Budget Calculation**: Real-time evaluation of service availability, remaining budget, and burn rate via `/api/v1/slo/error-budget`.
+- **🛡️ Enterprise DevSecOps & Pod Security Standards (PSS Restricted)**: Full adherence to Kubernetes PSS Restricted profile (`readOnlyRootFilesystem: true`, non-root execution, `drop: ["ALL"]` capabilities, `seccompProfile: RuntimeDefault`), Zero-Trust NetworkPolicies, and Trivy automated vulnerability auditing.
+
+## 🚀 Version History — v3.5 (Relational Persistence, SSE & Modular Frontend)
 - **🏛️ Relational Persistence with PostgreSQL & Alembic**: Full migration of volatile in-memory collections (`history_db`, incident simulations, chaos events) to relational PostgreSQL tables via `SQLAlchemy 2.0` async engine (`asyncpg`) and declarative migrations managed by `Alembic`, with resilient in-memory fallback.
 - **⚡ Real-Time Server-Sent Events (SSE)**: Complete elimination of polling loops (`setInterval`) in favor of low-latency unidirectional real-time streaming via `/api/v1/events/stream` with 15s keep-alive heartbeats.
 - **🧩 Modular Frontend Architecture (ES Modules - ESM)**: Decoupling of monolithic `dashboard.js` (2,300+ lines) into 6 isolated ES modules (`api.js`, `sse.js`, `incidents.js`, `chaos.js`, `terminal.js`, `charts.js`) coordinated by `app.js` using `<script type="module">`.
@@ -475,7 +491,7 @@ Distribuído sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para 
 
 <p align="center">
     <img src="https://img.shields.io/badge/Language-English-green?style=for-the-badge" alt="English Documentation" />
-  <img src="https://img.shields.io/badge/Version-v3.5-blue?style=for-the-badge" alt="Versão v3.5" />
+  <img src="https://img.shields.io/badge/Version-v4.0-blue?style=for-the-badge" alt="Versão v4.0" />
   <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12" />
   <img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Kubernetes-Kind-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" alt="Kubernetes" />

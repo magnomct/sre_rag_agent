@@ -42,3 +42,21 @@ Para comprovar a resiliência do sistema e o funcionamento do fluxo de SRE, o la
    curl -X POST "http://localhost:8080/api/v1/chaos/500?enable=false"
    ```
 5. **Recuperação:** A API volta a processar requests com HTTP 200. O Burn rate diminui e os alertas se auto-resolvem (Resolved) no Alertmanager.
+
+
+## Resposta Autônoma a Incidentes com o Agente SRE (v4.0)
+
+A versão 4.0 introduz o suporte à resposta automatizada via **Agente SRE com Ciclo OODA**:
+
+1. **Acionamento:** O agente pode ser acionado via API no endpoint `POST /api/v1/agent/diagnose`:
+   ```bash
+   curl -X POST "http://localhost:8080/api/v1/agent/diagnose" \
+     -H "Content-Type: application/json" \
+     -d '{"query": "Pod crashed with CrashLoopBackOff and high P99 latency", "auto_mitigate": false}'
+   ```
+2. **Ciclo OODA Transparente:**
+   - **Observe:** Consulta métricas ativas no Prometheus e eventos recentes de pods e nós no Kubernetes.
+   - **Orient:** Busca runbooks operacionais utilizando o motor híbrido (pgvector HNSW + BM25 + FlashRank).
+   - **Decide:** Identifica a causa raiz e elabora a estratégia de remediação recomendada.
+   - **Act:** Caso aprovado (`auto_mitigate: true`), executa a mitigação (restart de pod, scaling horizontal, etc.).
+3. **Streaming em Tempo Real:** Operadores podem acompanhar o raciocínio do agente ao vivo no War Room através do stream SSE em `GET /api/v1/events/stream`.

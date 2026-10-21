@@ -24,7 +24,7 @@ def test_dashboard_renders_successfully(client):
 
     # Verify key dashboard sections and scripts exist
     assert "SRE Incident Simulation Lab" in html
-    assert "app.js?v=3.5.0" in html
+    assert "app.js?v=4.0.0" in html
     assert 'type="module"' in html
     assert "chaos-monkey-toggle" in html
     assert "chaos-status-badge" in html

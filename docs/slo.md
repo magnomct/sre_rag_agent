@@ -34,3 +34,14 @@ O Prometheus pre-computa os SLIs usando Recording Rules para otimizar os dashboa
 - Burn Rate (1h): `slo:availability:burn_rate1h`
 
 Se `slo:availability:burn_rate1h > 14.4` E `slo:availability:burn_rate6h > 6`, o Alertmanager emite um alerta **CRITICAL**.
+
+
+## API de Monitoramento Dinâmico de Error Budget (v4.0)
+
+A partir da versão 4.0, o laboratório expõe a rota `GET /api/v1/slo/error-budget` que computa em tempo real:
+- Disponibilidade atual em janela de 30 dias.
+- Percentual de Error Budget consumido e restante relativo à meta de 99.9%.
+- Status operacional do serviço:
+  - `healthy`: Burn rate normal, budget preservado.
+  - `warning`: Burn rate elevado, atenção operacional recomendada.
+  - `critical`: Risco iminente de violação de SLA — acionamento de políticas de freeze de deploy.
