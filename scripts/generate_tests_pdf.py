@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # ==============================================================================
-# SRE RAG Agent v3.5 — Gerador Oficial do tests.pdf
+# SRE RAG Agent v4.0 — Gerador Oficial do tests.pdf
 # Produz o Guia de Execução Local em PDF com ReportLab (3 páginas balanceadas)
 # ==============================================================================
 
@@ -48,7 +48,7 @@ class NumberedCanvas(canvas.Canvas):
 
         # Header (topo: y=755 linha, y=762 texto)
         self.line(40, 755, 572, 755)
-        self.drawString(40, 762, "SRE RAG Agent v3.5 — Guia de Execução Local (Step by Step)")
+        self.drawString(40, 762, "SRE RAG Agent v4.0 — Guia de Execução Local (Step by Step)")
 
         # Footer (rodapé: y=42 linha, y=30 texto)
         self.line(40, 42, 572, 42)
@@ -187,11 +187,11 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
     story = []
 
     # =========================================================================
-    # PÁGINA 1 — Header do Documento + Novidades v3.5 + Opção 1 (Dev Local)
+    # PÁGINA 1 — Header do Documento + Novidades v4.0 + Opção 1 (Dev Local)
     # =========================================================================
 
     story.append(Spacer(1, 4))
-    story.append(Paragraph("■ SRE RAG Agent v3.5 — Guia de Execução Local", doc_title_style))
+    story.append(Paragraph("■ SRE RAG Agent v4.0 — Guia de Execução Local", doc_title_style))
     story.append(Spacer(1, 2))
     story.append(
         Paragraph("Passo a Passo (Step by Step) para Inicialização, Operação e Validação do Laboratório", doc_subtitle_style)
@@ -200,64 +200,64 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
 
     intro_text = (
         "Este documento reúne as 3 formas homologadas de subir e operar o ambiente do "
-        "<b>SRE Incident Simulation Lab v3.5</b> em ambiente local (WSL2 / Ubuntu ou Linux). "
+        "<b>SRE Incident Simulation Lab v4.0</b> em ambiente local (WSL2 / Ubuntu ou Linux). "
         "Escolha a opção mais adequada ao seu objetivo de estudo ou teste."
     )
     story.append(Paragraph(intro_text, body_style))
-    story.append(Spacer(1, 6))
+    story.append(Spacer(1, 5))
 
-    # Box de Destaques da v3.5 (Novidades & Hardening)
-    v34_highlights_html = (
-        "<b>🛡️ Novidades &amp; Hardening da v3.5:</b> "
-        "• <b>Pydantic V2 ConfigDict:</b> Zero DeprecationWarnings no bootstrap de configs.<br/>"
-        "• <b>Health Check TTL Cache (5s):</b> Prevenção contra connection storms e medição de latência real de DB/Redis.<br/>"
-        "• <b>Async Embeddings:</b> <i>asyncio.to_thread</i> na inferência vetorial, liberando o event loop do FastAPI.<br/>"
-        "• <b>GZip &amp; Nginx Cache:</b> Compressão transparente &gt;1KB e cache estático (expires 1h) para assets imutáveis.<br/>"
-        "• <b>Defesa em Profundidade:</b> Security Headers automáticos (CSP, HSTS, XFO) e Rate Limiter (30 req/min no RAG)."
+    # Box de Destaques da v4.0 (Novidades & Hardening)
+    v40_highlights_html = (
+        "<b>🤖 Novidades &amp; Arquitetura da Versão v4.0:</b><br/>"
+        "• <b>Agente SRE com Ciclo OODA:</b> Raciocínio closed-loop (Observe, Orient, Decide, Act) com Tool Calling e streaming SSE.<br/>"
+        "• <b>Busca Híbrida 3-Stage:</b> pgvector (HNSW) + BM25Okapi + Fusão RRF (k=60) + Re-ranking Neural FlashRank.<br/>"
+        "• <b>Chaos Engineering Real:</b> Injeção no kernel (cgroups v2, CFS throttling, tc netem) e Dead Man's Switch de 60s.<br/>"
+        "• <b>OpenTelemetry &amp; Jaeger:</b> Spans distribuídos (FastAPI, DB, Redis) com trace_id e span_id no structlog.<br/>"
+        "• <b>DevSecOps PSS Restricted:</b> readOnlyRootFilesystem, usuário não-root, NetworkPolicies e 0 CVEs Trivy."
     )
-    v34_box_p = Paragraph(v34_highlights_html, ParagraphStyle("V34Box", fontName="Helvetica", fontSize=8.0, leading=11, textColor=colors.HexColor("#1f2328")))
-    v34_box = Table([[v34_box_p]], colWidths=[532])
-    v34_box.setStyle(
+    v40_box_p = Paragraph(v40_highlights_html, ParagraphStyle("V40Box", fontName="Helvetica", fontSize=7.8, leading=10.8, textColor=colors.HexColor("#1f2328")))
+    v40_box = Table([[v40_box_p]], colWidths=[532])
+    v40_box.setStyle(
         TableStyle(
             [
                 ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f0f8ff")),
                 ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#54aeff")),
-                ("TOPPADDING", (0, 0), (-1, -1), 4),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                ("TOPPADDING", (0, 0), (-1, -1), 3.5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3.5),
                 ("LEFTPADDING", (0, 0), (-1, -1), 7),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 7),
             ]
         )
     )
-    story.append(v34_box)
-    story.append(Spacer(1, 8))
+    story.append(v40_box)
+    story.append(Spacer(1, 6))
 
     # Opção 1: Dev Local Rápido
     story.append(create_section_header("Opção 1: Modo Desenvolvimento Local Rápido", "MAIS RÁPIDO", "#1a7f37"))
-    story.append(Spacer(1, 4))
+    story.append(Spacer(1, 3))
     story.append(
         Paragraph(
-            "Ideal para desenvolvimento, testes de UI, simulação de incidentes e uso do War Room sem necessidade de inicializar contêineres Docker.",
+            "Ideal para desenvolvimento, testes de UI, simulação de incidentes, War Room e diagnóstico com o Agente SRE sem Docker.",
             sec_desc_style,
         )
     )
-    story.append(Spacer(1, 5))
+    story.append(Spacer(1, 4))
 
     # Passo 1
     story.append(Paragraph("Passo 1: Navegue até o diretório raiz do projeto:", step_title_style))
-    story.append(Spacer(1, 2))
+    story.append(Spacer(1, 1))
     story.append(create_code_block(["cd /home/magno/sre_rag_agent"]))
-    story.append(Spacer(1, 4))
+    story.append(Spacer(1, 3))
 
     # Passo 2
     story.append(Paragraph("Passo 2: Crie e ative o ambiente virtual Python 3.12 (caso ainda não exista):", step_title_style))
-    story.append(Spacer(1, 2))
+    story.append(Spacer(1, 1))
     story.append(create_code_block(["python3 -m venv app/.venv", "source app/.venv/bin/activate"]))
-    story.append(Spacer(1, 4))
+    story.append(Spacer(1, 3))
 
     # Passo 3
     story.append(Paragraph("Passo 3: Instale as dependências (com PyTorch CPU otimizado, sem CUDA bloat):", step_title_style))
-    story.append(Spacer(1, 2))
+    story.append(Spacer(1, 1))
     story.append(
         create_code_block(
             [
@@ -267,11 +267,11 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
             ]
         )
     )
-    story.append(Spacer(1, 4))
+    story.append(Spacer(1, 3))
 
     # Passo 4
     story.append(Paragraph("Passo 4: Inicie o servidor ASGI (Uvicorn) na porta 8080:", step_title_style))
-    story.append(Spacer(1, 2))
+    story.append(Spacer(1, 1))
     story.append(
         create_code_block(
             [
@@ -281,11 +281,11 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
             ]
         )
     )
-    story.append(Spacer(1, 4))
+    story.append(Spacer(1, 3))
 
     # Passo 5: Tabela de Endpoints
     story.append(Paragraph("Passo 5: Acesse a interface e endpoints no navegador:", step_title_style))
-    story.append(Spacer(1, 3))
+    story.append(Spacer(1, 2))
 
     table_data = [
         [
@@ -294,9 +294,9 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
             Paragraph("Simulador de incidentes, vitrine e runbooks em 5 fases", table_cell_style),
         ],
         [
-            Paragraph("War Room (Terminal Interativo)", table_header_style),
+            Paragraph("War Room & Agente OODA", table_header_style),
             Paragraph("http://localhost:8080/dashboard#warroom", table_url_style),
-            Paragraph("Terminal CLI seguro com comandos simulados (kubectl/helm)", table_cell_style),
+            Paragraph("Terminal seguro e painel de diagnóstico do Agente SRE v4.0", table_cell_style),
         ],
         [
             Paragraph("Conceitos SRE & Arquitetura", table_header_style),
@@ -304,14 +304,14 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
             Paragraph("Hub pedagógico de baixo nível (cgroups, CFS, epoll, probes)", table_cell_style),
         ],
         [
-            Paragraph("Métricas & Histórico", table_header_style),
-            Paragraph("http://localhost:8080/dashboard#history", table_url_style),
-            Paragraph("Histórico de simulações, acertos e métricas de desempenho", table_cell_style),
+            Paragraph("Monitoramento de Error Budget", table_header_style),
+            Paragraph("http://localhost:8080/api/v1/slo/error-budget", table_url_style),
+            Paragraph("Disponibilidade real em 30d, consumo e burn rate de SLO (v4.0)", table_cell_style),
         ],
         [
             Paragraph("Health Check da Aplicação", table_header_style),
             Paragraph("http://localhost:8080/healthz", table_url_style),
-            Paragraph("Health check com cache TTL 5s e latência real do banco (v3.5)", table_cell_style),
+            Paragraph("Health check com cache TTL 5s e latência real do banco", table_cell_style),
         ],
         [
             Paragraph("Métricas Prometheus (RED)", table_header_style),
@@ -327,8 +327,8 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
                 ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#ffffff")),
                 ("ROWBACKGROUNDS", (0, 0), (-1, -1), [colors.HexColor("#ffffff"), colors.HexColor("#f8fafc")]),
                 ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#d0d7de")),
-                ("TOPPADDING", (0, 0), (-1, -1), 3),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                ("TOPPADDING", (0, 0), (-1, -1), 2.5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 2.5),
                 ("LEFTPADDING", (0, 0), (-1, -1), 6),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 6),
             ]
@@ -343,12 +343,12 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
     story.append(Spacer(1, 4))
 
     # Opção 2: Docker Compose
-    story.append(create_section_header("Opção 2: Modo Docker Compose (Multi-Network Isolado)", "STACK SEGURA", "#0969da"))
+    story.append(create_section_header("Opção 2: Modo Docker Compose (Multi-Network & Tracing)", "STACK SEGURA", "#0969da"))
     story.append(Spacer(1, 4))
     story.append(
         Paragraph(
-            "Sobe o ecossistema completo em contêineres: Nginx (Proxy reverso público na porta 80 com compressão GZip e cache), "
-            "FastAPI (API), PostgreSQL e Redis interligados pela rede interna isolada <i>backend_net</i>.",
+            "Sobe o ecossistema completo em contêineres: Nginx (Proxy reverso porta 80), FastAPI (API v4.0), "
+            "PostgreSQL 15 com pgvector, Redis e Jaeger Tracing interligados pela rede isolada <i>backend_net</i>.",
             sec_desc_style,
         )
     )
@@ -372,14 +372,15 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
     story.append(create_code_block(["docker compose ps"]))
     story.append(Spacer(1, 4))
 
-    story.append(Paragraph("Passo 3: Acesso aos serviços via Nginx Reverse Proxy (Porta 80):", step_title_style))
+    story.append(Paragraph("Passo 3: Acesso aos serviços via Nginx e Jaeger Tracing:", step_title_style))
     story.append(Spacer(1, 2))
 
     t_compose = Table(
         [
-            [Paragraph("Interface Web Principal", table_header_style), Paragraph("http://localhost/dashboard", table_url_style), Paragraph("Porta 80 padrão com GZip ativo", table_cell_style)],
-            [Paragraph("Métricas Prometheus", table_header_style), Paragraph("http://localhost/metrics", table_url_style), Paragraph("Coleta RED para scrape", table_cell_style)],
-            [Paragraph("Health Check Nginx/API", table_header_style), Paragraph("http://localhost/healthz", table_url_style), Paragraph("Status com cache defensivo", table_cell_style)],
+            [Paragraph("Interface Web Principal", table_header_style), Paragraph("http://localhost/dashboard", table_url_style), Paragraph("Porta 80 padrão com GZip e SSE ativo", table_cell_style)],
+            [Paragraph("Painel Jaeger Tracing", table_header_style), Paragraph("http://localhost:16686", table_url_style), Paragraph("Visualização de spans OTel distribuídos (v4.0)", table_cell_style)],
+            [Paragraph("Métricas Prometheus", table_header_style), Paragraph("http://localhost/metrics", table_url_style), Paragraph("Coleta RED pronta para scrape", table_cell_style)],
+            [Paragraph("Health Check Nginx/API", table_header_style), Paragraph("http://localhost/healthz", table_url_style), Paragraph("Status com cache defensivo de 5s", table_cell_style)],
         ],
         colWidths=[150, 195, 187],
     )
@@ -388,8 +389,8 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
             [
                 ("ROWBACKGROUNDS", (0, 0), (-1, -1), [colors.HexColor("#ffffff"), colors.HexColor("#f8fafc")]),
                 ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#d0d7de")),
-                ("TOPPADDING", (0, 0), (-1, -1), 3),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                ("TOPPADDING", (0, 0), (-1, -1), 2.5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 2.5),
                 ("LEFTPADDING", (0, 0), (-1, -1), 6),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 6),
             ]
@@ -408,15 +409,15 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
             ]
         )
     )
-    story.append(Spacer(1, 7))
+    story.append(Spacer(1, 6))
 
     # Opção 3: Modo Cluster Kubernetes (Kind + Helm)
-    story.append(create_section_header("Opção 3: Modo Cluster Kubernetes (Kind + Helm)", "PRODUÇÃO REAL", "#8250df"))
+    story.append(create_section_header("Opção 3: Modo Cluster Kubernetes (Kind + Helm v4.0)", "PRODUÇÃO REAL", "#8250df"))
     story.append(Spacer(1, 4))
     story.append(
         Paragraph(
-            "Simulação completa de cluster K8s local com orquestração Helm (Chart v0.2.0, appVersion 3.5), "
-            "Prometheus Operator, Alertmanager e dashboards Grafana pré-configurados.",
+            "Simulação completa de cluster K8s local com orquestração Helm (Chart v0.6.0, appVersion 4.0), "
+            "PSS Restricted, Zero-Trust NetworkPolicies, Prometheus Operator, Alertmanager e Grafana.",
             sec_desc_style,
         )
     )
@@ -427,7 +428,7 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
     story.append(create_code_block(["cd /home/magno/sre_rag_agent", "make setup"]))
     story.append(Spacer(1, 4))
 
-    story.append(Paragraph("Passo 2: Realizar o deploy do SRE RAG Agent via Helm (v3.5):", step_title_style))
+    story.append(Paragraph("Passo 2: Realizar o deploy do SRE RAG Agent via Helm (v4.0):", step_title_style))
     story.append(Spacer(1, 2))
     story.append(create_code_block(["make deploy"]))
     story.append(Spacer(1, 4))
@@ -454,8 +455,8 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
             [
                 ("ROWBACKGROUNDS", (0, 0), (-1, -1), [colors.HexColor("#ffffff"), colors.HexColor("#f8fafc")]),
                 ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#d0d7de")),
-                ("TOPPADDING", (0, 0), (-1, -1), 3),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                ("TOPPADDING", (0, 0), (-1, -1), 2.5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 2.5),
                 ("LEFTPADDING", (0, 0), (-1, -1), 6),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 6),
             ]
@@ -469,48 +470,48 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
     story.append(create_code_block(["make clean"]))
 
     # =========================================================================
-    # PÁGINA 3 — Validação, Testes Automatizados & Critérios de Aceite v3.5
+    # PÁGINA 3 — Validação, Testes Automatizados & Critérios de Aceite v4.0
     # =========================================================================
     story.append(PageBreak())
     story.append(Spacer(1, 4))
 
-    story.append(create_section_header("Validação Rápida da Suíte de Testes & Qualidade (v3.5)", "QUALIDADE & ACEITE", "#1a7f37"))
+    story.append(create_section_header("Validação Rápida da Suíte de Testes & Qualidade (v4.0)", "QUALIDADE & ACEITE", "#1a7f37"))
     story.append(Spacer(1, 4))
     story.append(
         Paragraph(
-            "Rotina completa de validação contínua para certificar que todos os 16 cenários de produção, o motor RAG semântico, "
-            "os runbooks estruturados em 5 fases e as novas proteções técnicas da v3.5 estão 100% íntegros e operacionais.",
+            "Rotina completa de validação contínua para certificar que o Agente SRE OODA, a busca híbrida 3-stage com pgvector, "
+            "o orquestrador de chaos real no kernel e os 15 critérios de aceite da v4.0 estão 100% íntegros e operacionais.",
             sec_desc_style,
-        )
-    )
-    story.append(Spacer(1, 6))
-
-    # Passo 1: Script de Validação Automatizada da v3.5
-    story.append(Paragraph("Passo 1: Script de Validação Automatizada da v3.5 (12 Critérios de Aceite):", step_title_style))
-    story.append(Spacer(1, 2))
-    story.append(
-        create_code_block(
-            [
-                "bash scripts/verify_v3.5.sh",
-                "# Executa a verificação dos 12 critérios de aceite: sintaxe, Pydantic V2 ConfigDict,",
-                "# TTL cache, async embeddings, gzip, security headers, rate limit e testes unitários.",
-            ]
         )
     )
     story.append(Spacer(1, 5))
 
+    # Passo 1: Script de Validação Automatizada da v4.0
+    story.append(Paragraph("Passo 1: Script de Validação Automatizada da v4.0 (15 Critérios de Aceite):", step_title_style))
+    story.append(Spacer(1, 2))
+    story.append(
+        create_code_block(
+            [
+                "bash scripts/verify_v4.0.sh",
+                "# Valida os 15 critérios: pgvector, flashrank, appVersion 4.0, sre_agent.py, tools.py,",
+                "# chaos_real.py, telemetry.py, PSS Restricted, NetworkPolicies, E2E e desafios.",
+            ]
+        )
+    )
+    story.append(Spacer(1, 4))
+
     # Passo 2: Testes unitários com pytest
-    story.append(Paragraph("Passo 2: Executar a suíte de testes unitários e de integração:", step_title_style))
+    story.append(Paragraph("Passo 2: Executar a suíte de testes unitários e de integração (17 testes):", step_title_style))
     story.append(Spacer(1, 2))
     story.append(
         create_code_block(
             [
                 "make test",
-                "# Executa: PYTHONPATH=.:app ./app/.venv/bin/pytest tests/ -v",
+                "# Executa: PYTHONPATH=app ./app/.venv/bin/pytest tests/ -v (17/17 PASSED)",
             ]
         )
     )
-    story.append(Spacer(1, 5))
+    story.append(Spacer(1, 4))
 
     # Tabela de módulos testados
     story.append(Paragraph("Módulos e Escopo de Testes Automatizados Cobertos:", step_title_style))
@@ -524,9 +525,19 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
                 Paragraph("<b>O que é validado</b>", table_header_style),
             ],
             [
+                Paragraph("Agente OODA &amp; Chaos Real", table_cell_style),
+                Paragraph("<code>tests/e2e/test_v4_autonomous_flows.py</code>", table_cell_style),
+                Paragraph("Ciclo OODA nos 4 estágios, injeção de cgroup OOM real, Dead Man's Switch 60s, cálculo dinâmico de Error Budget e busca híbrida RRF.", table_cell_style),
+            ],
+            [
+                Paragraph("Dashboard &amp; Streaming SSE", table_cell_style),
+                Paragraph("<code>tests/e2e/test_dashboard_e2e.py</code>", table_cell_style),
+                Paragraph("Renderização do dashboard v4.0, SSE broadcaster pub/sub em tempo real, ciclo de 16 cenários e toggle do Chaos Monkey.", table_cell_style),
+            ],
+            [
                 Paragraph("Cenários de Incidente", table_cell_style),
                 Paragraph("<code>tests/test_incidents.py</code>", table_cell_style),
-                Paragraph("16 cenários de produção, integridade dos runbooks em 5 fases, balanceamento em 4 dificuldades (Fácil, Médio, Difícil, Extremo) e histórico de zero-repetição.", table_cell_style),
+                Paragraph("16 cenários de produção, integridade dos runbooks em 5 fases, balanceamento em 4 dificuldades e histórico de zero-repetição.", table_cell_style),
             ],
             [
                 Paragraph("Chaos Monkey 2.0", table_cell_style),
@@ -536,10 +547,10 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
             [
                 Paragraph("Motor RAG Semântico", table_cell_style),
                 Paragraph("<code>tests/test_rag.py</code>", table_cell_style),
-                Paragraph("Indexação vetorial de runbooks, inferência com SentenceTransformer (asyncio.to_thread), cálculo de similaridade e acurácia de recuperação.", table_cell_style),
+                Paragraph("Indexação vetorial de runbooks, inferência com SentenceTransformer (asyncio.to_thread), similaridade e acurácia de recuperação.", table_cell_style),
             ],
         ],
-        colWidths=[130, 142, 260],
+        colWidths=[125, 145, 262],
     )
     t_tests_scope.setStyle(
         TableStyle(
@@ -547,15 +558,15 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
                 ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f0f4f9")),
                 ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.HexColor("#ffffff"), colors.HexColor("#f8fafc")]),
                 ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#d0d7de")),
-                ("TOPPADDING", (0, 0), (-1, -1), 3.5),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 3.5),
+                ("TOPPADDING", (0, 0), (-1, -1), 3.0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3.0),
                 ("LEFTPADDING", (0, 0), (-1, -1), 6),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 6),
             ]
         )
     )
     story.append(t_tests_scope)
-    story.append(Spacer(1, 6))
+    story.append(Spacer(1, 5))
 
     # Passo 3: Avaliação de IA (SRE-Eval)
     story.append(Paragraph("Passo 3: Executar a avaliação de acurácia com o benchmark SRE-Eval:", step_title_style))
@@ -569,25 +580,25 @@ def build_pdf(filename="/home/magno/sre_rag_agent/tests.pdf"):
             ]
         )
     )
-    story.append(Spacer(1, 6))
+    story.append(Spacer(1, 5))
 
     # Box de Dicas de Troubleshooting e Observabilidade
     tb_title = '<font face="Helvetica-Bold" size="8.5" color="#0969da"><b>💡 Dicas de Observabilidade &amp; Troubleshooting Rápido no Lab:</b></font>'
     tb_body = (
-        "• <b>Status dos SLOs em Tempo Real:</b> Execute <code>make slo-status</code> para verificar a taxa de queima (Burn Rate) de Error Budget instantânea.<br/>"
-        "• <b>Simulação de Carga Contínua:</b> Execute <code>make load-test</code> para disparar requisições concorrentes e testar o HPA e o Rate Limiter.<br/>"
-        "• <b>Auditoria do Chaos Monkey:</b> Monitore o terminal ou os logs com <code>docker compose logs -f api</code> para inspecionar falhas injetadas.<br/>"
-        "• <b>Verificação de Health Cache:</b> Execute requisições sucessivas a <code>/healthz</code> para constatar a resposta sub-milissegundo via cache TTL."
+        "• <b>Status dos SLOs em Tempo Real:</b> Consulte <code>/api/v1/slo/error-budget</code> para verificar a taxa de queima instantânea.<br/>"
+        "• <b>Rastreamento Distribuído no Jaeger:</b> Acesse <code>http://localhost:16686</code> para inspecionar os spans de cada requisição e log.<br/>"
+        "• <b>Chaos Real com Dead Man's Switch:</b> Teste falhas de kernel em <code>/api/v1/chaos/real/cgroup-oom</code> com reversão segura em 60s.<br/>"
+        "• <b>Auditoria DevSecOps com Trivy:</b> Execute <code>trivy fs .</code> para garantir conformidade contínua e 0 CVEs críticas."
     )
-    tb_p = Paragraph(f"{tb_title}<br/>{tb_body}", ParagraphStyle("TBBox", fontName="Helvetica", fontSize=7.8, leading=10.8, textColor=colors.HexColor("#1f2328")))
+    tb_p = Paragraph(f"{tb_title}<br/>{tb_body}", ParagraphStyle("TBBox", fontName="Helvetica", fontSize=7.8, leading=10.5, textColor=colors.HexColor("#1f2328")))
     tb_table = Table([[tb_p]], colWidths=[532])
     tb_table.setStyle(
         TableStyle(
             [
                 ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f6f8fa")),
                 ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#d0d7de")),
-                ("TOPPADDING", (0, 0), (-1, -1), 4),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                ("TOPPADDING", (0, 0), (-1, -1), 3.5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3.5),
                 ("LEFTPADDING", (0, 0), (-1, -1), 7),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 7),
             ]
