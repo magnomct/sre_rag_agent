@@ -566,11 +566,20 @@ def get_hint(scenario_id: str, index: int = 0):
     if simulation_engine.active and simulation_engine.active.scenario_id == scenario_id:
         simulation_engine.active.hints_used = simulation_engine.active.hints_used + 1
     
+    raw_hint = hints[index]
+    if isinstance(raw_hint, dict):
+        hint_pt = raw_hint.get("hint", "")
+        hint_en = raw_hint.get("hint_en", hint_pt)
+    else:
+        hint_pt = str(raw_hint)
+        hint_en = str(raw_hint)
+
     return {
         "scenario_id": scenario_id,
         "index": index,
         "total": len(hints),
-        "hint": hints[index],
+        "hint": hint_pt,
+        "hint_en": hint_en,
         "penalty_percent": (index + 1) * 20,
         "score_after": max(0, 100 - (index + 1) * 20),
     }
