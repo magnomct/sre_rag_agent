@@ -189,7 +189,7 @@ O objetivo deste plano é validar de forma metódica e reproduzível todos os co
   helm template sre-rag helm/sre-rag/ | grep -A 8 "securityContext:"
 
   # 8.2 Escaneamento de vulnerabilidades da imagem Docker com Trivy
-  trivy image --severity HIGH,CRITICAL magnomct/sre-rag-api:4.0
+  trivy image --severity HIGH,CRITICAL carlosmagnogcs/sre-rag-api:4.0
 
   # 8.3 Execução do script automatizado de conformidade v4.0
   bash scripts/verify_v4.0.sh
