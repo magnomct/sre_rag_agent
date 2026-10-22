@@ -2601,8 +2601,11 @@ class IncidentSimulationEngine:
         }
 
     def solve(self, scenario_id: str, solution_id: str) -> dict:
+        if scenario_id not in SCENARIOS:
+            return {"error": f"Scenario '{scenario_id}' not found"}
+
         if not self.active or self.active.scenario_id != scenario_id:
-            return {"error": "No matching active simulation"}
+            self.start(scenario_id)
 
         scenario = SCENARIOS[scenario_id]
         solution = next((s for s in scenario["solutions"] if s["id"] == solution_id), None)
@@ -2611,46 +2614,65 @@ class IncidentSimulationEngine:
             cmd_submitted = solution_id.strip()
             correct_sol = next((s for s in scenario["solutions"] if s["correct"]), None)
             
-            if correct_sol and correct_sol.get("command") and cmd_submitted.lower() == correct_sol["command"].lower():
-                solution = correct_sol
-            else:
-                diag_map = DIAGNOSTIC_COMMANDS.get(scenario_id, {})
-                norm = cmd_submitted.lower()
-                matched_output = None
-                for d_cmd, d_out in diag_map.items():
-                    if norm == d_cmd.lower() or norm.startswith(d_cmd.lower()):
-                        matched_output = d_out
-                        break
-                
-                if not matched_output:
-                    if norm in ("help", "--help", "-h"):
-                        matched_output = (
-                            "Comandos Suportados:\n"
-                            "  Diagnóstico : helm history, kubectl get pods, kubectl describe pod, kubectl logs, df -h, psql\n"
-                            "  Mitigação   : Digite o comando de remediação correspondente (ex: helm rollback, etc.)\n"
-                            "  Revisão     : Clique no botão '📖 Revisão' para ver o passo a passo completo."
-                        )
-                    elif norm in ("kubectl get pods", "kubectl get pod", "k get pods"):
-                        matched_output = (
-                            "NAME                           READY   STATUS    RESTARTS   AGE\n"
-                            "sre-rag-api-7b89f5d6cb-9k8lx   1/1     Running   0          25m\n"
-                            "sre-rag-api-7b89f5d6cb-m42xq   1/1     Running   0          25m"
-                        )
+            for s in scenario["solutions"]:
+                if s.get("command") and cmd_submitted.lower() == s["command"].strip().lower():
+                    solution = s
+                    break
+            
+            if not solution and scenario.get("command") and cmd_submitted.lower() == scenario["command"].strip().lower():
+                solution = correct_sol or scenario["solutions"][0]
 
-                if matched_output:
-                    return {
-                        "diagnostic": True,
-                        "correct": False,
-                        "output": matched_output,
-                        "explanation": "Comando de diagnóstico executado com sucesso."
-                    }
+        if not solution:
+            norm = solution_id.strip().lower()
+            matched_output = None
+            
+            if norm in ("help", "--help", "-h"):
+                matched_output = (
+                    "Comandos Suportados:\n"
+                    "  Diagnóstico : helm history, kubectl get pods, kubectl describe pod, kubectl logs, df -h, psql\n"
+                    "  Mitigação   : Digite o comando de remediação correspondente (ex: helm rollback, etc.)\n"
+                    "  Revisão     : Clique no botão '📖 Revisão' para ver o passo a passo completo."
+                )
+            elif norm in ("kubectl get pods", "kubectl get pod", "k get pods"):
+                matched_output = (
+                    "NAME                           READY   STATUS    RESTARTS   AGE\n"
+                    "sre-rag-api-7b89f5d6cb-9k8lx   1/1     Running   0          25m\n"
+                    "sre-rag-api-7b89f5d6cb-m42xq   1/1     Running   0          25m"
+                )
+            elif norm.startswith("kubectl logs"):
+                matched_output = (
+                    "2026-10-21T14:10:02Z [ERROR] Container initialization failed: KeyError: 'OPENAI_API_KEY'\n"
+                    "2026-10-21T14:10:02Z [FATAL] Required environment variable missing from secret mount."
+                )
+            elif norm.startswith("kubectl describe pod"):
+                matched_output = (
+                    "Events:\n"
+                    "  Type     Reason     Age                From               Message\n"
+                    "  ----     ------     ----               ----               -------\n"
+                    "  Warning  Failed     10s (x3 over 45s)  kubelet            Error: secret \"sre-rag-secrets\" not found"
+                )
+            elif norm in ("df -h", "df -h /"):
+                matched_output = (
+                    "Filesystem      Size  Used Avail Use% Mounted on\n"
+                    "/dev/root        50G   49G  1.0G  98% /"
+                )
 
+            if matched_output:
                 return {
-                    "diagnostic": False,
+                    "diagnostic": True,
                     "correct": False,
-                    "explanation": f"Comando não reconhecido ou incorreto. Dica: Para mitigar este incidente, o comando correto é: `{correct_sol.get('command', 'indisponível')}`",
-                    "explanation_en": "Command not recognized or incorrect."
+                    "output": matched_output,
+                    "explanation": "Comando de diagnóstico executado com sucesso."
                 }
+
+            correct_sol = next((s for s in scenario["solutions"] if s["correct"]), None)
+            cmd_hint = correct_sol.get("command") if correct_sol else scenario.get("command", "indisponível")
+            return {
+                "diagnostic": False,
+                "correct": False,
+                "explanation": f"Comando não reconhecido ou incorreto. Dica: Para mitigar este incidente, o comando correto é: `{cmd_hint}`",
+                "explanation_en": "Command not recognized or incorrect."
+            }
 
         elapsed = time.time() - self.active.started_at
         mttd = scenario["detection_delay_seconds"]
