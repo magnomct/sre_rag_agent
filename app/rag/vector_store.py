@@ -14,7 +14,7 @@ logger = structlog.get_logger()
 
 # Optional FlashRank import
 try:
-    from flashrank import Ranker, RerankRequest
+    from flashrank import Ranker, RerankRequest  # type: ignore # pyrefly: ignore[missing-import]
     _HAS_FLASHRANK = True
 except Exception:
     _HAS_FLASHRANK = False
