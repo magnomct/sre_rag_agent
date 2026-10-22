@@ -50,3 +50,30 @@ def test_simulation_lifecycle():
     assert engine.active is None
     assert len(engine.history) == 1
     assert engine.history[0].scenario_id == "crashloopbackoff"
+
+def test_solve_auto_starts_simulation_and_matches_command():
+    """Verify that solving directly with a CLI command string automatically binds and resolves on first attempt."""
+    engine = simulation_engine
+    engine.cancel()
+    engine.clear_history()
+
+    # Active should be None initially
+    assert engine.active is None
+
+    cmd = "kubectl create secret generic sre-rag-secrets --from-literal=OPENAI_API_KEY=mock-key --from-literal=DATABASE_URL=postgres://app:secret@postgresql:5432/sre_db"
+    res = engine.solve("missing-config-secret", cmd)
+
+    assert res.get("correct") is True
+    assert "Concluído" in res.get("explanation") or "Correto" in res.get("explanation")
+    assert len(engine.history) == 1
+    assert engine.history[0].scenario_id == "missing-config-secret"
+
+
+def test_solve_unrecognized_command_returns_clear_hint():
+    """Verify that invalid commands return a clear explanation rather than None or undefined."""
+    engine = simulation_engine
+    engine.cancel()
+    res = engine.solve("missing-config-secret", "invalid-command-xyz")
+    assert res.get("correct") is False
+    assert res.get("explanation") is not None
+    assert "Dica:" in res.get("explanation")

@@ -1,5 +1,5 @@
 /**
- * SRE Incident Simulation Dashboard — JavaScript Controller v3.2
+ * SRE Incident Simulation Dashboard — JavaScript Controller v4.0
  * - Tab navigation (Simulação & Chaos Lab vs Métricas & Histórico SRE)
  * - Complete bilingual support (pt-BR / en-US) with dynamic live switching
  * - Chaos Monkey real-time telemetry, sessions tracking & audit trail
@@ -1646,10 +1646,33 @@ async function startSimDifficulty(difficulty, excludeId) {
 
 function scrollTerminalToView() {
   const term = document.getElementById('terminal-output');
-  if (term) scrollTerminalToView();
+  if (term) {
+    term.scrollTop = term.scrollHeight;
+  }
   const inputEl = document.getElementById('terminal-input');
   if (inputEl) {
     inputEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+async function warroomStartScenario(scenarioId) {
+  try {
+    const res = await fetch(`/api/v1/incidents/scenario/${scenarioId}`);
+    if (!res.ok) throw new Error(await res.text());
+    const scenario = await res.json();
+
+    warroomHintsUsed = 0;
+    warroomCurrentScore = 100;
+
+    if (!warroomPlaylist.includes(scenarioId)) {
+      warroomPlaylist.push(scenarioId);
+    }
+    warroomPlayIdx = warroomPlaylist.indexOf(scenarioId);
+    warroomDifficulty = scenario.difficulty || 'medium';
+
+    _renderWarroomScenario(scenario);
+  } catch (err) {
+    alert('Erro ao carregar cenário no War Room: ' + err.message);
   }
 }
 
@@ -1689,7 +1712,7 @@ function _renderWarroomScenario(scenario) {
   `;
 
   term.innerHTML = `
-    <div style="color:#58a6ff;">SRE Incident Lab Web Terminal v3.2</div>
+    <div style="color:#58a6ff;">SRE Incident Lab Web Terminal v4.0</div>
     <div style="color:#a371f7;">[SYSTEM] War Room ativada — incidente: <strong>${scenario.id}</strong></div>
     <div style="color:#d29922;">[INFO] Dificuldade: <strong>${warroomDifficulty || scenario.difficulty || 'n/a'}</strong> | Severidade: <strong>${sev}</strong></div>
     <div style="color:#8b949e; margin-top:6px;">[HINT] Digite o comando correto e pressione Enter para resolver o incidente.</div>
@@ -1774,20 +1797,25 @@ async function handleTerminalInput(event) {
       
       const data = await res.json();
       
-      if (data.diagnostic) {
-        term.innerHTML += `<div style="color:#79c0ff; font-family:monospace; white-space:pre-wrap; margin:8px 0; padding:10px; background:rgba(56,139,253,0.1); border-left:3px solid #58a6ff; border-radius:4px; line-height:1.45;">${data.output}</div>`;
+      if (!res.ok) {
+        const errorMsg = data.detail || data.error || 'Falha ao validar comando.';
+        term.innerHTML += `<div class="term-output-error">bash: ${escapeHtml(cmd)}: command failed</div>`;
+        term.innerHTML += `<div class="term-output-error" style="opacity: 0.8; font-size: 0.85em;">> Dica do Sistema: ${escapeHtml(errorMsg)}</div>`;
+      } else if (data.diagnostic) {
+        term.innerHTML += `<div style="color:#79c0ff; font-family:monospace; white-space:pre-wrap; margin:8px 0; padding:10px; background:rgba(56,139,253,0.1); border-left:3px solid #58a6ff; border-radius:4px; line-height:1.45;">${escapeHtml(data.output)}</div>`;
       } else if (data.correct) {
         isWarroomResolved = true;
-        term.innerHTML += `<div class="term-output-success">[SUCCESS] ${data.explanation}</div>`;
+        term.innerHTML += `<div class="term-output-success">[SUCCESS] ${escapeHtml(data.explanation || 'Incidente resolvido com sucesso!')}</div>`;
         term.innerHTML += `<div class="term-output-success" style="margin-top: 15px; color:#a371f7;">[SYSTEM] Incidente Resolvido! Clique no botão '➡️ Próximo' para avançar ao próximo desafio.</div>`;
         if (typeof fetchHistory === 'function') fetchHistory();
       } else {
-        term.innerHTML += `<div class="term-output-error">bash: ${cmd}: command not found or not permitted</div>`;
-        term.innerHTML += `<div class="term-output-error" style="opacity: 0.8; font-size: 0.85em;">> Dica do Sistema: ${data.explanation}</div>`;
+        const exp = data.explanation || (currentLang === 'en' ? 'Command not recognized or incorrect.' : 'Comando não reconhecido ou incorreto.');
+        term.innerHTML += `<div class="term-output-error">bash: ${escapeHtml(cmd)}: command not found or not permitted</div>`;
+        term.innerHTML += `<div class="term-output-error" style="opacity: 0.8; font-size: 0.85em;">> Dica do Sistema: ${escapeHtml(exp)}</div>`;
       }
       
     } catch(err) {
-      term.innerHTML += `<div class="term-output-error">Erro ao conectar com o servidor.</div>`;
+      term.innerHTML += `<div class="term-output-error">Erro ao conectar com o servidor: ${escapeHtml(err.message)}</div>`;
     }
     scrollTerminalToView();
   }
