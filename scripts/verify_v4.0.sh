@@ -93,7 +93,7 @@ check_step "14. Arquivo de Testes E2E Autônomos v4.0" \
 
 # 15. Desafios 13 a 17 documentados
 check_step "15. Desafios 13 a 17 em desafios.md" \
-  "grep -q '## 17. DevSecOps' desafios.md"
+  "grep -q '## 18. Resiliência do Terminal War Room' desafios.md"
 
 echo -e "${BLUE}====================================================${NC}"
 echo -e "Resultado: ${GREEN}$PASSED passaram${NC}, ${RED}$FAILED pendentes${NC} (Total: $((PASSED + FAILED)))"
