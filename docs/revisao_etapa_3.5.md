@@ -19,16 +19,16 @@ timeline
 
 ### 1.1 Estado do Baseline v3.4 (Congelado)
 Antes de iniciar qualquer alteração para a v3.5, a versão 3.4 foi concluída e validada com **100% de sucesso** nos testes unitários (`8 passed`), garantindo:
-- **Resolução de Warnings**: Substituição de `class Config` depreciada por `SettingsConfigDict` em [`app/config.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/config.py).
-- **Proteção contra Connection Storms**: Cache TTL de 5s em [`app/healthcheck.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/healthcheck.py) para neutralizar tempestades de sockets causadas por probes do Kubelet.
-- **Offloading Assíncrono**: Envolvimento da inferência de embeddings do SentenceTransformer via `asyncio.to_thread` em [`app/rag/engine.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/rag/engine.py).
+- **Resolução de Warnings**: Substituição de `class Config` depreciada por `SettingsConfigDict` em [`app/config.py`](../app/config.py).
+- **Proteção contra Connection Storms**: Cache TTL de 5s em [`app/healthcheck.py`](../app/healthcheck.py) para neutralizar tempestades de sockets causadas por probes do Kubelet.
+- **Offloading Assíncrono**: Envolvimento da inferência de embeddings do SentenceTransformer via `asyncio.to_thread` em [`app/rag/engine.py`](../app/rag/engine.py).
 - **Segurança e Egress**: `GZipMiddleware` ativo para payloads > 1KB, headers HTTP defensivos (`CSP`, `HSTS`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`) e Rate Limiting defensivo com `slowapi` (30 req/min no endpoint de query).
 
 ---
 
 ## 🔍 2. Diagnóstico Arquitetural e Limitações Identificadas
 
-A partir da análise detalhada documentada em [`melhorias.md`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/melhorias.md), foram isolados quatro débitos técnicos críticos que impediam a operação em escala corporativa:
+A partir da análise detalhada documentada em [`melhorias.md`](../melhorias.md), foram isolados quatro débitos técnicos críticos que impediam a operação em escala corporativa:
 
 | Domínio | Estado Atual (v3.4) | Impacto / Limitação | Estado Alvo (v3.5) |
 |---|---|---|---|
@@ -121,7 +121,7 @@ graph TD
 
 ## 🤖 5. O Agente Autônomo de Auditoria e Testes (`scripts/test_agent.py`)
 
-A revisão 3.5 formalizou a inclusão de um agente de auditoria contínua, documentado na Seção 8 do [`AGENTS.md`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/AGENTS.md) e acionável por `make test-audit`:
+A revisão 3.5 formalizou a inclusão de um agente de auditoria contínua, documentado na Seção 8 do [`AGENTS.md`](../AGENTS.md) e acionável por `make test-audit`:
 
 ### 5.1 Capacidades do Agente de Auditoria
 - **Bateria de Segurança (`Security Battery`)**:
@@ -135,7 +135,7 @@ A revisão 3.5 formalizou a inclusão de um agente de auditoria contínua, docum
   - `PERF-002`: Distribuição de percentis de latência (P50, P90, P95, P99) em rajada de 50 requisições.
   - `PERF-003`: Eficiência de compressão GZip e redução de tráfego de saída.
   - `PERF-004`: Validação de não-bloqueio do event loop no cálculo de embeddings com `asyncio.to_thread`.
-- **Relatório Automatizado**: Geração contínua de evidências em [`docs/SECURITY_PERF_TEST_REPORT.md`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/docs/SECURITY_PERF_TEST_REPORT.md).
+- **Relatório Automatizado**: Geração contínua de evidências em [`docs/SECURITY_PERF_TEST_REPORT.md`](../docs/SECURITY_PERF_TEST_REPORT.md).
 
 ---
 
@@ -164,11 +164,11 @@ flowchart LR
 
 ### T1. Dependências & Configuração Assíncrona do Banco
 - **Dependências**: `sqlalchemy==2.0.35`, `asyncpg==0.29.0`, `alembic==1.13.3`, `sse-starlette==2.1.3`.
-- **Configuração**: Adição de `postgres_pool_size: int = 10`, `postgres_max_overflow: int = 20` e property `async_postgres_url` em [`app/config.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/config.py).
-- **Novo Módulo**: [`app/database.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/database.py) instanciando `AsyncEngine` com `pool_pre_ping=True`, session factory `async_sessionmaker` e helper `init_db()` com fallback tolerante a falhas.
+- **Configuração**: Adição de `postgres_pool_size: int = 10`, `postgres_max_overflow: int = 20` e property `async_postgres_url` em [`app/config.py`](../app/config.py).
+- **Novo Módulo**: [`app/database.py`](../app/database.py) instanciando `AsyncEngine` com `pool_pre_ping=True`, session factory `async_sessionmaker` e helper `init_db()` com fallback tolerante a falhas.
 
 ### T2. Modelagem Relacional & Migrações com Alembic
-- **Novo Módulo**: [`app/models.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/models.py) declarando com tipagem SQLAlchemy 2.0:
+- **Novo Módulo**: [`app/models.py`](../app/models.py) declarando com tipagem SQLAlchemy 2.0:
   - `QueryHistoryRecord` (tabela `query_history`): consultas e respostas do RAG.
   - `IncidentSimulationRecord` (tabela `incident_simulations`): registro de simulações com MTTD/MTTR e pontuação.
   - `ChaosSessionRecord` (tabela `chaos_sessions`): histórico de sessões do Chaos Monkey.
@@ -177,11 +177,11 @@ flowchart LR
 - **Alembic**: Configuração de `app/alembic.ini` e script assíncrono em `app/migrations/versions/0001_initial_schema.py`.
 
 ### T3. Persistência de Estado com Fallback Resiliente
-- **Modificações**: [`app/main.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/main.py), [`app/incidents.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/incidents.py) e [`app/chaos.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/chaos.py).
+- **Modificações**: [`app/main.py`](../app/main.py), [`app/incidents.py`](../app/incidents.py) e [`app/chaos.py`](../app/chaos.py).
 - **Mecanismo de Resiliência**: Gravação assíncrona com commits protegidos por blocos `try/except` defensivos que salvam em memória caso o banco esteja indisponível, impedindo falhas em cascata.
 
 ### T4. Server-Sent Events (SSE) para Streaming em Tempo Real
-- **Novo Módulo**: [`app/events.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/events.py) provendo broadcaster pub/sub baseado em `asyncio.Queue` isoladas por cliente.
+- **Novo Módulo**: [`app/events.py`](../app/events.py) provendo broadcaster pub/sub baseado em `asyncio.Queue` isoladas por cliente.
 - **Endpoint**: `GET /api/v1/events/stream` via `EventSourceResponse`, transmitindo telemetria, eventos de incidentes e heartbeat a cada 15 segundos.
 
 ### T5. Modularização do Frontend em ES Modules (ESM)
@@ -192,11 +192,11 @@ flowchart LR
   4. `chaos.js`: Interface de injeção e blast radius do Chaos Monkey.
   5. `terminal.js`: Emulador de terminal com histórico e suporte a comandos.
   6. `charts.js`: Renderização de métricas RED e gráficos de disponibilidade.
-  7. `app.js`: Ponto de entrada carregado via `<script type="module" src="/static/js/app.js">` em [`app/templates/dashboard.html`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/templates/dashboard.html).
+  7. `app.js`: Ponto de entrada carregado via `<script type="module" src="/static/js/app.js">` em [`app/templates/dashboard.html`](../app/templates/dashboard.html).
 
 ### T6. Suíte de Testes E2E (Playwright), Version Bump & Automação
-- **Novo Arquivo**: [`tests/e2e/test_dashboard_e2e.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/tests/e2e/test_dashboard_e2e.py) validando no navegador: carregamento do dashboard, fluxo completo de simulação de incidente e toggle do Chaos Monkey.
-- **Governança**: Bump de versão para `3.5` em [`helm/sre-rag/Chart.yaml`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/helm/sre-rag/Chart.yaml) e [`README.md`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/README.md).
+- **Novo Arquivo**: [`tests/e2e/test_dashboard_e2e.py`](../tests/e2e/test_dashboard_e2e.py) validando no navegador: carregamento do dashboard, fluxo completo de simulação de incidente e toggle do Chaos Monkey.
+- **Governança**: Bump de versão para `3.5` em [`helm/sre-rag/Chart.yaml`](../helm/sre-rag/Chart.yaml) e [`README.md`](../README.md).
 
 ---
 
@@ -216,7 +216,7 @@ Para considerar a versão 3.5 formalmente aceita, foram estipulados **13 critér
 - [ ] **Critério 10**: Polling contínuo (`setInterval`) no frontend eliminado e substituído por SSE.
 - [ ] **Critério 11**: Baseline de testes unitários mantido com 100% de sucesso (`8 passed`).
 - [ ] **Critério 12**: Suíte E2E com Playwright valida o fluxo completo de resolução de incidentes.
-- [ ] **Critério 13**: Agente de Auditoria [`scripts/test_agent.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/scripts/test_agent.py) aprovado com relatório vivo em [`docs/SECURITY_PERF_TEST_REPORT.md`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/docs/SECURITY_PERF_TEST_REPORT.md).
+- [ ] **Critério 13**: Agente de Auditoria [`scripts/test_agent.py`](../scripts/test_agent.py) aprovado com relatório vivo em [`docs/SECURITY_PERF_TEST_REPORT.md`](../docs/SECURITY_PERF_TEST_REPORT.md).
 
 ---
 
@@ -243,6 +243,6 @@ gantt
 
 ## 🔒 9. Estado de Congelamento ao Final da Etapa de Revisão
 
-- **Documentação de Referência**: Plano consolidado em [`plano_v3.5.md`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/plano_v3.5.md).
+- **Documentação de Referência**: Plano consolidado em [`plano_v3.5.md`](../plano_v3.5.md).
 - **Código de Produção**: **Inalterado**. Todo o código de produção permaneceu rigorosamente congelado no baseline homologado da v3.4 durante a etapa de revisão.
-- **Validação Automatizada**: Criação do script de checagem preliminar [`scripts/verify_v3.5.sh`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/scripts/verify_v3.5.sh) para auditoria contínua de conformidade antes e depois da execução.
+- **Validação Automatizada**: Criação do script de checagem preliminar [`scripts/verify_v3.5.sh`](../scripts/verify_v3.5.sh) para auditoria contínua de conformidade antes e depois da execução.
