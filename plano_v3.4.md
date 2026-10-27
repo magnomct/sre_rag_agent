@@ -10,11 +10,11 @@
 
 | # | Task | Arquivo(s) Alvo | Risco | Esforço |
 |---|---|---|---|---|
-| T1 | Correção Pydantic V2 `ConfigDict` | [`config.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/config.py) | 🟢 Baixo | ~5 min |
-| T2 | Bump de versão para `3.4` | [`config.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/config.py), [`README.md`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/README.md), [`Chart.yaml`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/helm/sre-rag/Chart.yaml) | 🟢 Baixo | ~5 min |
-| T3 | Health Check com Cache TTL + Latência Real | [`healthcheck.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/healthcheck.py) | 🟡 Médio | ~20 min |
-| T4 | `asyncio.to_thread` para embeddings + GZip | [`rag/engine.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/rag/engine.py), [`main.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/main.py) | 🟡 Médio | ~15 min |
-| T5 | Rate Limiting + Security Headers + CORS | [`main.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/main.py), [`requirements.txt`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/requirements.txt), [`nginx.conf`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/docker/nginx.conf) | 🟡 Médio | ~25 min |
+| T1 | Correção Pydantic V2 `ConfigDict` | [`config.py`](app/config.py) | 🟢 Baixo | ~5 min |
+| T2 | Bump de versão para `3.4` | [`config.py`](app/config.py), [`README.md`](README.md), [`Chart.yaml`](helm/sre-rag/Chart.yaml) | 🟢 Baixo | ~5 min |
+| T3 | Health Check com Cache TTL + Latência Real | [`healthcheck.py`](app/healthcheck.py) | 🟡 Médio | ~20 min |
+| T4 | `asyncio.to_thread` para embeddings + GZip | [`rag/engine.py`](app/rag/engine.py), [`main.py`](app/main.py) | 🟡 Médio | ~15 min |
+| T5 | Rate Limiting + Security Headers + CORS | [`main.py`](app/main.py), [`requirements.txt`](app/requirements.txt), [`nginx.conf`](docker/nginx.conf) | 🟡 Médio | ~25 min |
 
 **Tempo Total Estimado**: ~70 minutos (sem contar testes)
 
@@ -36,7 +36,7 @@ Resultado esperado: **4 passed** (confirmado em 15/10/2026)
 ## T1. Correção Pydantic V2 `ConfigDict`
 
 ### Problema
-[`app/config.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/config.py) usa `class Config:` interno (linha 95-97) que é depreciado no Pydantic V2, gerando o warning:
+[`app/config.py`](app/config.py) usa `class Config:` interno (linha 95-97) que é depreciado no Pydantic V2, gerando o warning:
 ```
 PydanticDeprecatedSince20: Support for class-based `config` is deprecated,
 use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0.
@@ -132,7 +132,7 @@ Atualizar badges de versão e adicionar seção de novidades v3.4 no topo do cha
 
 ### Problema Atual
 
-Em [`app/healthcheck.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/healthcheck.py), cada chamada a `check_postgres()` (L32-L48) e `check_redis()` (L50-L67) abre uma **nova conexão socket síncrona**, executa uma query e fecha imediatamente. Com probes do kubelet a cada 5 segundos e `N` réplicas, isso gera até `N * 12` conexões de banco por minuto apenas para health checks.
+Em [`app/healthcheck.py`](app/healthcheck.py), cada chamada a `check_postgres()` (L32-L48) e `check_redis()` (L50-L67) abre uma **nova conexão socket síncrona**, executa uma query e fecha imediatamente. Com probes do kubelet a cada 5 segundos e `N` réplicas, isso gera até `N * 12` conexões de banco por minuto apenas para health checks.
 
 **Dois bugs adicionais identificados**:
 1. `check_postgres()` retorna `"latency_ms": 0` hardcoded — nunca mede a latência real.
@@ -268,7 +268,7 @@ print('Cache TTL OK')
 
 ### Problema Atual
 
-Em [`app/rag/engine.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/rag/engine.py) (L112), `generate_query_embedding(question)` executa `SentenceTransformer.encode()` sincronamente na thread principal do event loop do FastAPI. Isso bloqueia **todas** as requisições HTTP concorrentes durante o cálculo do embedding (~20-50ms por query no CPU).
+Em [`app/rag/engine.py`](app/rag/engine.py) (L112), `generate_query_embedding(question)` executa `SentenceTransformer.encode()` sincronamente na thread principal do event loop do FastAPI. Isso bloqueia **todas** as requisições HTTP concorrentes durante o cálculo do embedding (~20-50ms por query no CPU).
 
 ### Diff em `app/rag/engine.py`
 
