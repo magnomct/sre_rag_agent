@@ -2,7 +2,7 @@
 
 [![Docker Pulls](https://img.shields.io/docker/pulls/carlosmagnogcs/sre-rag-api)](https://hub.docker.com/r/carlosmagnogcs/sre-rag-api)
 [![Version](https://img.shields.io/badge/version-4.0.0-blue)](https://hub.docker.com/r/carlosmagnogcs/sre-rag-api)
-[![Image Size](https://img.shields.io/badge/image%20size-~1.4%20GB-brightgreen)](https://hub.docker.com/r/carlosmagnogcs/sre-rag-api)
+[![Image Size](https://img.shields.io/badge/image%20size-387%20MB%20(compressed)%20%2F%20~1.4%20GB-brightgreen)](https://hub.docker.com/r/carlosmagnogcs/sre-rag-api)
 [![Well-Architected](https://img.shields.io/badge/Well--Architected-9.65%2F10-purple)](https://github.com/magnomct/sre_rag_agent)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -85,7 +85,7 @@ Access the services:
 
 ## 🏛️ Well-Architected Compliance
 
-The v4.0 architecture is certified across all 6 pillars of the **Cloud Well-Architected Framework** with an average score of **9.65/10 (96.5%)**:
+The v4.0 architecture has been comprehensively self-assessed across all 6 pillars of the **Cloud Well-Architected Framework** with an average score of **9.65/10 (96.5%)**:
 - **Operational Excellence:** 9.8 / 10
 - **Security & DevSecOps:** 9.8 / 10
 - **Reliability (SRE):** 9.9 / 10

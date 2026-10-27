@@ -11,12 +11,12 @@
 
 | # | Task | Arquivo(s) Alvo | Risco | Esforço |
 |---|---|---|---|---|
-| **T1** | Dependências & Configuração Assíncrona do Banco | [`app/requirements.txt`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/requirements.txt), [`app/config.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/config.py), [`app/database.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/database.py) | 🟡 Médio | ~25 min |
-| **T2** | Modelagem Relacional & Migrações Declarativas (Alembic) | [`app/models.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/models.py), [`app/alembic.ini`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/alembic.ini), [`app/migrations/`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/migrations) | 🟡 Médio | ~30 min |
-| **T3** | Persistência do Estado com Fallback Resiliente | [`app/main.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/main.py), [`app/incidents.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/incidents.py), [`app/chaos.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/chaos.py) | 🔴 Alto | ~40 min |
-| **T4** | Server-Sent Events (SSE) para Streaming em Tempo Real | [`app/events.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/events.py), [`app/main.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/main.py) | 🟡 Médio | ~30 min |
-| **T5** | Modularização do Frontend em ES Modules (ESM) | [`app/static/js/app.js`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/static/js/app.js), [`app/static/js/modules/`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/static/js/modules), [`app/templates/dashboard.html`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/app/templates/dashboard.html) | 🔴 Alto | ~45 min |
-| **T6** | Agente de Auditoria DevSecOps, E2E Playwright & Version Bump | [`scripts/test_agent.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/scripts/test_agent.py), [`tests/e2e/test_dashboard_e2e.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/tests/e2e/test_dashboard_e2e.py), [`helm/sre-rag/Chart.yaml`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/helm/sre-rag/Chart.yaml), [`README.md`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/README.md) | 🟡 Médio | ~30 min |
+| **T1** | Dependências & Configuração Assíncrona do Banco | [`app/requirements.txt`](app/requirements.txt), [`app/config.py`](app/config.py), [`app/database.py`](app/database.py) | 🟡 Médio | ~25 min |
+| **T2** | Modelagem Relacional & Migrações Declarativas (Alembic) | [`app/models.py`](app/models.py), [`app/alembic.ini`](app/alembic.ini), [`app/migrations/`](app/migrations) | 🟡 Médio | ~30 min |
+| **T3** | Persistência do Estado com Fallback Resiliente | [`app/main.py`](app/main.py), [`app/incidents.py`](app/incidents.py), [`app/chaos.py`](app/chaos.py) | 🔴 Alto | ~40 min |
+| **T4** | Server-Sent Events (SSE) para Streaming em Tempo Real | [`app/events.py`](app/events.py), [`app/main.py`](app/main.py) | 🟡 Médio | ~30 min |
+| **T5** | Modularização do Frontend em ES Modules (ESM) | [`app/static/js/app.js`](app/static/js/app.js), [`app/static/js/modules/`](app/static/js/modules), [`app/templates/dashboard.html`](app/templates/dashboard.html) | 🔴 Alto | ~45 min |
+| **T6** | Agente de Auditoria DevSecOps, E2E Playwright & Version Bump | [`scripts/test_agent.py`](scripts/test_agent.py), [`tests/e2e/test_dashboard_e2e.py`](tests/e2e/test_dashboard_e2e.py), [`helm/sre-rag/Chart.yaml`](helm/sre-rag/Chart.yaml), [`README.md`](README.md) | 🟡 Médio | ~30 min |
 
 **Tempo Total Estimado de Implementação**: ~3 horas e 20 minutos (sem contar execução completa de testes).
 
@@ -84,7 +84,7 @@ graph TD
 ### 1. Excelência Operacional (Operational Excellence)
 - **Infraestrutura e Migrações como Código**: Banco de dados estruturado via migrações declarativas versionadas no Git com Alembic (`migrations/`).
 - **Runbooks Estruturados em 5 Fases**: Catálogo com 16 cenários de incidentes reais de produção com guias de remediação padronizados.
-- **Auditoria Contínua**: O `ChaosManager` e o `SRETestAgent` produzem trilha de auditoria completa em [`docs/SECURITY_PERF_TEST_REPORT.md`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/docs/SECURITY_PERF_TEST_REPORT.md).
+- **Auditoria Contínua**: O `ChaosManager` e o `SRETestAgent` produzem trilha de auditoria completa em [`docs/SECURITY_PERF_TEST_REPORT.md`](docs/SECURITY_PERF_TEST_REPORT.md).
 
 ### 2. Segurança (Security & DevSecOps)
 - **Defesa em Profundidade (Defense in Depth)**:
@@ -146,13 +146,13 @@ flowchart LR
 5. **Security & Audit**: Execução do **Agente Autônomo de Testes** (`scripts/test_agent.py`) auditando headers de segurança, rate limits, CORS e vazamento de informações.
 6. **Release**: Helm Chart validado com `helm lint` e `helm template --debug`, com versionamento semântico `v3.5`.
 7. **Deploy**: Deploy declarativo em Kubernetes/Kind com probes de liveness e readiness cacheadas.
-8. **Monitor & Observability**: Telemetria RED/USE no Prometheus, dashboard no Grafana, monitoramento de burn rate de SLO e auditoria em [`docs/SECURITY_PERF_TEST_REPORT.md`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/docs/SECURITY_PERF_TEST_REPORT.md).
+8. **Monitor & Observability**: Telemetria RED/USE no Prometheus, dashboard no Grafana, monitoramento de burn rate de SLO e auditoria em [`docs/SECURITY_PERF_TEST_REPORT.md`](docs/SECURITY_PERF_TEST_REPORT.md).
 
 ---
 
 ## 🤖 4. O Agente Autônomo de Auditoria e Testes (`scripts/test_agent.py`)
 
-Foi introduzido no projeto o **SRE Test & Security Audit Agent**, localizado em [`scripts/test_agent.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/scripts/test_agent.py) e documentado na Seção 8 do [`AGENTS.md`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/AGENTS.md).
+Foi introduzido no projeto o **SRE Test & Security Audit Agent**, localizado em [`scripts/test_agent.py`](scripts/test_agent.py) e documentado na Seção 8 do [`AGENTS.md`](AGENTS.md).
 
 ### Capacidades do Agente:
 1. **Bateria de Segurança (`Security Battery`)**:
@@ -167,7 +167,7 @@ Foi introduzido no projeto o **SRE Test & Security Audit Agent**, localizado em 
    - `PERF-003`: Eficiência de compressão GZip e redução de tráfego de saída.
    - `PERF-004`: Desacoplamento não-bloqueante de embeddings via `asyncio.to_thread`.
 3. **Geração Automatizada de Documentação Viva**:
-   - Cada execução compila evidências e atualiza o relatório [`docs/SECURITY_PERF_TEST_REPORT.md`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/docs/SECURITY_PERF_TEST_REPORT.md).
+   - Cada execução compila evidências e atualiza o relatório [`docs/SECURITY_PERF_TEST_REPORT.md`](docs/SECURITY_PERF_TEST_REPORT.md).
 4. **Comando Integrado no Makefile**:
    ```bash
    make test-audit
@@ -271,7 +271,7 @@ Testes automatizados cobrindo carregamento do dashboard, fluxo completo de resol
 #### Atualização de Metadados
 - `helm/sre-rag/Chart.yaml`: `appVersion: "3.5"`, `version: "0.5.0"`
 - `README.md`, `desafios.md`, `desafios_en.md`, `AGENTS.md`
-- Execução do agente de auditoria: `make test-audit` gerando [`docs/SECURITY_PERF_TEST_REPORT.md`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/docs/SECURITY_PERF_TEST_REPORT.md).
+- Execução do agente de auditoria: `make test-audit` gerando [`docs/SECURITY_PERF_TEST_REPORT.md`](docs/SECURITY_PERF_TEST_REPORT.md).
 
 ---
 
@@ -289,7 +289,7 @@ Testes automatizados cobrindo carregamento do dashboard, fluxo completo de resol
 - [ ] **Critério 10**: Polling contínuo (`setInterval`) eliminado e substituído por SSE no frontend.
 - [ ] **Critério 11**: Baseline de 8 testes unitários passando (`8 passed`).
 - [ ] **Critério 12**: Suíte E2E com Playwright valida a interface gráfica.
-- [ ] **Critério 13**: Agente de Auditoria [`scripts/test_agent.py`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/scripts/test_agent.py) aprovado com relatório em [`docs/SECURITY_PERF_TEST_REPORT.md`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/docs/SECURITY_PERF_TEST_REPORT.md).
+- [ ] **Critério 13**: Agente de Auditoria [`scripts/test_agent.py`](scripts/test_agent.py) aprovado com relatório em [`docs/SECURITY_PERF_TEST_REPORT.md`](docs/SECURITY_PERF_TEST_REPORT.md).
 
 ---
 

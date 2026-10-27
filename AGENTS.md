@@ -38,7 +38,7 @@
   # ou via Makefile:
   make test-audit
   ```
-- **Documentação Viva e Rastreabilidade**: O agente documenta automaticamente cada teste adicionado no relatório [`docs/SECURITY_PERF_TEST_REPORT.md`](file:///Ubuntu-24.04/home/magno/sre_rag_agent/docs/SECURITY_PERF_TEST_REPORT.md).
+- **Documentação Viva e Rastreabilidade**: O agente documenta automaticamente cada teste adicionado no relatório [`docs/SECURITY_PERF_TEST_REPORT.md`](docs/SECURITY_PERF_TEST_REPORT.md).
 - **Adição de Novos Testes**:
   - Para testes de segurança: criar métodos `audit_<feature>()` no `SRETestAgent` registrando um `AuditResult` com categoria `"Security"`, threshold esperado e diagnóstico de mitigação.
   - Para testes de performance: criar métodos `benchmark_<feature>()` no `SRETestAgent` registrando um `AuditResult` com categoria `"Performance"`, percentis (P50, P90, P95, P99) e latência em milissegundos.
