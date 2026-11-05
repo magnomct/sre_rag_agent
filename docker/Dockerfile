@@ -1,5 +1,5 @@
 # ---- Build Stage ----
-FROM python:3.12.4-slim AS builder
+FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
@@ -25,7 +25,7 @@ RUN find /install -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || t
     find /install -type f -name "*.pyc" -delete 2>/dev/null || true
 
 # ---- Runtime Stage ----
-FROM python:3.12.4-slim
+FROM python:3.12-slim
 
 # Prevent Python from writing .pyc files and buffer stdout/stderr
 ENV PYTHONDONTWRITEBYTECODE=1

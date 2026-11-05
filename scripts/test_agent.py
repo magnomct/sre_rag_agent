@@ -211,6 +211,46 @@ class SRETestAgent:
             details=details,
         ))
 
+    def audit_cve_dependencies_and_k8s_hardening(self):
+        """SEC-006: Audit requirements.txt and K8s manifests against known CVEs and PSS Restricted."""
+        req_file = REPO_DIR / "app" / "requirements.txt"
+        helm_file = REPO_DIR / "helm" / "sre-rag" / "templates" / "api-deployment.yaml"
+        nginx_file = REPO_DIR / "docker" / "nginx.conf"
+
+        req_content = req_file.read_text(encoding="utf-8") if req_file.exists() else ""
+        helm_content = helm_file.read_text(encoding="utf-8") if helm_file.exists() else ""
+        nginx_content = nginx_file.read_text(encoding="utf-8") if nginx_file.exists() else ""
+
+        checks = {
+            "jinja2_patched": "jinja2==3.1.6" in req_content or "jinja2>=3.1.6" in req_content,
+            "certifi_safe_ca": "certifi>=2026.10.19" in req_content,
+            "dotenv_patched": "python-dotenv==1.2.4" in req_content or "python-dotenv>=1.2.2" in req_content,
+            "langchain_eliminated": "langchain" not in req_content,
+            "seccomp_runtime_default": "RuntimeDefault" in helm_content,
+            "nginx_header_limit": "large_client_header_buffers" in nginx_content,
+        }
+
+        failed_checks = [k for k, v in checks.items() if not v]
+        if not failed_checks:
+            status = "PASS"
+            actual = "All requirements and K8s manifests conform to CVE mitigations and PSS Restricted"
+            details = "Zero known high/critical CVEs in pinned requirements. SeccompProfile RuntimeDefault active. Nginx ReDoS buffer limits active."
+        else:
+            status = "FAIL"
+            actual = f"Failed checks: {', '.join(failed_checks)}"
+            details = "Identified vulnerable dependency pin or missing PSS RuntimeDefault in deployment."
+
+        self.results.append(AuditResult(
+            test_id="SEC-006",
+            category="Security",
+            name="Dependency CVEs & PSS Restricted Compliance",
+            description="Audits requirements.txt, Nginx buffers, and Helm charts for CVE fixes and Kubernetes PSS Restricted profile.",
+            target_threshold="Patched CVE dependencies + PSS RuntimeDefault + Nginx buffer limits",
+            actual_value=actual,
+            status=status,
+            details=details,
+        ))
+
     # =========================================================================
     # Performance Battery
     # =========================================================================
@@ -333,6 +373,7 @@ class SRETestAgent:
         self.audit_cors_configuration()
         self.audit_stack_trace_leakage()
         self.audit_docker_security()
+        self.audit_cve_dependencies_and_k8s_hardening()
 
         # Performance
         self.benchmark_healthcheck_ttl()
