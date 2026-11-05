@@ -1,7 +1,7 @@
 # 🛡️ Relatório Contínuo de Testes de Segurança & Performance
 ## SRE RAG Agent — Test & Security Audit Agent Report
 
-> **Gerado automaticamente em**: `2026-11-05 18:46:03 UTC`  
+> **Gerado automaticamente em**: `2026-11-05 18:55:39 UTC`  
 > **Versão da Aplicação**: `v4.0` | **Ambiente**: `development`  
 > **Índice de Conformidade DevSecOps**: `100.0%` (10/10 aprovados)
 
@@ -26,8 +26,8 @@
 | `SEC-004` | Security | **Error Message Sanitization (Anti-Leak)** | `Zero sensitive path or stack trace leakage` | No leak detected | ✅ `PASS` |
 | `SEC-005` | Security | **Container Security & Non-Root Execution** | `Non-root execution (appuser) + HEALTHCHECK` | Non-root user (appuser) + HEALTHCHECK defined | ✅ `PASS` |
 | `SEC-006` | Security | **Dependency CVEs & PSS Restricted Compliance** | `Patched CVE dependencies + PSS RuntimeDefault + Nginx buffer limits` | All requirements and K8s manifests conform to CVE mitigations and PSS Restricted | ✅ `PASS` |
-| `PERF-001` | Performance | **Health Check Latency & TTL Cache Shield** | `Cached latency < 50ms` | Call 1: 4.45ms, Call 2 (cached): 4.06ms | ✅ `PASS` |
-| `PERF-002` | Performance | **API Endpoint Latency Distribution (Catalog)** | `P95 Latency < 150ms` | P50: 4.6ms | P90: 5.8ms | P95: 5.8ms | P99: 6.3ms | ✅ `PASS` |
+| `PERF-001` | Performance | **Health Check Latency & TTL Cache Shield** | `Cached latency < 50ms` | Call 1: 4.35ms, Call 2 (cached): 6.65ms | ✅ `PASS` |
+| `PERF-002` | Performance | **API Endpoint Latency Distribution (Catalog)** | `P95 Latency < 150ms` | P50: 5.1ms | P90: 6.3ms | P95: 6.5ms | P99: 7.5ms | ✅ `PASS` |
 | `PERF-003` | Performance | **GZip Compression & Egress Efficiency** | `Compression ratio > 40% on payloads > 1KB` | Plain: 103700B -> GZip: 103700B (0.0% reduction) | ✅ `PASS` |
 | `PERF-004` | Performance | **Non-blocking Async Vector Embeddings** | `Thread pool offload via asyncio.to_thread` | asyncio.to_thread(generate_query_embedding) detected | ✅ `PASS` |
 
@@ -81,14 +81,14 @@
 - **Categoria**: `Performance`
 - **Objetivo**: Measures round-trip latency of dependency health checks and verifies 5s TTL cache efficiency.
 - **Threshold Esperado**: `Cached latency < 50ms`
-- **Resultado Medido**: `Call 1: 4.45ms, Call 2 (cached): 4.06ms`
+- **Resultado Medido**: `Call 1: 4.35ms, Call 2 (cached): 6.65ms`
 - **Diagnóstico**: TTL cache shields databases from probe connection storms. Reported Postgres latency: 0ms
 
 ### 🟢 [PERF-002] API Endpoint Latency Distribution (Catalog)
 - **Categoria**: `Performance`
 - **Objetivo**: Profiles P50, P90, P95, and P99 response times across repeated requests to establish baseline SLOs.
 - **Threshold Esperado**: `P95 Latency < 150ms`
-- **Resultado Medido**: `P50: 4.6ms | P90: 5.8ms | P95: 5.8ms | P99: 6.3ms`
+- **Resultado Medido**: `P50: 5.1ms | P90: 6.3ms | P95: 6.5ms | P99: 7.5ms`
 - **Diagnóstico**: Catalog latency is well within SRE SLO limits (< 200ms). Sample size: 50 requests.
 
 ### 🟢 [PERF-003] GZip Compression & Egress Efficiency

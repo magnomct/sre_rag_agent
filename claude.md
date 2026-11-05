@@ -302,7 +302,7 @@ CMD ["python", "main.py"]
 - **Non-root user**: NUNCA rode como root
 - **Layer caching**: Copie `requirements.txt` antes do código
 - **.dockerignore**: Exclua `.git`, `__pycache__`, `*.md`, `tests/`
-- **Pin versions**: `python:3.12.4-slim`, não `python:3.12-slim`
+- **Pin versions**: `python:3.12-slim` (security track ativa com patches Debian)
 - **Scan vulnerabilidades**: `trivy image <image>` no CI
 
 ---

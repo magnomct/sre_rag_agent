@@ -277,7 +277,7 @@ Em plataformas modernas de microsserviços e Inteligência Artificial, contêine
 
 ### 9.1 Multi-Stage Build & Otimização do PyTorch (Economia >70% de Imagem)
 - **O Desafio:** A aplicação utiliza `sentence-transformers` para indexação vetorial semântica. Ao instalar via PyPI tradicional, o pip baixa o PyTorch com binários completos CUDA/cuDNN da NVIDIA para GPU, inflando a imagem para mais de **3.5 GB**.
-- **A Solução:** Adotamos um *multi-stage build* (`python:3.12.4-slim`), forçando a instalação dos wheels dedicados para CPU do PyTorch a partir do repositório oficial (`https://download.pytorch.org/whl/cpu`):
+- **A Solução:** Adotamos um *multi-stage build* (`python:3.12-slim`), forçando a instalação dos wheels dedicados para CPU do PyTorch a partir do repositório oficial (`https://download.pytorch.org/whl/cpu`):
   ```dockerfile
   RUN pip install --no-cache-dir --prefix=/install torch --index-url https://download.pytorch.org/whl/cpu
   RUN pip install --no-cache-dir --prefix=/install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt

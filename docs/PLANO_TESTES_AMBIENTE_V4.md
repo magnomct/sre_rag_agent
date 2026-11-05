@@ -193,8 +193,11 @@ O objetivo deste plano é validar de forma metódica e reproduzível todos os co
 
   # 8.3 Execução do script automatizado de conformidade v4.0
   bash scripts/verify_v4.0.sh
+
+  # 8.4 Execução do agente autônomo de auditoria DevSecOps e benchmarks
+  PYTHONPATH=app ./app/.venv/bin/python3 scripts/test_agent.py
   ```
-* **Critério de Sucesso:** Zero vulnerabilidades críticas impeditivas e `verify_v4.0.sh` aprovado com 15/15 critérios atendidos.
+* **Critério de Sucesso:** Zero vulnerabilidades críticas impeditivas, `verify_v4.0.sh` aprovado com 15/15 critérios atendidos e 10/10 testes PASS no `test_agent.py`.
 
 ---
 

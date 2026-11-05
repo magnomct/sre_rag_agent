@@ -92,7 +92,7 @@ graph TD
   - Isolamento estrito de tráfego ingress/egress.
   - A API só comunica com PostgreSQL na porta 5432, Redis na 6379, Jaeger na 4317 e CoreDNS na porta 53.
   - Banco de dados e cache rejeitam qualquer conexão externa à API.
-- **Auditoria de Vulnerabilidades com Trivy:** Scan automatizado de arquivos de infraestrutura e dependências Python, garantindo ausência de CVEs críticas e prevenção de vazamento de credenciais.
+- **Auditoria de Vulnerabilidades & Hardening:** Scan automatizado com Trivy e suite de auditoria contínua `scripts/test_agent.py` (10/10 testes PASS), garantindo ausência de CVEs conhecidas nas dependências pinadas (Jinja2 3.1.6, certifi, python-dotenv, Starlette, OTel 1.45.1+), limites perimetrais de buffer contra ReDoS no Nginx (`large_client_header_buffers`) e eliminação de superfícies de ataque órfãs (`langchain`).
 
 ---
 
