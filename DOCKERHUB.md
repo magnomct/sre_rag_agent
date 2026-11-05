@@ -13,11 +13,11 @@
 ## 🚀 What's New in Version 4.0
 
 - 🤖 **Autonomous SRE Agent with OODA Loop**: Intelligent closed-loop incident responder cycling through *Observe, Orient, Decide, Act* with native asynchronous Tool Calling (`query_prometheus`, `get_k8s_events`, `search_runbooks`, `execute_mitigation`) and live SSE reasoning streams.
-- 🔍 **3-Stage Hybrid Retrieval & Neural Re-ranking**: Dense vector search via PostgreSQL 15 + `pgvector` (HNSW cosine index) fused with sparse lexical BM25Okapi scoring ($k=60$ RRF) and re-ordered with **FlashRank Cross-Encoder** for sub-30ms precision.
+- 🔍 **3-Stage Hybrid Retrieval & Neural Re-ranking**: Dense vector search via PostgreSQL 15 + `pgvector` (HNSW cosine index) fused with sparse lexical BM25Okapi scoring using RRF (k=60) and re-ordered with **FlashRank Cross-Encoder** for sub-30ms precision.
 - ⚡ **Real Chaos Engineering at Kernel Level**: Controlled fault injection targeting Linux cgroups (`cgroup-oom` via `stress-ng`, CFS `cpu-throttle`, and `tc netem` packet latency), governed by an automated **60-second Dead Man's Switch** safety harness.
 - 🔭 **3D Observability with OpenTelemetry & Jaeger**: Distributed tracing spanning FastAPI, Asyncpg, and Redis with contextual injection of `trace_id` and `span_id` into structured JSON logs for instant alert-to-trace correlation.
 - 📊 **Dynamic SLO & Error Budget Tracking**: Live evaluation of service availability, remaining budget, and burn rate via `/api/v1/slo/error-budget`.
-- 🛡️ **Enterprise DevSecOps & PSS Restricted**: Adheres to Kubernetes Pod Security Standards `restricted` profile (`readOnlyRootFilesystem: true`, non-root execution under `appuser`, `drop: ["ALL"]` capabilities), Zero-Trust NetworkPolicies, and automated Trivy auditing.
+- 🛡️ **Enterprise DevSecOps & PSS Restricted**: Adheres to Kubernetes Pod Security Standards `restricted` profile (`readOnlyRootFilesystem: true`, non-root execution under `appuser`, `drop: ["ALL"]` capabilities, `seccompProfile: RuntimeDefault`), perimeter ReDoS mitigation in Nginx, zero known CVEs across pinned dependencies (Jinja2 3.1.6, certifi, python-dotenv, Starlette, OpenTelemetry 1.45.1+), Zero-Trust NetworkPolicies, and 10 continuous compliance audits in `scripts/test_agent.py` (`SEC-006`).
 - 💻 **Resilient War Room Terminal**: Web terminal for live incident remediation with immediate first-try resolution, recursion-free DOM scrolling, and native SRE diagnostic CLI simulations (`kubectl get pods`, `kubectl logs`, `df -h`).
 
 ---

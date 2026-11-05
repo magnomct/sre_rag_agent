@@ -703,7 +703,7 @@ While Prometheus RED metrics (`metrics.py`) and multi-window multi-burn-rate rul
 |---|---|---|---|
 | **v3.4** | **Quick Wins & Hardening** | Pydantic V2 ConfigDict, connection pooling in healthcheck, `asyncio.to_thread` for embeddings, rate limiting, and security headers | ✅ **Concluído / Released** |
 | **v3.5** | **Persistence & Frontend ESM** | Async PostgreSQL with Alembic migrations, Server-Sent Events (SSE), modular ES Modules frontend, and Playwright E2E tests | ✅ **Concluído / Released** |
-| **v4.0** | **Advanced AI & Real Chaos** | pgvector HNSW, Hybrid Search (Dense + BM25 + FlashRank), SRE Autonomous OODA Agent with Tool Calling, Kernel-level Chaos (Dead Man's Switch 60s), OpenTelemetry 3D tracing, PSS Restricted, and Docker Hub distribution | ✅ **Concluído / Released (v4.0.0)** |
+| **v4.0** | **Advanced AI & Real Chaos** | pgvector HNSW, Hybrid Search (Dense + BM25 + FlashRank), SRE Autonomous OODA Agent with Tool Calling, Kernel-level Chaos (Dead Man's Switch 60s), OpenTelemetry 3D tracing, PSS Restricted with RuntimeDefault seccomp, Nginx ReDoS hardening, zero known CVEs, and Docker Hub distribution | ✅ **Concluído / Released (v4.0.0)** |
 | **v4.1+** | **Enterprise Scale & Governance** | HashiCorp Vault / ESO secret management, KEDA event-driven autoscaling from Prometheus SLIs, and mTLS Zero-Trust service mesh | 📋 **Roadmap Futuro** |
 
 ### 🎯 10.1 Status de Execução e Homologação (Atualizado: Outubro/2026 — v4.0.0 Concluída)
@@ -713,7 +713,7 @@ Todas as metas arquiteturais estabelecidas neste plano de melhorias foram integr
 2. **Agente SRE Autônomo (Ciclo OODA):** Ciclo cognitivo fechado (*Observe, Orient, Decide, Act*) com Tool Calling assíncrono sandboxed (`query_prometheus`, `get_k8s_events`, `search_runbooks`, `execute_mitigation`), streaming SSE na War Room e controle Human-in-the-Loop (`auto_mitigate: False`).
 3. **Chaos Real no Kernel Linux:** Injeção determinística de falhas em cgroups (`cgroup-oom` via `stress-ng`, quotas de CPU CFS e degradação de rede com `tc netem`), governadas por temporizador de reversão automática com **Dead Man's Switch de 60 segundos**.
 4. **Observabilidade Tridimensional:** Spans OpenTelemetry assíncronos (FastAPI, Asyncpg, Redis) via OTLP gRPC para o Jaeger, injeção automática de `trace_id` e `span_id` no `structlog`, e cálculo dinâmico de disponibilidade e burn rate de SLO no endpoint `/api/v1/slo/error-budget`.
-5. **Hardening DevSecOps:** Helm charts com Pod Security Standards (PSS) Restricted (`readOnlyRootFilesystem: true`, não-root, drop de capabilities), NetworkPolicies Zero-Trust e publicação oficial no Docker Hub (`carlosmagnogcs/sre-rag-api:4.0`).
+5. **Hardening DevSecOps & Remediação de CVEs:** Helm charts em total conformidade com Pod Security Standards (PSS) Restricted (`readOnlyRootFilesystem: true`, não-root, drop de capabilities, `seccompProfile: RuntimeDefault`), NetworkPolicies Zero-Trust, mitigação de ReDoS no Nginx (`large_client_header_buffers`), dependências sem CVEs conhecidas (Jinja2 3.1.6, certifi, python-dotenv, Starlette, OTel 1.45.1+), remoção da biblioteca órfã `langchain`, 10 testes contínuos no `scripts/test_agent.py` (`SEC-006`) e publicação oficial no Docker Hub (`carlosmagnogcs/sre-rag-api:4.0`).
 6. **Higienização e Portabilidade:** Links locais relativizados, métricas de imagem clarificadas (387 MB comprimido / ~1.4 GB descompactado) e total conformidade com o Well-Architected Framework avaliada em 9.65/10.
 
 ---

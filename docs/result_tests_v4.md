@@ -301,11 +301,12 @@ O escopo da validação cobriu os seguintes pilares arquiteturais:
 
 ### Bateria 8: Segurança DevSecOps & Varredura de Testes Automatizados
 
-* **Objetivo:** Rodar a suíte completa de testes de regressão automatizados e o script oficial de homologação v4.0.
+* **Objetivo:** Rodar a suíte completa de testes de regressão automatizados, o script oficial de homologação v4.0 e o agente autônomo de auditoria contínua de segurança e performance.
 * **Comandos Executados:**
   ```bash
   PYTHONPATH=app ./app/.venv/bin/pytest -v tests/
   bash scripts/verify_v4.0.sh
+  PYTHONPATH=app ./app/.venv/bin/python3 scripts/test_agent.py
   ```
 * **Evidência Real Capturada do Pytest (19/19 Aprovados):**
   ```text
@@ -329,7 +330,7 @@ O escopo da validação cobriu os seguintes pilares arquiteturais:
   tests/test_rag.py::test_rag_engine_end_to_end PASSED                     [ 94%]
   tests/test_rag.py::test_benchmark_composite_score PASSED                 [100%]
 
-  ======================= 19 passed, 2 warnings in 15.91s ========================
+  ======================= 19 passed, 2 warnings in 12.13s ========================
   ```
 * **Evidência Real Capturada de `verify_v4.0.sh` (15/15 Critérios Aprovados):**
   ```text
@@ -356,6 +357,26 @@ O escopo da validação cobriu os seguintes pilares arquiteturais:
   ====================================================
   🎉 Todos os 15 critérios de validação da v4.0 foram atendidos!
   ```
+* **Evidência Real Capturada do Agente de Auditoria Contínua `test_agent.py` (10/10 Testes Aprovados - 100%):**
+  ```text
+  ============================================================
+  🔍 SRE Test & Security Audit Agent — v4.0 (development)
+  ============================================================
+  [1/10] Auditing HTTP Security Headers (SEC-001)... PASS
+  [2/10] Auditing Rate Limiting Thresholds (SEC-002)... PASS
+  [3/10] Auditing CORS Origin Enforcement (SEC-003)... PASS
+  [4/10] Auditing Error Leakage & Stack Traces (SEC-004)... PASS
+  [5/10] Auditing Container Security & Non-Root (SEC-005)... PASS
+  [6/10] Auditing CVE Remediations & K8s Hardening (SEC-006)... PASS
+  [7/10] Benchmarking Health Check TTL Cache (PERF-001)... PASS
+  [8/10] Benchmarking Endpoint Latency Distribution (PERF-002)... PASS
+  [9/10] Benchmarking GZip Compression Ratio (PERF-003)... PASS
+  [10/10] Benchmarking Async Embedding Offload (PERF-004)... PASS
+  ============================================================
+  Relatório gerado em: docs/SECURITY_PERF_TEST_REPORT.md
+  Audit Agent Final: 10 PASS, 0 WARN, 0 FAIL (100.0% compliant)
+  ============================================================
+  ```
 * **Resultado:** ✅ **PASSOU** — 100% dos testes e critérios formais de validação atendidos com louvor.
 
 ---
@@ -371,7 +392,7 @@ O escopo da validação cobriu os seguintes pilares arquiteturais:
 | **5** | Agente SRE OODA | `sre_agent.py` | Tool calling sandboxed, SSE streaming | Diagnóstico emitido em 4.9s com recomendação de rollout undo | ✅ **APROVADO** |
 | **6** | War Room Terminal | `dashboard.js` & `incidents.py` | Resolução no 1º envio, sem recursão, badges v4.0 | Sucesso imediato (`correct: true`, 80/100 pts), scroll suave, zero loop | ✅ **APROVADO** |
 | **7** | Chaos Real & Dead Man | `chaos_real.py` | CPU Throttling e OOM com reversão em 60s | Injeção cgroup `/sys/fs/cgroup/cpu` ativa e revertida via emergency revert | ✅ **APROVADO** |
-| **8** | DevSecOps & Testes | `tests/` + `verify_v4.0.sh` | 19/19 testes passando e 15/15 de aceite | 19/19 pytests (15.91s); 15/15 critérios no script de homologação | ✅ **APROVADO** |
+| **8** | DevSecOps & Testes | `tests/` + `verify_v4.0.sh` + `test_agent.py` | 19/19 pytests, 15/15 de aceite e 10/10 auditorias de segurança | 19/19 pytests (12.13s); 15/15 critérios no script de homologação; 10/10 no agente de auditoria DevSecOps | ✅ **APROVADO** |
 
 ---
 
